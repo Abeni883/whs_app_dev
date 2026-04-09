@@ -24,19 +24,17 @@
             <div class="config-table-section" style="margin-top: 1.5rem;">
                 <table class="config-table whk-table" style="table-layout: fixed; width: 100%;">
                     <colgroup>
-                        <col style="width: 12%;">
-                        <col style="width: 18%;">
-                        <col style="width: 20%;">
-                        <col style="width: 13%;">
-                        <col style="width: 13%;">
-                        <col style="width: 12%;">
-                        <col style="width: 12%;">
+                        <col style="width: 15%;">
+                        <col style="width: 25%;">
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
                     </colgroup>
                     <thead>
                         <tr>
                             <th>WHK Nr.</th>
                             <th>Typ</th>
-                            <th>Preset / Typ</th>
                             <th>Abgänge</th>
                             <th>Temperatursonden</th>
                             <th>Antriebsheizung</th>
@@ -52,14 +50,6 @@
                                 </td>
                                 <td>
                                     <input type="text" name="whk_typ_{{ loop.index }}" class="whk-input whk-typ" value="{{ config.whk_typ or '' }}" placeholder="WHK_20_LU_01_16" maxlength="50">
-                                </td>
-                                <td>
-                                    <select name="preset_typ_{{ loop.index }}" class="whk-select preset-typ" required>
-                                        <option value="kabine_16hz" {% if config.preset_typ == 'kabine_16hz' %}selected{% endif %}>WHK Kabine 16.7Hz (IP55)</option>
-                                        <option value="kabine_50hz" {% if config.preset_typ == 'kabine_50hz' %}selected{% endif %}>WHK Kabine 50Hz (IP55)</option>
-                                        <option value="rahmen_16hz" {% if config.preset_typ == 'rahmen_16hz' %}selected{% endif %}>WHK Rahmen 16.7Hz (IP2X)</option>
-                                        <option value="rahmen_50hz" {% if config.preset_typ == 'rahmen_50hz' %}selected{% endif %}>WHK Rahmen 50Hz (IP2X)</option>
-                                    </select>
                                 </td>
                                 <td>
                                     <select name="abgaenge_{{ loop.index }}" class="whk-select" required>
@@ -90,14 +80,6 @@
                                 </td>
                                 <td>
                                     <input type="text" name="whk_typ_1" class="whk-input whk-typ" value="" placeholder="WHK_20_LU_01_16" maxlength="50">
-                                </td>
-                                <td>
-                                    <select name="preset_typ_1" class="whk-select preset-typ" required>
-                                        <option value="kabine_16hz" selected>WHK Kabine 16.7Hz (IP55)</option>
-                                        <option value="kabine_50hz">WHK Kabine 50Hz (IP55)</option>
-                                        <option value="rahmen_16hz">WHK Rahmen 16.7Hz (IP2X)</option>
-                                        <option value="rahmen_50hz">WHK Rahmen 50Hz (IP2X)</option>
-                                    </select>
                                 </td>
                                 <td>
                                     <select name="abgaenge_1" class="whk-select" required>
@@ -290,14 +272,6 @@ function addWHKRow() {
         </td>
         <td>
             <input type="text" name="whk_typ_${nextNumber}" class="whk-input whk-typ" value="" placeholder="WHK_20_LU_01_16" maxlength="50">
-        </td>
-        <td>
-            <select name="preset_typ_${nextNumber}" class="whk-select preset-typ" required>
-                <option value="kabine_16hz" selected>WHK Kabine 16.7Hz (IP55)</option>
-                <option value="kabine_50hz">WHK Kabine 50Hz (IP55)</option>
-                <option value="rahmen_16hz">WHK Rahmen 16.7Hz (IP2X)</option>
-                <option value="rahmen_50hz">WHK Rahmen 50Hz (IP2X)</option>
-            </select>
         </td>
         <td>
             <select name="abgaenge_${nextNumber}" class="whk-select" required>
@@ -557,7 +531,7 @@ function setupAutoSave() {
 
     // Event Delegation für Selects und Checkboxen
     document.addEventListener('change', function(e) {
-        if (e.target.matches('.whk-checkbox, .whk-select, .preset-typ, .ms-whk, input[type="checkbox"], select')) {
+        if (e.target.matches('.whk-checkbox, .whk-select, .ms-whk, input[type="checkbox"], select')) {
             triggerAutoSave();
         }
     });
@@ -592,7 +566,6 @@ function performAutoSave() {
     whkRows.forEach((row) => {
         const whkNr = row.querySelector('.whk-nummer')?.value;
         const whkTyp = row.querySelector('.whk-typ')?.value;
-        const presetTyp = row.querySelector('.preset-typ')?.value;
         const abgaenge = row.querySelector('select[name^="abgaenge"]')?.value;
         const temperatursonden = row.querySelector('select[name^="temperatursonden"]')?.value;
         const antriebsheizung = row.querySelector('input[name^="antriebsheizung"]')?.checked;
@@ -601,7 +574,6 @@ function performAutoSave() {
             whkData.push({
                 whk_nummer: whkNr.trim(),
                 whk_typ: (whkTyp || '').trim(),
-                preset_typ: presetTyp || 'kabine_16hz',
                 anzahl_abgaenge: parseInt(abgaenge) || 1,
                 anzahl_temperatursonden: parseInt(temperatursonden) || 1,
                 hat_antriebsheizung: antriebsheizung || false
