@@ -789,6 +789,11 @@ class Stuecknachweis(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
     whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id'), nullable=False)
 
+    # Kopfdaten
+    typbezeichnung = db.Column(db.String(100), nullable=True)
+    auftraggeber = db.Column(db.String(100), default='SBB AG')
+    hersteller = db.Column(db.String(100), default='Achermann & Co. AG')
+
     # Herstellung
     herstellungsdatum = db.Column(db.Date, nullable=True)
     herstellungsjahr = db.Column(db.Integer, nullable=True)

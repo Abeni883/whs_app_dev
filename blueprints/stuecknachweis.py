@@ -77,6 +77,9 @@ def stuecknachweis_formular(project_id, whk_id):
         sn = Stuecknachweis(
             project_id=project_id,
             whk_config_id=whk_id,
+            typbezeichnung=whk.whk_typ or whk.whk_nummer,
+            auftraggeber='SBB AG',
+            hersteller='Achermann & Co. AG',
             herstellungsdatum=date.today(),
             herstellungsjahr=datetime.now().year,
         )
@@ -104,6 +107,11 @@ def stuecknachweis_formular(project_id, whk_id):
 
     if request.method == 'POST':
         try:
+            # Kopfdaten
+            sn.typbezeichnung = request.form.get('typbezeichnung', '').strip() or None
+            sn.auftraggeber = request.form.get('auftraggeber', '').strip() or 'SBB AG'
+            sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
+
             # Preset-Typ aus Formular lesen und auf WHK speichern
             preset_typ = request.form.get('preset_typ', whk.preset_typ)
             if preset_typ in schutzgrad_map:

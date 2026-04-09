@@ -23,18 +23,18 @@
         <h3 class="sn-section-title">Kopfdaten</h3>
 
         <div class="form-group">
-            <label>Typbezeichnung / Kennnummer</label>
-            <input type="text" value="{{ typbezeichnung }}" readonly class="sn-input-readonly">
+            <label for="typbezeichnung">Typbezeichnung / Kennnummer</label>
+            <input type="text" id="typbezeichnung" name="typbezeichnung" value="{{ sn.typbezeichnung or typbezeichnung }}" maxlength="100">
         </div>
 
         <div class="form-group">
-            <label>Auftraggeber</label>
-            <input type="text" value="SBB AG" readonly class="sn-input-readonly">
+            <label for="auftraggeber">Auftraggeber</label>
+            <input type="text" id="auftraggeber" name="auftraggeber" value="{{ sn.auftraggeber or 'SBB AG' }}" maxlength="100">
         </div>
 
         <div class="form-group">
-            <label>Hersteller</label>
-            <input type="text" value="Achermann + Co. AG" readonly class="sn-input-readonly">
+            <label for="hersteller">Hersteller</label>
+            <input type="text" id="hersteller" name="hersteller" value="{{ sn.hersteller or 'Achermann & Co. AG' }}" maxlength="100">
         </div>
 
         <div class="form-group">
