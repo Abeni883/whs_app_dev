@@ -24,13 +24,12 @@
             <div class="config-table-section" style="margin-top: 1.5rem;">
                 <table class="config-table whk-table" style="table-layout: fixed; width: 100%;">
                     <colgroup>
-                        <col style="width: 14%;">
-                        <col style="width: 20%;">
-                        <col style="width: 12%;">
-                        <col style="width: 12%;">
-                        <col style="width: 12%;">
                         <col style="width: 18%;">
-                        <col style="width: 12%;">
+                        <col style="width: 22%;">
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
+                        <col style="width: 15%;">
                     </colgroup>
                     <thead>
                         <tr>
@@ -39,7 +38,6 @@
                             <th>Abgänge</th>
                             <th>Temperatursonden</th>
                             <th>Antriebsheizung</th>
-                            <th style="text-align: center;">Stücknachweis</th>
                             <th style="text-align: center;">Löschen</th>
                         </tr>
                     </thead>
@@ -76,15 +74,6 @@
                                     <input type="checkbox" name="antriebsheizung_{{ loop.index }}" class="whk-checkbox" {% if config.hat_antriebsheizung %}checked{% endif %}>
                                 </td>
                                 <td style="text-align: center; vertical-align: middle;">
-                                    {% if config.stuecknachweis %}
-                                    <a href="{{ url_for('stuecknachweis.stuecknachweis_formular', project_id=projekt.id, whk_id=config.id) }}"
-                                       class="sn-badge sn-badge-exists" title="Stücknachweis vorhanden">&#10003; Stücknachweis</a>
-                                    {% else %}
-                                    <a href="{{ url_for('stuecknachweis.stuecknachweis_formular', project_id=projekt.id, whk_id=config.id) }}"
-                                       class="sn-badge sn-badge-empty" title="Stücknachweis erstellen">Stücknachweis</a>
-                                    {% endif %}
-                                </td>
-                                <td style="text-align: center; vertical-align: middle;">
                                     <button type="button" class="btn-delete-whk" title="WHK löschen" onclick="deleteWHKRow(this)">×</button>
                                 </td>
                             </tr>
@@ -118,9 +107,6 @@
                                 </td>
                                 <td style="text-align: center; vertical-align: middle;">
                                     <input type="checkbox" name="antriebsheizung_1" class="whk-checkbox">
-                                </td>
-                                <td style="text-align: center; vertical-align: middle;">
-                                    <span class="sn-badge sn-badge-empty" style="cursor: default;">Stücknachweis</span>
                                 </td>
                                 <td style="text-align: center; vertical-align: middle;">
                                     <button type="button" class="btn-delete-whk" title="WHK löschen" onclick="deleteWHKRow(this)">×</button>
@@ -314,9 +300,6 @@ function addWHKRow() {
         </td>
         <td style="text-align: center; vertical-align: middle;">
             <input type="checkbox" name="antriebsheizung_${nextNumber}" class="whk-checkbox">
-        </td>
-        <td style="text-align: center; vertical-align: middle;">
-            <span class="sn-badge sn-badge-empty" style="cursor: default;">Stücknachweis</span>
         </td>
         <td style="text-align: center; vertical-align: middle;">
             <button type="button" class="btn-delete-whk" title="WHK löschen" onclick="deleteWHKRow(this)">×</button>
