@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}EN 61439 — {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>{{ projekt.projektname }}</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>EN 61439</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h2>EN 61439 — Stücknachweis &amp; Konformitätserklärung</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px;">
+                {{ projekt.projektname }}
+                {% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück</a>
+    </div>
+
+    {% if whk_data %}
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>WHK Bezeichnung</th>
+                    <th>Preset Typ</th>
+                    <th>Abgänge</th>
+                    <th>Stücknachweis</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in whk_data %}
+                <tr>
+                    <td><strong>{{ item.whk.whk_nummer }}</strong></td>
+                    <td>
+                        <span class="preset-badge">{{ item.preset_label }}</span>
+                    </td>
+                    <td>{{ item.whk.anzahl_abgaenge }}</td>
+                    <td>
+                        {% if item.has_stuecknachweis %}
+                            <span class="status-badge status-vorhanden">Vorhanden</span>
+                        {% else %}
+                            <span class="status-badge status-offen">Nicht erstellt</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('stuecknachweis.stuecknachweis_formular', project_id=projekt.id, whk_id=item.whk.id) }}" class="btn-primary btn-sm">Öffnen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-data">
+            <p>Keine WHK-Konfigurationen vorhanden.</p>
+            <p>Erstellen Sie zuerst eine <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}">WH-Anlage Konfiguration</a>.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

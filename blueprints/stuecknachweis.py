@@ -17,6 +17,39 @@ from models import (
 stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
 
 
+@stuecknachweis_bp.route('/projekt/<int:project_id>/stuecknachweis/whk-auswahl')
+@login_required
+def whk_auswahl(project_id):
+    """WHK-Auswahl für Stücknachweis (EN 61439) anzeigen."""
+    projekt = Project.query.get(project_id)
+    if not projekt:
+        flash('Projekt nicht gefunden!', 'error')
+        return redirect(url_for('projekte.projekte'))
+
+    whk_configs = WHKConfig.query.filter_by(projekt_id=project_id).order_by(WHKConfig.whk_nummer).all()
+
+    # Prüfe pro WHK ob ein Stücknachweis existiert
+    whk_data = []
+    for whk in whk_configs:
+        sn = Stuecknachweis.query.filter_by(whk_config_id=whk.id).first()
+        # Preset-Typ lesbar formatieren
+        preset_labels = {
+            'kabine_16hz': 'Kabine 16.7Hz',
+            'kabine_50hz': 'Kabine 50Hz',
+            'rahmen_16hz': 'Rahmen 16.7Hz',
+            'rahmen_50hz': 'Rahmen 50Hz',
+        }
+        whk_data.append({
+            'whk': whk,
+            'preset_label': preset_labels.get(whk.preset_typ, whk.preset_typ),
+            'has_stuecknachweis': sn is not None,
+        })
+
+    return render_template('stuecknachweis/whk_auswahl.html',
+                           projekt=projekt,
+                           whk_data=whk_data)
+
+
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis', methods=['GET', 'POST'])
 @login_required
 def stuecknachweis_formular(project_id, whk_id):

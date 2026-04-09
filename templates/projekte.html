@@ -23,7 +23,7 @@
         <div class="search-form">
             <input type="text"
                    id="searchInput"
-                   placeholder="Suche nach Projektname, DIDOK oder IBN-Jahr"
+                   placeholder="Suche nach Projektname"
                    class="search-input">
             <button type="button" id="resetBtn" class="btn-cancel" style="display: none;">Zurücksetzen</button>
         </div>
@@ -37,17 +37,16 @@
                 <tr>
                     <th>Energie</th>
                     <th>Projektname</th>
-                    <th>DIDOK</th>
-                    <th>IBN</th>
                     <th>Projektinformationen</th>
                     <th>WH-Anlage</th>
                     <th>Abnahmetest</th>
+                    <th>EN 61439</th>
                     <th>Löschen</th>
                 </tr>
             </thead>
             <tbody>
                 {% for projekt in projekte %}
-                <tr data-ibn="{{ projekt.ibn_inbetriebnahme_jahre|lower if projekt.ibn_inbetriebnahme_jahre else '' }}">
+                <tr>
                     <td>
                         <span class="energie-badge energie-{{ projekt.energie.lower() if projekt.energie else 'unbekannt' }}">
                             {%- if projekt.energie and projekt.energie.lower() == 'gas' -%}
@@ -64,8 +63,6 @@
                         </span>
                     </td>
                     <td><strong>{{ projekt.projektname }}</strong></td>
-                    <td>{{ projekt.didok_betriebspunkt or '-' }}</td>
-                    <td class="ibn-jahr-cell">{{ projekt.ibn_inbetriebnahme_jahre or '-' }}</td>
                     <td>
                         <a href="{{ url_for('projekte.projekt_bearbeiten', projekt_id=projekt.id) }}" class="action-link">Bearbeiten</a>
                     </td>
@@ -86,6 +83,13 @@
                             <a href="{{ url_for('ewh.projekt_abnahmetest', projekt_id=projekt.id) }}" class="test-link{% if progress == 100 %} test-complete{% endif %}">
                                 Abnahmetest (<span style="color: {{ progress_color(progress) }}; font-weight: bold;">{{ progress }}%</span>)
                             </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if projekt.energie == 'EWH' %}
+                            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="btn-secondary btn-sm">EN 61439</a>
+                        {% else %}
+                            <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
                     </td>
                     <td>
@@ -124,16 +128,12 @@
         let visibleCount = 0;
 
         projectRows.forEach(row => {
-            // Extrahiere Text aus Spalten: Projektname (Index 1), DIDOK (Index 2), IBN Jahr (Index 3)
+            // Extrahiere Text aus Spalten: Projektname (Index 1)
             const cells = row.querySelectorAll('td');
             const projektname = cells[1]?.textContent.toLowerCase() || '';
-            const didok = cells[2]?.textContent.toLowerCase() || '';
-            const ibnJahre = cells[3]?.textContent.toLowerCase() || '';
 
             // Prüfe ob Suchbegriff vorkommt
-            const matches = projektname.includes(searchTerm) ||
-                          didok.includes(searchTerm) ||
-                          ibnJahre.includes(searchTerm);
+            const matches = projektname.includes(searchTerm);
 
             // Zeige oder verstecke Zeile
             if (matches || searchTerm === '') {
