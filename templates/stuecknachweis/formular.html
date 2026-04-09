@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Stücknachweis — {{ typbezeichnung }} — {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}">{{ projekt.projektname }}</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}">EN 61439</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>Stücknachweis {{ whk.whk_nummer }}</span>
+    </nav>
+
+    <div class="page-header">
+        <h2>Stücknachweis — {{ typbezeichnung }}</h2>
+        <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="btn-cancel">Zurück</a>
+    </div>
+
+    <form method="POST" id="stuecknachweis-form">
+
+        <!-- ==================== KOPFDATEN ==================== -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Kopfdaten</h3>
+            <div class="sn-kopfdaten-grid">
+                <div class="sn-field">
+                    <label>Typbezeichnung / Kennnummer</label>
+                    <input type="text" value="{{ typbezeichnung }}" readonly class="sn-input-readonly">
+                </div>
+                <div class="sn-field">
+                    <label>Auftraggeber</label>
+                    <input type="text" value="SBB AG" readonly class="sn-input-readonly">
+                </div>
+                <div class="sn-field">
+                    <label>Hersteller</label>
+                    <input type="text" value="Achermann + Co. AG" readonly class="sn-input-readonly">
+                </div>
+                <div class="sn-field">
+                    <label for="herstellungsdatum">Herstellungsdatum</label>
+                    <input type="date" id="herstellungsdatum" name="herstellungsdatum"
+                           value="{{ sn.herstellungsdatum.strftime('%Y-%m-%d') if sn.herstellungsdatum else '' }}">
+                </div>
+                <div class="sn-field">
+                    <label for="herstellungsjahr">Herstellungsjahr</label>
+                    <input type="number" id="herstellungsjahr" name="herstellungsjahr"
+                           value="{{ sn.herstellungsjahr or '' }}" min="2000" max="2099">
+                </div>
+                <div class="sn-field">
+                    <label for="preset_typ">WHK Preset</label>
+                    <select id="preset_typ" name="preset_typ">
+                        <option value="kabine_16hz" {% if whk.preset_typ == 'kabine_16hz' %}selected{% endif %}>WHK Kabine 16.7Hz (IP55)</option>
+                        <option value="kabine_50hz" {% if whk.preset_typ == 'kabine_50hz' %}selected{% endif %}>WHK Kabine 50Hz (IP55)</option>
+                        <option value="rahmen_16hz" {% if whk.preset_typ == 'rahmen_16hz' %}selected{% endif %}>WHK Rahmen 16.7Hz (IP2X)</option>
+                        <option value="rahmen_50hz" {% if whk.preset_typ == 'rahmen_50hz' %}selected{% endif %}>WHK Rahmen 50Hz (IP2X)</option>
+                    </select>
+                </div>
+                <div class="sn-field">
+                    <label>Schutzgrad</label>
+                    <input type="text" id="schutzgrad" value="{{ schutzgrad }}" readonly class="sn-input-readonly">
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== NORMEN EN 61439-1 ==================== -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Normen EN 61439-1</h3>
+            <table class="sn-table">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">Abschnitt</th>
+                        <th>Merkmal</th>
+                        <th style="width: 20%;">Nachweisverfahren</th>
+                        <th style="width: 5%; text-align: center;">&#252;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>11.2</td>
+                        <td>Schutzart von Umhüllungen</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_2" {% if sn.check_11_2 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.3</td>
+                        <td>Kriechstrecke</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_3_kriech" {% if sn.check_11_3_kriech %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.3</td>
+                        <td>Luftstrecken: Kleiner als Tabelle 1 (EN 61439-1)</td>
+                        <td>Prüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_3_luft_1" {% if sn.check_11_3_luft_1 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.3</td>
+                        <td>Luftstrecken: Nicht offensichtlich grösser als Tabelle 1</td>
+                        <td>Messung / Prüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_3_luft_2" {% if sn.check_11_3_luft_2 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.3</td>
+                        <td>Luftstrecken: Grösser als Tabelle 1 (EN 61439-1)</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_3_luft_3" {% if sn.check_11_3_luft_3 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.4</td>
+                        <td>Schutz gegen elektrischen Schlag</td>
+                        <td>—</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_4_schutz" {% if sn.check_11_4_schutz %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.4</td>
+                        <td>Durchgängigkeit von Schutzleiterkreisen</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_4_durch" {% if sn.check_11_4_durch %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.4</td>
+                        <td>Geschraubte Verbindungen von Schutzleiterkreisen</td>
+                        <td>Stichproben</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_4_geschr" {% if sn.check_11_4_geschr %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.5</td>
+                        <td>Einbau von Betriebsmitteln</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_5" {% if sn.check_11_5 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.6</td>
+                        <td>Verbindungen elektr. Stromkreise korrekt angezogen</td>
+                        <td>Stichproben</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_6_verb" {% if sn.check_11_6_verb %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.6</td>
+                        <td>Verdrahtung Übereinstimmung mit Fertigungsunterlagen</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_6_verd" {% if sn.check_11_6_verd %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.7</td>
+                        <td>Übereinstimmung der Anschlüsse für externe Leiter</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_7" {% if sn.check_11_7 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.8</td>
+                        <td>Mechanische Funktionen</td>
+                        <td>Prüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_8" {% if sn.check_11_8 %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.1</td>
+                        <td>Kennzeichnung der Schaltgerätekombination</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_1_kenn" {% if sn.check_11_1_kenn %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.1</td>
+                        <td>Vollständigkeit der Technischen Dokumentation</td>
+                        <td>Sichtprüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_1_doku" {% if sn.check_11_1_doku %}checked{% endif %}></td>
+                    </tr>
+                    <tr>
+                        <td>11.1</td>
+                        <td>Elektrische Funktionsprüfungen bei komplexen Anlagen</td>
+                        <td>Prüfung</td>
+                        <td class="sn-check-cell"><input type="checkbox" name="check_11_1_funk" {% if sn.check_11_1_funk %}checked{% endif %}></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== MESSUNGEN ==================== -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Messungen (HT FullTest 3)</h3>
+            <table class="sn-table">
+                <thead>
+                    <tr>
+                        <th>Funktion</th>
+                        <th style="width: 15%;">Grenzwert</th>
+                        <th style="width: 20%;">Ergebnis</th>
+                        <th style="width: 12%; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Niederohmmessung 25A</td>
+                        <td>&lt; 0.100 &#8486;</td>
+                        <td><input type="text" name="niederohm_ergebnis" value="{{ sn.niederohm_ergebnis or '' }}" placeholder="z.B. 0.045"></td>
+                        <td class="sn-toggle-cell">
+                            <input type="hidden" name="niederohm_status" value="">
+                            <button type="button" class="sn-toggle {% if sn.niederohm_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
+                                    onclick="toggleStatus(this, 'niederohm_status')">
+                                {{ 'Richtig' if sn.niederohm_status else 'Falsch' }}
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Spannungsfestigkeit 2500V</td>
+                        <td>&lt; 2.0 mA</td>
+                        <td><input type="text" name="spannung_ergebnis" value="{{ sn.spannung_ergebnis or '' }}" placeholder="z.B. 0.8"></td>
+                        <td class="sn-toggle-cell">
+                            <input type="hidden" name="spannung_status" value="">
+                            <button type="button" class="sn-toggle {% if sn.spannung_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
+                                    onclick="toggleStatus(this, 'spannung_status')">
+                                {{ 'Richtig' if sn.spannung_status else 'Falsch' }}
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Isolationswiderstand 500V</td>
+                        <td>&gt; 1.0 M&#8486;</td>
+                        <td><input type="text" name="isolation_ergebnis" value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. 150"></td>
+                        <td class="sn-toggle-cell">
+                            <input type="hidden" name="isolation_status" value="">
+                            <button type="button" class="sn-toggle {% if sn.isolation_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
+                                    onclick="toggleStatus(this, 'isolation_status')">
+                                {{ 'Richtig' if sn.isolation_status else 'Falsch' }}
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== FI-MESSUNGEN ==================== -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">FI Messungen (HT FullTest 3)</h3>
+            <table class="sn-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Sicherung</th>
+                        <th style="width: 20%;">&#8710;I FI [mA]</th>
+                        <th style="width: 20%;">&#8710;t FI [ms]</th>
+                        <th style="width: 12%; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fi in sn.fi_messungen %}
+                    <tr>
+                        <td>
+                            <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}" readonly class="sn-input-readonly">
+                        </td>
+                        <td>
+                            <input type="number" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}" placeholder="mA">
+                        </td>
+                        <td>
+                            <input type="number" name="fi_{{ fi.id }}_delta_t" value="{{ fi.delta_t_ms if fi.delta_t_ms is not none else '' }}" placeholder="ms">
+                        </td>
+                        <td class="sn-toggle-cell">
+                            <input type="hidden" name="fi_{{ fi.id }}_status" value="">
+                            <button type="button" class="sn-toggle {% if fi.status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
+                                    onclick="toggleStatus(this, 'fi_{{ fi.id }}_status')">
+                                {{ 'Richtig' if fi.status else 'Falsch' }}
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ==================== BEMERKUNG ==================== -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Bemerkung</h3>
+            <textarea name="bemerkung" rows="4" placeholder="Optionale Bemerkungen...">{{ sn.bemerkung or '' }}</textarea>
+        </div>
+
+        <!-- ==================== AKTIONEN ==================== -->
+        <div class="sn-actions">
+            <button type="submit" class="btn-primary">Speichern</button>
+            <a href="{{ url_for('stuecknachweis.stuecknachweis_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Stücknachweis</a>
+            <a href="{{ url_for('stuecknachweis.konformitaet_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Konformitätserklärung</a>
+        </div>
+
+    </form>
+</div>
+
+<script>
+// ==================== PRESET-LOGIK ====================
+const PRESETS = {
+    'kabine_16hz': {
+        label: 'WHK Kabine 16.7Hz',
+        schutzgrad: 'IP55',
+        checkboxen: {
+            check_11_2: true, check_11_3_kriech: true,
+            check_11_3_luft_1: true, check_11_3_luft_2: true, check_11_3_luft_3: true,
+            check_11_4_schutz: true, check_11_4_durch: true, check_11_4_geschr: true,
+            check_11_5: true, check_11_6_verb: true, check_11_6_verd: true,
+            check_11_7: true, check_11_8: true,
+            check_11_1_kenn: true, check_11_1_doku: true, check_11_1_funk: true
+        }
+    },
+    'kabine_50hz': {
+        label: 'WHK Kabine 50Hz',
+        schutzgrad: 'IP55',
+        checkboxen: {
+            check_11_2: true, check_11_3_kriech: true,
+            check_11_3_luft_1: true, check_11_3_luft_2: true, check_11_3_luft_3: true,
+            check_11_4_schutz: true, check_11_4_durch: true, check_11_4_geschr: true,
+            check_11_5: true, check_11_6_verb: true, check_11_6_verd: true,
+            check_11_7: true, check_11_8: true,
+            check_11_1_kenn: true, check_11_1_doku: true, check_11_1_funk: true
+        }
+    },
+    'rahmen_16hz': {
+        label: 'WHK Rahmen 16.7Hz',
+        schutzgrad: 'IP2X',
+        checkboxen: {
+            check_11_2: true, check_11_3_kriech: true,
+            check_11_3_luft_1: true, check_11_3_luft_2: true, check_11_3_luft_3: true,
+            check_11_4_schutz: true, check_11_4_durch: true, check_11_4_geschr: true,
+            check_11_5: true, check_11_6_verb: true, check_11_6_verd: true,
+            check_11_7: true, check_11_8: true,
+            check_11_1_kenn: true, check_11_1_doku: true, check_11_1_funk: true
+        }
+    },
+    'rahmen_50hz': {
+        label: 'WHK Rahmen 50Hz',
+        schutzgrad: 'IP2X',
+        checkboxen: {
+            check_11_2: true, check_11_3_kriech: true,
+            check_11_3_luft_1: true, check_11_3_luft_2: true, check_11_3_luft_3: true,
+            check_11_4_schutz: true, check_11_4_durch: true, check_11_4_geschr: true,
+            check_11_5: true, check_11_6_verb: true, check_11_6_verd: true,
+            check_11_7: true, check_11_8: true,
+            check_11_1_kenn: true, check_11_1_doku: true, check_11_1_funk: true
+        }
+    }
+};
+
+function applyPreset(presetKey, nurSchutzgrad) {
+    const preset = PRESETS[presetKey];
+    if (!preset) return;
+
+    document.getElementById('schutzgrad').value = preset.schutzgrad;
+
+    if (!nurSchutzgrad) {
+        Object.keys(preset.checkboxen).forEach(function(name) {
+            const cb = document.querySelector('input[name="' + name + '"]');
+            if (cb) cb.checked = preset.checkboxen[name];
+        });
+    }
+}
+
+document.getElementById('preset_typ').addEventListener('change', function() {
+    applyPreset(this.value, false);
+});
+
+// Beim Laden nur Schutzgrad setzen (Checkboxen kommen aus DB)
+document.addEventListener('DOMContentLoaded', function() {
+    applyPreset(document.getElementById('preset_typ').value, true);
+    syncAllToggles();
+});
+
+// ==================== TOGGLE-LOGIK ====================
+function toggleStatus(btn, hiddenName) {
+    const isOk = btn.classList.contains('sn-toggle-ok');
+    const hidden = btn.previousElementSibling;
+
+    if (isOk) {
+        btn.classList.remove('sn-toggle-ok');
+        btn.classList.add('sn-toggle-fail');
+        btn.textContent = 'Falsch';
+        hidden.value = '';
+        hidden.name = '';
+    } else {
+        btn.classList.remove('sn-toggle-fail');
+        btn.classList.add('sn-toggle-ok');
+        btn.textContent = 'Richtig';
+        hidden.value = 'on';
+        hidden.name = hiddenName;
+    }
+}
+
+function syncAllToggles() {
+    document.querySelectorAll('.sn-toggle').forEach(function(btn) {
+        const hidden = btn.previousElementSibling;
+        const hiddenName = btn.getAttribute('onclick').match(/'([^']+)'\)/)[1];
+        if (btn.classList.contains('sn-toggle-ok')) {
+            hidden.name = hiddenName;
+            hidden.value = 'on';
+        } else {
+            hidden.name = '';
+            hidden.value = '';
+        }
+    });
+}
+</script>
+{% endblock %}

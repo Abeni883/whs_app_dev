@@ -1453,6 +1453,183 @@ footer {
 .breadcrumb-sep {
     color: var(--text-secondary);
 }
+
+/* ==================== STÜCKNACHWEIS FORMULAR ==================== */
+.sn-section {
+    margin-bottom: 2rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.sn-section-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--accent-green);
+    padding-bottom: 0.5rem;
+}
+
+.sn-kopfdaten-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.sn-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+.sn-field input,
+.sn-field select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sn-input-readonly {
+    background: var(--bg-tertiary, #f1f5f9) !important;
+    color: var(--text-secondary) !important;
+    cursor: default;
+}
+
+/* Stücknachweis Tabelle */
+.sn-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sn-table thead th {
+    background: var(--table-header-bg, #2c3e50);
+    color: #fff;
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.sn-table tbody td {
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+.sn-table tbody tr:nth-child(even) {
+    background: var(--bg-tertiary, #f8fafc);
+}
+
+.sn-table tbody tr:hover {
+    background: var(--row-hover, rgba(16, 185, 129, 0.05));
+}
+
+.sn-check-cell {
+    text-align: center !important;
+}
+
+.sn-check-cell input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent-green);
+}
+
+.sn-table input[type="text"],
+.sn-table input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+/* Toggle Richtig/Falsch */
+.sn-toggle-cell {
+    text-align: center !important;
+}
+
+.sn-toggle {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 70px;
+    transition: all 0.15s ease;
+}
+
+.sn-toggle-ok {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--accent-green);
+}
+
+.sn-toggle-ok:hover {
+    background: rgba(16, 185, 129, 0.35);
+}
+
+.sn-toggle-fail {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--accent-red, #ef4444);
+}
+
+.sn-toggle-fail:hover {
+    background: rgba(239, 68, 68, 0.35);
+}
+
+/* Bemerkung */
+.sn-section textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+/* Aktions-Buttons */
+.sn-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin: 1.5rem 0 2rem;
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] .sn-section {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .sn-input-readonly {
+    background: var(--bg-tertiary, #333) !important;
+}
+
+[data-theme="dark"] .sn-table tbody tr:nth-child(even) {
+    background: var(--bg-tertiary, #2d2d2d);
+}
+
+[data-theme="dark"] .sn-table input[type="text"],
+[data-theme="dark"] .sn-table input[type="number"] {
+    background: var(--bg-tertiary, #333);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .sn-section textarea {
+    background: var(--bg-tertiary, #333);
+    border-color: var(--border-color);
+}
+
 /* Aktions-Links */
 .action-link {
     color: var(--action-link-text);

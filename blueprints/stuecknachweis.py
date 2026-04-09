@@ -96,8 +96,19 @@ def stuecknachweis_formular(project_id, whk_id):
 
         db.session.commit()
 
+    # Schutzgrad-Map
+    schutzgrad_map = {
+        'kabine_16hz': 'IP55', 'kabine_50hz': 'IP55',
+        'rahmen_16hz': 'IP2X', 'rahmen_50hz': 'IP2X'
+    }
+
     if request.method == 'POST':
         try:
+            # Preset-Typ aus Formular lesen und auf WHK speichern
+            preset_typ = request.form.get('preset_typ', whk.preset_typ)
+            if preset_typ in schutzgrad_map:
+                whk.preset_typ = preset_typ
+
             # Herstellung
             datum_str = request.form.get('herstellungsdatum', '')
             if datum_str:
@@ -149,8 +160,8 @@ def stuecknachweis_formular(project_id, whk_id):
         return redirect(url_for('stuecknachweis.stuecknachweis_formular',
                                 project_id=project_id, whk_id=whk_id))
 
-    # Schutzgrad aus preset_typ ableiten
-    schutzgrad = 'IP55' if 'kabine' in whk.preset_typ else 'IP2X'
+    # Schutzgrad serverseitig ableiten
+    schutzgrad = schutzgrad_map.get(whk.preset_typ, 'IP55')
 
     # Typbezeichnung: whk_typ falls vorhanden, sonst whk_nummer
     typbezeichnung = whk.whk_typ or whk.whk_nummer
