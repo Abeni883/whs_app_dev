@@ -159,6 +159,15 @@ DATABASE_URL=sqlite:///whs_dev.db
 - GWH-Abnahmetest: Parameter-Prüfung (ZSK/HGLS) noch nicht vollständig implementiert
 - Zeiterfassung: API-Endpunkte vorhanden, UI-Integration laufend
 
+### Stücknachweis-Feature (in Entwicklung)
+- Formular: Kopfdaten, Normen EN 61439-1, Messungen, FI-Messungen ✅
+- Preset-Logik (4 Typen: kabine_16hz/50hz, rahmen_16hz/50hz) ✅
+- WHK-Auswahlseite (`/projekt/<id>/stuecknachweis/whk-auswahl`) ✅
+- EN 61439 Button in Projektübersicht ✅
+- Grund der Prüfung / Schutzmassnahme / Berührungsschutz → IN ARBEIT
+- PDF-Export Stücknachweis → AUSSTEHEND
+- PDF-Export Konformitätserklärung → AUSSTEHEND
+
 ---
 
 ## Kontakt / Verantwortlich
