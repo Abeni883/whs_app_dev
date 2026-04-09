@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Testfragen-Verwaltung - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Testfragen-Verwaltung</h2>
+
+    <div class="actions-bar">
+        <a href="{{ url_for('testfrage_neu', tab=request.args.get('tab', 'Anlage')) }}" class="btn-add">+ Neue Testfrage</a>
+    </div>
+
+    <!-- Tabs für verschiedene Komponententypen -->
+    <div class="component-tabs">
+        <button class="tab-btn active" data-component="Anlage">Anlage</button>
+        <button class="tab-btn" data-component="WHK">WHK</button>
+        <button class="tab-btn" data-component="Abgang">Abgang</button>
+        <button class="tab-btn" data-component="Temperatursonde">Temperatursonde</button>
+        <button class="tab-btn" data-component="Antriebsheizung">Antriebsheizung</button>
+        <button class="tab-btn" data-component="Meteostation">Meteostation</button>
+    </div>
+
+    <!-- Testfragen-Listen für jeden Komponententyp -->
+    {% for komp_typ in ['Anlage', 'WHK', 'Abgang', 'Temperatursonde', 'Antriebsheizung', 'Meteostation'] %}
+    <div class="tab-content" id="tab-{{ komp_typ }}" {% if komp_typ != 'Anlage' %}style="display:none;"{% endif %}>
+        <h3>{{ komp_typ }}-Tests</h3>
+
+        <table class="fragen-tabelle">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">Pos.</th>
+                    <th style="width: 50px;">Nr.</th>
+                    <th>Testfrage</th>
+                    <th style="width: 250px;">Test-Information</th>
+                    <th style="width: 220px;">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody class="sortable-fragen" data-component="{{ komp_typ }}">
+                {% set ns = namespace(found=false) %}
+                {% for frage in test_questions %}
+                {% if frage.komponente_typ == komp_typ %}
+                {% set ns.found = true %}
+                <tr data-frage-id="{{ frage.id }}" data-reihenfolge="{{ frage.reihenfolge }}">
+                    <td class="drag-handle" title="Ziehen zum Verschieben">⋮⋮</td>
+                    <td>{{ frage.frage_nummer }}</td>
+                    <td>
+                        {{ frage.frage_text }}
+                        {% if frage.preset_antworten %}
+                        <span class="preset-badge" title="Preset definiert: LSS-CH={{ frage.preset_antworten.get('lss_ch', '-') }}, WH-LTS={{ frage.preset_antworten.get('wh_lts', '-') }}">
+                            🎯 Preset
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="test-info-cell">{{ frage.test_information or '-' }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('testfrage_bearbeiten', frage_id=frage.id, tab=komp_typ) }}" class="btn-edit">Bearbeiten</a>
+                        <form method="POST" action="{{ url_for('testfrage_loeschen', frage_id=frage.id) }}" style="display:inline;">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Testfrage wirklich löschen?')">Löschen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+                {% if not ns.found %}
+                <tr>
+                    <td colspan="5" class="no-data">Keine Testfragen für diesen Komponententyp vorhanden</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- SortableJS Library -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Für jede sortierbare Tabelle
+    document.querySelectorAll('.sortable-fragen').forEach(tbody => {
+        new Sortable(tbody, {
+            animation: 150,
+            handle: '.drag-handle',
+            onEnd: function(evt) {
+                // Neue Reihenfolge an Server senden
+                updateReihenfolge(tbody);
+            }
+        });
+    });
+
+    // Tab-Wechsel
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const component = this.dataset.component;
+
+            // Aktive Tab-Button
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Zeige entsprechenden Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById('tab-' + component).style.display = 'block';
+
+            // Aktualisiere URL ohne Reload (für Browserhistorie)
+            const url = new URL(window.location);
+            url.searchParams.set('tab', component);
+            window.history.pushState({}, '', url);
+
+            // Aktualisiere "Neue Testfrage" Button
+            updateNeueFrageButton(component);
+        });
+    });
+
+    // Initialer Tab aus URL-Parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    if (activeTab) {
+        activateTab(activeTab);
+    }
+});
+
+function activateTab(component) {
+    // Deaktiviere alle Tabs
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.display = 'none';
+    });
+
+    // Aktiviere gewünschten Tab
+    const targetBtn = document.querySelector(`.tab-btn[data-component="${component}"]`);
+    const targetContent = document.getElementById('tab-' + component);
+
+    if (targetBtn && targetContent) {
+        targetBtn.classList.add('active');
+        targetContent.style.display = 'block';
+    }
+
+    // Aktualisiere "Neue Testfrage" Button
+    updateNeueFrageButton(component);
+}
+
+function updateNeueFrageButton(component) {
+    const btn = document.querySelector('.btn-add');
+    if (btn) {
+        const url = new URL(btn.href, window.location.origin);
+        url.searchParams.set('tab', component);
+        btn.href = url.toString();
+    }
+}
+
+function updateReihenfolge(tbody) {
+    const componentType = tbody.dataset.component;
+    const rows = tbody.querySelectorAll('tr[data-frage-id]');
+    const newOrder = [];
+
+    rows.forEach((row, index) => {
+        newOrder.push({
+            id: row.dataset.frageId,
+            reihenfolge: index + 1
+        });
+    });
+
+    // AJAX-Request an Server
+    fetch('/testfragen/reihenfolge', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            component_type: componentType,
+            order: newOrder
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Reihenfolge erfolgreich aktualisiert');
+            // Aktualisiere data-reihenfolge Attribute
+            rows.forEach((row, index) => {
+                row.dataset.reihenfolge = index + 1;
+            });
+        } else {
+            alert('Fehler beim Speichern der Reihenfolge: ' + (data.error || 'Unbekannter Fehler'));
+        }
+    })
+    .catch(error => {
+        console.error('Fehler beim Aktualisieren der Reihenfolge:', error);
+        alert('Fehler beim Speichern der Reihenfolge!');
+    });
+}
+</script>
+
+{% endblock %}

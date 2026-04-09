@@ -1,0 +1,105 @@
+Installation auf Windows Server 2022 Standard:
+**********************************************
+
+Start der Applikation:
+Start-Process powershell -ArgumentList "-WindowStyle Hidden -Command python app.py" -PassThru
+
+
+SCHRITT 1: Server-Vorbereitung
+______________________________
+
+
+IIS installieren:
+-----------------
+
+# IIS mit PowerShell installieren
+Install-WindowsFeature -name Web-Server -IncludeManagementTools
+
+# Zusätzliche Features
+Install-WindowsFeature -name Web-CGI
+Install-WindowsFeature -name Web-ISAPI-Ext
+Install-WindowsFeature -name Web-ISAPI-Filter
+
+
+SCHRITT 2: Python installieren
+______________________________
+
+powershell
+
+# Download Python 3.11 (oder neueste stabile Version)
+$pythonUrl = "https://www.python.org/ftp/python/3.11.8/python-3.11.8-amd64.exe"
+$installerPath = "$env:TEMP\python-installer.exe"
+
+# Download
+Invoke-WebRequest -Uri $pythonUrl -OutFile $installerPath
+
+# Installation mit allen Features
+Start-Process -FilePath $installerPath -ArgumentList @(
+    '/quiet',
+    'InstallAllUsers=1',
+    'PrependPath=1',
+    'Include_test=0',
+    'Include_pip=1',
+    'Include_launcher=1',
+    'InstallLauncherAllUsers=1'
+) -Wait
+
+# Prüfe Installation
+python --version
+pip --version
+
+ SCHRITT 3: Applikation installieren
+ ___________________________________
+
+ 3.1 Verzeichnisstruktur erstellen
+ ---------------------------------
+
+ # Erstelle Produktions-Verzeichnis
+$appPath = "C:\inetpub\whs_app"
+New-Item -ItemType Directory -Path $appPath -Force
+
+# Unterverzeichnisse
+New-Item -ItemType Directory -Path "$appPath\logs" -Force
+New-Item -ItemType Directory -Path "$appPath\database" -Force
+
+
+3.2 Applikations-Dateien kopieren
+---------------------------------
+
+# Kopiere alle Dateien von Entwicklungsumgebung
+# Beispiel: Von lokalem Entwickler-PC
+Copy-Item -Path "\\dev-pc\share\whs_app\*" -Destination $appPath -Recurse
+
+# ODER mit Git
+cd $appPath
+git clone https://github.com/your-repo/whs_app.git .
+```
+
+**Benötigte Dateien:**
+```
+C:\inetpub\whs_app\
+├── app.py
+├── requirements.txt
+├── database.db (oder leer lassen)
+├── templates/
+├── static/
+├── models/
+└── web.config (erstellen wir gleich)
+
+3.3 Virtual Environment erstellen
+---------------------------------
+
+cd C:\inetpub\whs_app
+
+# Virtual Environment erstellen
+python -m venv venv
+
+# Aktivieren
+.\venv\Scripts\Activate.ps1
+
+# Dependencies installieren
+pip install -r requirements.txt
+
+# Zusätzliche Production-Pakete
+pip install wfastcgi
+pip install waitress

@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Export-Konfiguration - {{ projekt.projektname }} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header-Bereich -->
+    <div class="page-header">
+        <div>
+            <h2>Export-Konfiguration</h2>
+            <p class="project-info">
+                <strong>{{ projekt.projektname }}</strong>
+                {% if projekt.didok_betriebspunkt %}
+                    <span class="didok-badge">DIDOK: {{ projekt.didok_betriebspunkt }}</span>
+                {% endif %}
+                <span class="energie-badge energie-{{ projekt.energie.lower() if projekt.energie else 'unbekannt' }}">
+                    {{ projekt.energie or '?' }}
+                </span>
+            </p>
+        </div>
+        <a href="{{ url_for('export.export') }}" class="btn-secondary">← Zurück zur Übersicht</a>
+    </div>
+
+    <!-- Export-Formular -->
+    <form id="export-form" method="POST" action="{{ url_for('export.export_generate') }}">
+        <input type="hidden" name="projekt_id" value="{{ projekt.id }}">
+
+        <!-- Auswahl-Bereich -->
+        <div class="export-config-section">
+            <h3>Zu exportierende Sektionen auswählen</h3>
+
+            <!-- Steuerungselemente -->
+            <div class="selection-controls">
+                <button type="button" id="select-all-btn" class="btn-select-all">Alle auswählen</button>
+                <button type="button" id="deselect-all-btn" class="btn-deselect-all">Alle abwählen</button>
+            </div>
+
+            <!-- Checkboxen-Liste -->
+            <div class="checkbox-list">
+                <!-- Generelle Sektionen -->
+                <div class="checkbox-group">
+                    <h4>Allgemeine Sektionen</h4>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="deckblatt" checked>
+                        <span class="checkbox-label">
+                            <strong>Deckblatt</strong>
+                            <small>Projektinformationen, Prüfer, Datum</small>
+                        </span>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="zusammenfassung_fehler" checked>
+                        <span class="checkbox-label">
+                            <strong>Zusammenfassung fehlgeschlagener Tests</strong>
+                            <small>Übersicht aller Tests mit Ergebnis "falsch"</small>
+                        </span>
+                    </label>
+
+                    {% if projekt.energie == 'GWH' %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="gwh_anlage" checked>
+                        <span class="checkbox-label">
+                            <strong>GWH-Anlage</strong>
+                            <small>Allgemeine Anlage-Tests</small>
+                        </span>
+                    </label>
+                    {% else %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="wh_anlage" checked>
+                        <span class="checkbox-label">
+                            <strong>WH-Anlage</strong>
+                            <small>Allgemeine Anlage-Tests</small>
+                        </span>
+                    </label>
+                    {% endif %}
+                </div>
+
+                {% if projekt.energie == 'GWH' %}
+                <!-- HGLS-Sektion (Tests und Parameter zusammen) -->
+                {% if hgls_config %}
+                <div class="checkbox-group">
+                    <h4>HGLS</h4>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="hgls" checked>
+                        <span class="checkbox-label">
+                            <strong>HGLS</strong>
+                            <small>HGLS Testfragen, 22 Parameter-Prüfungen</small>
+                        </span>
+                    </label>
+                </div>
+                {% endif %}
+
+                <!-- ZSK-Sektionen (wie WHK bei EWH - eine Checkbox pro ZSK) -->
+                {% if zsk_configs %}
+                <div class="checkbox-group">
+                    <h4>Zentralsteuerkasten (ZSK)</h4>
+
+                    {% for zsk in zsk_configs %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="zsk_{{ zsk.zsk_nummer }}" checked>
+                        <span class="checkbox-label">
+                            <strong>{% if zsk.zsk_nummer.startswith('ZSK ') %}{{ zsk.zsk_nummer }}{% else %}ZSK {{ zsk.zsk_nummer }}{% endif %}</strong>
+                            <small>
+                                {% if zsk.anzahl_teile and zsk.anzahl_teile > 0 %}
+                                    {{ zsk.anzahl_teile }} Teil{% if zsk.anzahl_teile > 1 %}e{% endif %},
+                                {% endif %}
+                                {% if zsk.hat_temperatursonde %}Temperatursonde, {% endif %}
+                                18 Parameter
+                            </small>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Meteostation-Sektionen (einzeln wie bei EWH) -->
+                {% if gwh_meteostationen and gwh_meteostationen|length > 0 %}
+                <div class="checkbox-group">
+                    <h4>Meteostationen</h4>
+
+                    {% for ms in gwh_meteostationen %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="gwh_meteostation_{{ ms.ms_nummer }}" checked>
+                        <span class="checkbox-label">
+                            <strong>{% if ms.name.startswith('MS ') %}Meteostation {{ ms.name[3:] }}{% else %}{{ ms.name }}{% endif %}</strong>
+                            <small>{% if ms.ms_nummer.startswith('MS ') %}{{ ms.ms_nummer }}{% else %}MS {{ ms.ms_nummer }}{% endif %}</small>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <!-- WHK-Sektionen (nur für EWH) -->
+                {% if projekt.energie != 'GWH' and whk_configs %}
+                <div class="checkbox-group">
+                    <h4>Weichenheizkabinen (WHK)</h4>
+
+                    {% for whk in whk_configs %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="whk_{{ whk.whk_nummer|replace(' ', '_') }}" checked>
+                        <span class="checkbox-label">
+                            <strong>{{ whk.whk_nummer }}</strong>
+                            <small>
+                                {{ whk.anzahl_abgaenge }} Abgänge, {{ whk.anzahl_temperatursonden }} Temperatursonden
+                                {% if whk.hat_antriebsheizung %}, Antriebsheizung{% endif %}
+                                {% if whk.meteostation %}, {{ whk.meteostation }}{% endif %}
+                            </small>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Meteostation-Sektionen für EWH (einzeln auswählbar) -->
+                {% if projekt.energie != 'GWH' and has_meteostationen %}
+                <div class="checkbox-group">
+                    <h4>Meteostationen</h4>
+
+                    {% for meteo in meteo_stations %}
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="selected_sections" value="meteostation_{{ meteo.name }}" checked>
+                        <span class="checkbox-label">
+                            <strong>Meteostation: {{ meteo.name }}</strong>
+                            <small>
+                                {{ meteo.whk_count }} WHK{% if meteo.whk_count != 1 %}s{% endif %}
+                                ({{ meteo.whk_numbers|join(', ') }})
+                            </small>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Export-Format (nur PDF) -->
+        <input type="hidden" name="export_format" value="pdf">
+
+        <!-- Export-Button -->
+        <div class="export-config-section">
+            <button type="submit" id="export-btn" class="btn-primary btn-export-large">
+                📤 Export starten
+            </button>
+            <p id="validation-message" class="validation-message" style="display: none;">
+                Bitte wählen Sie mindestens eine Sektion aus.
+            </p>
+        </div>
+    </form>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.page-header h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.page-header .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background: #6b7280;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 4px;
+    border: 1px solid #9ca3af;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.page-header .btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+}
+
+.project-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.project-info strong {
+    color: var(--text-primary);
+}
+
+.didok-badge {
+    padding: 0.25rem 0.75rem;
+    background-color: var(--accent-blue-light);
+    color: var(--accent-blue-dark);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--accent-blue);
+}
+
+[data-theme="dark"] .didok-badge {
+    background-color: var(--accent-blue-light);
+    color: var(--accent-blue-dark);
+    border-color: var(--accent-blue);
+}
+
+.export-config-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.export-config-section h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.selection-controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Alle auswählen Button */
+.btn-select-all {
+    padding: 0.6rem 1.2rem;
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-select-all:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Alle abwählen Button */
+.btn-deselect-all {
+    padding: 0.6rem 1.2rem;
+    background: #6b7280;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-deselect-all:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+}
+
+.checkbox-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.checkbox-group {
+    margin-bottom: 1rem;
+}
+
+.checkbox-group h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
+}
+
+.checkbox-item:hover {
+    border-color: var(--accent-primary);
+    background: var(--bg-primary);
+    transform: translateX(4px);
+}
+
+.checkbox-item input[type="checkbox"] {
+    margin-top: 0.25rem;
+    margin-right: 1rem;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+}
+
+.checkbox-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.checkbox-label strong {
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.checkbox-label small {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.btn-export-large {
+    width: 100%;
+    padding: 1.25rem 2rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--btn-primary-bg);
+    color: var(--text-inverse);
+}
+
+.btn-export-large:hover:not(:disabled) {
+    background: var(--btn-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-export-large:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--btn-secondary-bg);
+}
+
+.validation-message {
+    color: var(--accent-red);
+    text-align: center;
+    margin-top: 1rem;
+    font-weight: 500;
+}
+</style>
+
+<script>
+(function() {
+    const form = document.getElementById('export-form');
+    const checkboxes = document.querySelectorAll('input[name="selected_sections"]');
+    const selectAllBtn = document.getElementById('select-all-btn');
+    const deselectAllBtn = document.getElementById('deselect-all-btn');
+    const exportBtn = document.getElementById('export-btn');
+    const validationMessage = document.getElementById('validation-message');
+
+    // Vorgeschlagener Dateiname vom Server
+    const suggestedFilename = "{{ suggested_filename | default('WH_331 Export.pdf') }}";
+
+    // Alle auswählen
+    selectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateExportButton();
+    });
+
+    // Alle abwählen
+    deselectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateExportButton();
+    });
+
+    // Export-Button Status aktualisieren
+    function updateExportButton() {
+        const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+        exportBtn.disabled = !anyChecked;
+
+        if (!anyChecked) {
+            validationMessage.style.display = 'block';
+        } else {
+            validationMessage.style.display = 'none';
+        }
+    }
+
+    // Event-Listener für Checkboxen
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateExportButton);
+    });
+
+    // Prüfe ob File System Access API verfügbar ist
+    const hasFileSystemAccess = 'showSaveFilePicker' in window;
+
+    // Formular-Submit Handler
+    form.addEventListener('submit', async function(e) {
+        const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+        if (!anyChecked) {
+            e.preventDefault();
+            validationMessage.style.display = 'block';
+            validationMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+
+        // PDF-Export mit File System Access API (falls verfügbar)
+        if (hasFileSystemAccess) {
+            e.preventDefault();
+            await handlePdfExportWithSaveDialog();
+        }
+        // Sonst: normaler Form-Submit
+    });
+
+    // PDF-Export mit Speichern-Dialog
+    async function handlePdfExportWithSaveDialog() {
+        const originalButtonText = exportBtn.innerHTML;
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '⏳ PDF wird generiert...';
+
+        try {
+            // FormData sammeln
+            const formData = new FormData(form);
+
+            // PDF vom Server holen
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Fehler beim Generieren der PDF');
+            }
+
+            // Dateiname aus Content-Disposition Header extrahieren
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = suggestedFilename;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                    // UTF-8 Dekodierung falls nötig
+                    try {
+                        filename = decodeURIComponent(filename);
+                    } catch (e) {}
+                }
+            }
+
+            // PDF-Daten als Blob
+            const pdfBlob = await response.blob();
+
+            // Speichern-Dialog öffnen
+            exportBtn.innerHTML = '💾 Speicherort wählen...';
+
+            try {
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{
+                        description: 'PDF Dokument',
+                        accept: { 'application/pdf': ['.pdf'] }
+                    }]
+                });
+
+                // Datei schreiben
+                const writable = await fileHandle.createWritable();
+                await writable.write(pdfBlob);
+                await writable.close();
+
+                // Erfolgsmeldung
+                exportBtn.innerHTML = '✅ Gespeichert!';
+                setTimeout(() => {
+                    exportBtn.innerHTML = originalButtonText;
+                    exportBtn.disabled = false;
+                }, 2000);
+
+            } catch (pickerError) {
+                // Benutzer hat abgebrochen
+                if (pickerError.name === 'AbortError') {
+                    exportBtn.innerHTML = originalButtonText;
+                    exportBtn.disabled = false;
+                    return;
+                }
+                throw pickerError;
+            }
+
+        } catch (error) {
+            console.error('Export-Fehler:', error);
+
+            // Fallback: Normaler Download
+            exportBtn.innerHTML = '⬇️ Download wird gestartet...';
+            form.submit();
+        }
+    }
+
+    // Initial-Status setzen
+    updateExportButton();
+})();
+</script>
+{% endblock %}

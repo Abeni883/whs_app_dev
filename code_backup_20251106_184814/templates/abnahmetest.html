@@ -1,0 +1,1017 @@
+{% extends "base.html" %}
+
+{% block title %}Abnahmetest - {{ projekt.projektname }} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Abnahmetest für Projekt: {{ projekt.projektname }}</h2>
+
+    {% if whk_configs and whk_configs|length > 0 %}
+        <!-- Hierarchische Test-Navigation -->
+        <div class="test-navigation">
+            <!-- Allgemein-Bereich -->
+            <div class="nav-section-allgemein">
+                <h4 class="nav-section-title">Allgemein</h4>
+                <div class="nav-buttons">
+                    <button type="button" class="nav-btn" data-component="Anlage" data-index="">Anlage</button>
+                    <button type="button" class="nav-btn" data-component="WHK" data-index="">WHK</button>
+                </div>
+            </div>
+
+            <!-- WHK-Tabelle -->
+            <table class="nav-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Abgänge</th>
+                        <th>Temperatursonden</th>
+                        <th>Antriebsheizung</th>
+                        <th>Meteostation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for whk in whk_configs %}
+                    <tr>
+                        <td class="whk-label">{{ whk.whk_nummer }}</td>
+                        <td>
+                            <button type="button" class="nav-btn nav-btn-compact" data-component="Abgang" data-index="{{ whk.whk_nummer }}">
+                                Abgänge
+                            </button>
+                        </td>
+                        <td>
+                            <button type="button" class="nav-btn nav-btn-compact" data-component="Temperatursonde" data-index="{{ whk.whk_nummer }}">
+                                Temperatursonden
+                            </button>
+                        </td>
+                        <td>
+                            {% if whk.hat_antriebsheizung %}
+                            <button type="button" class="nav-btn nav-btn-compact" data-component="Antriebsheizung" data-index="{{ whk.whk_nummer }}">
+                                Antriebsheizung
+                            </button>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if whk.meteostation %}
+                            <button type="button" class="nav-btn nav-btn-compact" data-component="Meteostation" data-index="{{ whk.meteostation }}">
+                                {{ whk.meteostation }}
+                            </button>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Export-Buttons (immer sichtbar) -->
+        <div class="export-buttons" style="margin-top: 1.5rem;">
+            <a href="{{ url_for('export_pdf', projekt_id=projekt.id) }}" class="btn-export btn-export-pdf" target="_blank">
+                📄 Als PDF exportieren
+            </a>
+            <a href="{{ url_for('export_excel', projekt_id=projekt.id) }}" class="btn-export btn-export-excel">
+                📊 Als Excel exportieren
+            </a>
+        </div>
+
+        <!-- Abnahmetest-Formular mit Navigation -->
+        <form id="abnahmetest-form" method="POST" action="{{ url_for('projekt_abnahmetest', projekt_id=projekt.id) }}">
+
+            <!-- Fragen-Navigation -->
+            <div class="question-navigation">
+                <div class="question-header">
+                    <div class="question-header-layout">
+                        <div class="component-label" id="component-label">Komponente</div>
+                        <div class="question-content">
+                            <h3 id="current-question-title">Lade Frage...</h3>
+                            <p class="test-info" id="current-question-info"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="navigation-controls">
+                    <span class="question-counter">
+                        Frage <span id="current-question-number">1</span> von <span id="total-questions">0</span>
+                    </span>
+                    <div class="nav-buttons">
+                        <button type="button" id="btn-prev" class="btn-nav" disabled>◀ Vorherige Frage</button>
+                        <button type="button" id="btn-next" class="btn-nav">Nächste Frage ▶</button>
+                    </div>
+                </div>
+
+                <!-- Fortschritts-Balken -->
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Auto-Save Status Anzeige -->
+            <div id="save-status" class="save-status" style="display: none;">
+                <!-- Wird per JavaScript befüllt -->
+            </div>
+
+            <!-- Test-Section mit nur EINER Tabelle -->
+            <section class="test-section">
+                <!-- LSS-CH System -->
+                <div class="system-group">
+                    <div class="table-wrapper">
+                        <table class="compact-test-table" id="lss-ch-table">
+                            <thead>
+                                <tr id="lss-ch-header">
+                                    <th class="result-column">LSS-CH</th>
+                                    <!-- Spalten werden dynamisch per JavaScript generiert -->
+                                </tr>
+                            </thead>
+                            <tbody id="lss-ch-body">
+                                <tr class="result-row-richtig">
+                                    <td class="result-label">Richtig</td>
+                                    <!-- Checkboxen werden dynamisch per JavaScript generiert -->
+                                </tr>
+                                <tr class="result-row-falsch">
+                                    <td class="result-label">Falsch</td>
+                                </tr>
+                                <tr class="result-row-nicht-testbar">
+                                    <td class="result-label">Nicht Testbar</td>
+                                </tr>
+                                <tr class="result-row-bemerkung">
+                                    <td class="result-label">Bemerkung</td>
+                                    <!-- Bemerkung-Buttons werden dynamisch per JavaScript generiert -->
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- WH-LTS System -->
+                <div class="system-group">
+                    <div class="table-wrapper">
+                        <table class="compact-test-table" id="wh-lts-table">
+                            <thead>
+                                <tr id="wh-lts-header">
+                                    <th class="result-column">WH-LTS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wh-lts-body">
+                                <tr class="result-row-richtig">
+                                    <td class="result-label">Richtig</td>
+                                </tr>
+                                <tr class="result-row-falsch">
+                                    <td class="result-label">Falsch</td>
+                                </tr>
+                                <tr class="result-row-nicht-testbar">
+                                    <td class="result-label">Nicht Testbar</td>
+                                </tr>
+                                <tr class="result-row-bemerkung">
+                                    <td class="result-label">Bemerkung</td>
+                                    <!-- Bemerkung-Buttons werden dynamisch per JavaScript generiert -->
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bemerkung-Modal -->
+            <dialog id="bemerkung-modal" class="bemerkung-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modal-title">Bemerkung hinzufügen</h3>
+                        <button type="button" class="modal-close-btn" onclick="closeBemerkungModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="modal-context" class="modal-context"></p>
+                        <textarea id="modal-bemerkung-input" class="modal-textarea" rows="5" placeholder="Bemerkung eingeben..."></textarea>
+                        <div class="char-counter">
+                            <span id="char-count">0</span> Zeichen
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="closeBemerkungModal()">Abbrechen</button>
+                        <button type="button" class="btn-danger" id="btn-delete-bemerkung" onclick="deleteBemerkung()" style="display: none;">Löschen</button>
+                        <button type="button" class="btn-primary" onclick="saveBemerkung()">Speichern</button>
+                    </div>
+                </div>
+            </dialog>
+
+            <!-- Speichern-Bereich (am Ende) -->
+            <div id="save-section" class="save-section" style="display: none;">
+                <div class="completion-message">
+                    <h3>✓ Alle Fragen durchlaufen</h3>
+                    <p>Sie haben alle Testfragen beantwortet.</p>
+
+                    <div class="summary">
+                        <p><strong>Beantwortete Fragen:</strong> <span id="answered-count">0</span> von <span id="total-count">0</span></p>
+                    </div>
+
+                    <div class="auto-save-info">
+                        <p class="auto-save-hint">💾 Alle Ihre Antworten wurden automatisch gespeichert.</p>
+                    </div>
+
+                    <div class="export-buttons">
+                        <a href="{{ url_for('export_pdf', projekt_id=projekt.id) }}" class="btn-export btn-export-pdf" target="_blank">
+                            📄 Als PDF exportieren
+                        </a>
+                        <a href="{{ url_for('export_excel', projekt_id=projekt.id) }}" class="btn-export btn-export-excel">
+                            📊 Als Excel exportieren
+                        </a>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="btn-back-to-start" class="btn-secondary">Zurück zum Anfang</button>
+                        <a href="{{ url_for('projekte') }}" class="btn-primary">Zurück zur Projektübersicht</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden Field für alle Antworten (wird beim Submit gefüllt) -->
+            <input type="hidden" id="answers-data" name="answers_data">
+        </form>
+
+    {% else %}
+        <!-- Keine WHK konfiguriert -->
+        <div class="alert alert-warning" style="margin-top: 2rem;">
+            <strong>Hinweis:</strong> Für dieses Projekt sind noch keine WHK konfiguriert.
+            <br><br>
+            <a href="{{ url_for('projekt_konfiguration', projekt_id=projekt.id) }}" class="btn-primary">Zur Konfiguration</a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// ==================== DATEN AUS BACKEND ====================
+const projektId = {{ projekt.id }};
+const testQuestions = {{ fragen_json | safe }};
+const existingResults = {{ existing_results_json | safe }};
+
+// ==================== GLOBALE VARIABLEN ====================
+let currentQuestionIndex = 0;
+let savedAnswers = {};
+let savedBemerkungen = {};
+let currentFilteredQuestions = [];
+let currentFilter = { component: null, index: null };
+let currentModalContext = null; // Speichert Kontext für offenes Modal
+
+// ==================== INITIALISIERUNG ====================
+document.addEventListener('DOMContentLoaded', function() {
+    // Lade gespeicherte Antworten aus Datenbank (existingResults)
+    if (existingResults && Object.keys(existingResults).length > 0) {
+        // existingResults ist jetzt ein Objekt mit {result: ..., bemerkung: ...}
+        for (const [key, value] of Object.entries(existingResults)) {
+            if (typeof value === 'object' && value !== null) {
+                savedAnswers[key] = value.result;
+                if (value.bemerkung) {
+                    savedBemerkungen[key] = value.bemerkung;
+                }
+            } else {
+                // Legacy-Support: Falls noch alte Datenstruktur
+                savedAnswers[key] = value;
+            }
+        }
+        console.log('=== Antworten aus Datenbank geladen ===');
+        console.log('Anzahl Antworten:', Object.keys(savedAnswers).length);
+        console.log('Anzahl Bemerkungen:', Object.keys(savedBemerkungen).length);
+
+        // Lösche LocalStorage, da wir frische Daten aus der Datenbank haben
+        localStorage.removeItem('abnahmetest_answers_projekt_{{ projekt.id }}');
+        console.log('LocalStorage gelöscht (verwende Datenbank-Daten)');
+    } else {
+        // Fallback: Lade aus LocalStorage (Backup)
+        const savedFromStorage = localStorage.getItem('abnahmetest_answers_projekt_{{ projekt.id }}');
+        if (savedFromStorage) {
+            try {
+                savedAnswers = JSON.parse(savedFromStorage);
+                console.log('Antworten aus LocalStorage geladen');
+            } catch (e) {
+                console.error('Fehler beim Laden aus LocalStorage', e);
+            }
+        }
+    }
+
+    // Initialisiere mit allen Fragen
+    currentFilteredQuestions = testQuestions;
+
+    // Navigation-Button Event-Listener
+    document.getElementById('btn-prev').addEventListener('click', goToPreviousQuestion);
+    document.getElementById('btn-next').addEventListener('click', goToNextQuestion);
+    document.getElementById('btn-back-to-start').addEventListener('click', backToStart);
+
+    // Form-Submit Handler
+    document.getElementById('abnahmetest-form').addEventListener('submit', handleFormSubmit);
+
+    // Hierarchische Navigation Event-Listener
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const component = this.dataset.component;
+            const index = this.dataset.index;
+
+            // Markiere aktiven Button
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Filtere Fragen
+            filterQuestions(component, index);
+        });
+    });
+
+    // Aktiviere ersten Navigation-Button automatisch (Anlage)
+    const firstNavBtn = document.querySelector('.nav-btn[data-component="Anlage"]');
+    if (firstNavBtn) {
+        firstNavBtn.click();
+    }
+
+    // Initiale Fortschrittsberechnung (mit kleinem Timeout, damit alle Event-Handler fertig sind)
+    setTimeout(() => {
+        updateButtonProgress();
+    }, 100);
+});
+
+// ==================== FRAGE LADEN ====================
+function loadQuestion(index) {
+    if (index < 0 || index >= currentFilteredQuestions.length) return;
+
+    currentQuestionIndex = index;
+    const question = currentFilteredQuestions[index];
+
+    // Komponenten-Label aktualisieren
+    let componentLabel = question.komponente_typ;
+    if (question.komponente_index) {
+        componentLabel = question.komponente_index + ' - ' + question.komponente_typ;
+    }
+    document.getElementById('component-label').textContent = componentLabel;
+
+    // Frage-Text und Info aktualisieren
+    document.getElementById('current-question-title').textContent = question.frage_text;
+    document.getElementById('current-question-info').textContent = question.test_information || '';
+    document.getElementById('current-question-number').textContent = index + 1;
+
+    // Tabellen aktualisieren
+    updateTable('lss-ch', question);
+    updateTable('wh-lts', question);
+
+    // Navigation-Buttons aktualisieren
+    document.getElementById('btn-prev').disabled = (index === 0);
+
+    const nextButton = document.getElementById('btn-next');
+    if (index === currentFilteredQuestions.length - 1) {
+        nextButton.textContent = 'Zum Speichern ▶';
+    } else {
+        nextButton.textContent = 'Nächste Frage ▶';
+    }
+
+    // Fortschritts-Balken aktualisieren
+    updateProgressBar();
+
+    // Speichern-Bereich ausblenden
+    document.getElementById('save-section').style.display = 'none';
+}
+
+// ==================== TABELLE AKTUALISIEREN ====================
+function updateTable(system, question) {
+    const header = document.getElementById(system + '-header');
+    const body = document.getElementById(system + '-body');
+
+    // Header aktualisieren (Spalten)
+    // System-Name formatieren: lss-ch -> LSS-CH, wh-lts -> WH-LTS
+    const systemName = system.toUpperCase();
+    header.innerHTML = '<th class="result-column">' + systemName + '</th>';
+    question.spalten.forEach(spalte => {
+        const th = document.createElement('th');
+        th.className = 'whk-column';
+        th.textContent = spalte;
+        header.appendChild(th);
+    });
+
+    // Body aktualisieren (Checkboxen)
+    const ergebnisse = ['richtig', 'falsch', 'nicht_testbar'];
+    ergebnisse.forEach((ergebnis, rowIndex) => {
+        const row = body.rows[rowIndex];
+
+        // Lösche alle Zellen außer der ersten (Label)
+        while (row.cells.length > 1) {
+            row.deleteCell(1);
+        }
+
+        // Füge Checkboxen für jede Spalte hinzu
+        question.spalten.forEach(spalte => {
+            const td = document.createElement('td');
+            td.className = 'checkbox-cell';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.questionId = question.id;
+            checkbox.dataset.system = system;
+            checkbox.dataset.spalte = spalte;
+            checkbox.dataset.ergebnis = ergebnis;
+
+            // Prüfe, ob gespeicherte Antwort vorhanden
+            // WICHTIG: Konvertiere Leerzeichen zu Unterstrichen für Konsistenz mit Backend
+            const spalteKey = spalte.replace(/ /g, '_');
+            const key = question.id + '_' + system + '_' + spalteKey;
+            if (savedAnswers[key] === ergebnis) {
+                // Gespeicherte Antwort hat Vorrang
+                checkbox.checked = true;
+            } else if (!savedAnswers[key] && question.preset_antworten) {
+                // Wenn keine gespeicherte Antwort vorhanden, prüfe Preset
+                // System-Name: lss-ch -> lss_ch, wh-lts -> wh_lts (für Datenbank-Format)
+                const systemKey = system.replace('-', '_');
+                const preset = question.preset_antworten[systemKey];
+
+                if (preset === ergebnis) {
+                    checkbox.checked = true;
+                }
+            }
+
+            // Event-Listener
+            checkbox.addEventListener('change', handleCheckboxChange);
+
+            td.appendChild(checkbox);
+            row.appendChild(td);
+        });
+    });
+
+    // Bemerkung-Zeile aktualisieren (4. Zeile)
+    const bemerkungRow = body.rows[3];
+    if (bemerkungRow) {
+        // Lösche alle Zellen außer der ersten (Label)
+        while (bemerkungRow.cells.length > 1) {
+            bemerkungRow.deleteCell(1);
+        }
+
+        // Füge Bemerkung-Buttons für jede Spalte hinzu
+        question.spalten.forEach(spalte => {
+            const td = document.createElement('td');
+            td.className = 'bemerkung-cell';
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn-bemerkung';
+            button.dataset.questionId = question.id;
+            button.dataset.system = system;
+            button.dataset.spalte = spalte;
+
+            // Prüfe ob Bemerkung vorhanden
+            const spalteKey = spalte.replace(/ /g, '_');
+            const key = question.id + '_' + system + '_' + spalteKey;
+            const hasBemerkung = savedBemerkungen[key];
+
+            if (hasBemerkung) {
+                button.classList.add('has-bemerkung');
+                button.title = 'Bemerkung bearbeiten: ' + hasBemerkung.substring(0, 50) + (hasBemerkung.length > 50 ? '...' : '');
+                button.textContent = '💬';
+            } else {
+                button.title = 'Bemerkung hinzufügen';
+                button.textContent = '💬';
+            }
+
+            // Event-Listener
+            button.addEventListener('click', function() {
+                openBemerkungModal(question.id, system, spalte);
+            });
+
+            td.appendChild(button);
+            bemerkungRow.appendChild(td);
+        });
+    }
+}
+
+// ==================== CHECKBOX CHANGE ====================
+function handleCheckboxChange(event) {
+    const checkbox = event.target;
+
+    // Extrahiere Daten aus Checkbox (außerhalb if/else für besseren Scope)
+    const questionId = checkbox.dataset.questionId;
+    const system = checkbox.dataset.system;
+    const spalte = checkbox.dataset.spalte;
+    const ergebnis = checkbox.dataset.ergebnis;
+
+    // WICHTIG: Konvertiere Leerzeichen zu Unterstrichen für Konsistenz mit Backend
+    const spalteKey = spalte.replace(/ /g, '_');
+    const key = questionId + '_' + system + '_' + spalteKey;
+
+    if (checkbox.checked) {
+        // Speichere Antwort
+        savedAnswers[key] = ergebnis;
+
+        // Deaktiviere andere Checkboxen in der gleichen Spalte
+        const parentRow = checkbox.closest('tr');
+        const columnIndex = Array.from(parentRow.cells).indexOf(checkbox.closest('td'));
+        const tbody = parentRow.parentElement;
+
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cell = row.cells[columnIndex];
+            if (cell) {
+                const otherCheckbox = cell.querySelector('input[type="checkbox"]');
+                if (otherCheckbox && otherCheckbox !== checkbox) {
+                    otherCheckbox.checked = false;
+                }
+            }
+        });
+    } else {
+        // Entferne Antwort
+        delete savedAnswers[key];
+    }
+
+    // LocalStorage Backup
+    localStorage.setItem('abnahmetest_answers_projekt_{{ projekt.id }}', JSON.stringify(savedAnswers));
+
+    // Auto-Save in Datenbank (sende spalte MIT Unterstrichen für Konsistenz)
+    autoSaveAnswer(questionId, system, spalteKey, checkbox.checked ? ergebnis : null);
+
+    // Aktualisiere Button-Fortschritt sofort (mit mini-Delay für DOM-Update)
+    setTimeout(() => {
+        updateButtonProgress();
+    }, 10);
+}
+
+// ==================== AUTO-SAVE FUNKTIONEN ====================
+let saveStatusTimeout = null;
+
+function autoSaveAnswer(questionId, system, spalte, ergebnis) {
+    // Zeige "Speichert..." Status
+    showSaveStatus('saving');
+
+    // AJAX Request
+    fetch('/projekt/abnahmetest/save-answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            projekt_id: projektId,
+            question_id: questionId,
+            spalte: spalte,
+            system: system,
+            ergebnis: ergebnis
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSaveStatus('saved');
+        } else {
+            showSaveStatus('error', data.error || 'Unbekannter Fehler');
+            console.error('Fehler beim Speichern:', data.error);
+        }
+    })
+    .catch(error => {
+        showSaveStatus('error', 'Netzwerkfehler');
+        console.error('Fehler beim Speichern:', error);
+    });
+}
+
+function showSaveStatus(status, message = '') {
+    const statusElement = document.getElementById('save-status');
+
+    // Clear previous timeout
+    if (saveStatusTimeout) {
+        clearTimeout(saveStatusTimeout);
+    }
+
+    if (status === 'saving') {
+        statusElement.innerHTML = '<span class="status-saving">💾 Speichert...</span>';
+        statusElement.style.display = 'block';
+    } else if (status === 'saved') {
+        statusElement.innerHTML = '<span class="status-saved">✓ Gespeichert</span>';
+        statusElement.style.display = 'block';
+
+        // Verstecke nach 2 Sekunden
+        saveStatusTimeout = setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 2000);
+    } else if (status === 'error') {
+        statusElement.innerHTML = `<span class="status-error">⚠ Fehler: ${message}</span>`;
+        statusElement.style.display = 'block';
+
+        // Verstecke nach 5 Sekunden
+        saveStatusTimeout = setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// ==================== FRAGEN FILTERN ====================
+function filterQuestions(component, index) {
+    if (component === 'Anlage' || component === 'WHK') {
+        // Allgemeine Tests ohne spezifischen Index
+        currentFilteredQuestions = testQuestions.filter(q =>
+            q.komponente_typ === component && q.komponente_index === ''
+        );
+    } else {
+        // WHK-spezifische Tests mit Index
+        currentFilteredQuestions = testQuestions.filter(q =>
+            q.komponente_typ === component && q.komponente_index === index
+        );
+    }
+
+    currentFilter = { component, index };
+    currentQuestionIndex = 0;
+
+    // Gesamtanzahl aktualisieren
+    document.getElementById('total-questions').textContent = currentFilteredQuestions.length;
+
+    if (currentFilteredQuestions.length > 0) {
+        loadQuestion(0);
+    } else {
+        showNoQuestionsMessage();
+    }
+
+    // Aktualisiere Button-Fortschritt nach Filterwechsel
+    updateButtonProgress();
+}
+
+function showNoQuestionsMessage() {
+    // Zeige Meldung, dass keine Fragen verfügbar sind
+    document.getElementById('component-label').textContent = '';
+    document.getElementById('current-question-title').textContent = 'Keine Testfragen verfügbar';
+    document.getElementById('current-question-info').textContent = 'Für diesen Bereich sind keine Testfragen definiert.';
+
+    // Leere Tabellen
+    ['lss-ch', 'wh-lts'].forEach(system => {
+        const header = document.getElementById(system + '-header');
+        const body = document.getElementById(system + '-body');
+        header.innerHTML = '<th class="result-column">Ergebnis</th>';
+        body.querySelectorAll('tr').forEach(row => {
+            while (row.cells.length > 1) {
+                row.deleteCell(1);
+            }
+        });
+    });
+
+    // Navigation deaktivieren
+    document.getElementById('btn-prev').disabled = true;
+    document.getElementById('btn-next').disabled = true;
+    document.getElementById('current-question-number').textContent = '0';
+    document.getElementById('progress-fill').style.width = '0%';
+}
+
+// ==================== NAVIGATION ====================
+function goToPreviousQuestion() {
+    if (currentQuestionIndex > 0) {
+        loadQuestion(currentQuestionIndex - 1);
+    }
+}
+
+function goToNextQuestion() {
+    if (currentQuestionIndex < currentFilteredQuestions.length - 1) {
+        loadQuestion(currentQuestionIndex + 1);
+    } else {
+        // Letzte Frage erreicht - Speichern-Bereich anzeigen
+        showSaveSection();
+    }
+}
+
+function backToStart() {
+    loadQuestion(0);
+}
+
+// ==================== FORTSCHRITTS-BALKEN ====================
+function updateProgressBar() {
+    const progress = ((currentQuestionIndex + 1) / currentFilteredQuestions.length) * 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+}
+
+// ==================== SPEICHERN-BEREICH ====================
+function showSaveSection() {
+    document.getElementById('save-section').style.display = 'block';
+    document.getElementById('save-section').scrollIntoView({ behavior: 'smooth' });
+
+    // Zähle beantwortete Fragen (alle Fragen, nicht nur gefilterte)
+    let answeredQuestions = new Set();
+    Object.keys(savedAnswers).forEach(key => {
+        const questionId = key.split('_')[0];
+        answeredQuestions.add(questionId);
+    });
+
+    document.getElementById('answered-count').textContent = answeredQuestions.size;
+    document.getElementById('total-count').textContent = testQuestions.length;
+}
+
+// ==================== FORM SUBMIT ====================
+function handleFormSubmit(event) {
+    // Übertrage savedAnswers in Hidden Field
+    document.getElementById('answers-data').value = JSON.stringify(savedAnswers);
+
+    // LocalStorage löschen nach erfolgreichem Submit
+    localStorage.removeItem('abnahmetest_answers_projekt_{{ projekt.id }}');
+}
+
+// ==================== FORTSCHRITTSBERECHNUNG ====================
+function updateButtonProgress() {
+    console.log('=== updateButtonProgress aufgerufen ===');
+    console.log('SavedAnswers Keys:', Object.keys(savedAnswers));
+
+    // Durchlaufe alle Navigation-Buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        const component = btn.dataset.component;
+        const index = btn.dataset.index;
+
+        // Filtere entsprechende Fragen
+        let questions;
+        if (component === 'Anlage' || component === 'WHK') {
+            questions = testQuestions.filter(q =>
+                q.komponente_typ === component && q.komponente_index === ''
+            );
+        } else {
+            questions = testQuestions.filter(q =>
+                q.komponente_typ === component && q.komponente_index === index
+            );
+        }
+
+        // Berechne Fortschritt
+        if (questions.length === 0) {
+            // Keine Fragen -> Button als "leer" markieren
+            btn.classList.remove('completed');
+            console.log(`Button ${component} (${index}): Keine Fragen`);
+            return;
+        }
+
+        const progress = calculateQuestionsProgress(questions);
+        console.log(`Button ${component} (${index}): ${progress}% - ${questions.length} Fragen`);
+
+        // Setze "completed" Klasse bei 100%
+        if (progress === 100) {
+            btn.classList.add('completed');
+            console.log(`✓ Button ${component} (${index}) als COMPLETED markiert (Klassen: ${btn.className})`);
+        } else {
+            btn.classList.remove('completed');
+            console.log(`  Button ${component} (${index}) NICHT completed (nur ${progress}%)`);
+        }
+
+        // Optional: Zeige Fortschritt im Button
+        updateButtonText(btn, component, index, progress);
+    });
+}
+
+function calculateQuestionsProgress(questions) {
+    if (questions.length === 0) return 0;
+
+    let completedQuestions = 0;
+
+    questions.forEach(question => {
+        if (isQuestionComplete(question)) {
+            completedQuestions++;
+        }
+    });
+
+    return Math.round((completedQuestions / questions.length) * 100);
+}
+
+function isQuestionComplete(question) {
+    // Bestimme die Spalten für diese Frage
+    const spalten = getSpaltenfuerFrage(question);
+
+    console.log(`  Prüfe Frage ${question.id} (${question.frage_text.substring(0, 30)}...): ${spalten.length} Spalten`);
+
+    // Prüfe ob ALLE Spalten für BEIDE Systeme ausgefüllt sind
+    for (const spalte of spalten) {
+        // WICHTIG: Keys mit Bindestrich, wie beim Speichern!
+        // Versuche mit Leerzeichen UND Unterstrichen (für Kompatibilität)
+        const spalteUnderscore = spalte.replace(/ /g, '_');
+
+        const lssChKey = question.id + '_lss-ch_' + spalte;
+        const lssChKeyUnderscore = question.id + '_lss-ch_' + spalteUnderscore;
+        const whLtsKey = question.id + '_wh-lts_' + spalte;
+        const whLtsKeyUnderscore = question.id + '_wh-lts_' + spalteUnderscore;
+
+        // Prüfe gespeicherte Antworten (beide Varianten)
+        const hasLssCh = !!savedAnswers[lssChKey] || !!savedAnswers[lssChKeyUnderscore];
+        const hasWhLts = !!savedAnswers[whLtsKey] || !!savedAnswers[whLtsKeyUnderscore];
+
+        // Prüfe Presets (falls keine gespeicherte Antwort vorhanden)
+        const hasLssChPreset = !hasLssCh && question.preset_antworten && question.preset_antworten.lss_ch;
+        const hasWhLtsPreset = !hasWhLts && question.preset_antworten && question.preset_antworten.wh_lts;
+
+        const lssChComplete = hasLssCh || hasLssChPreset;
+        const whLtsComplete = hasWhLts || hasWhLtsPreset;
+
+        console.log(`    Spalte "${spalte}": LSS-CH=${lssChComplete} (saved=${hasLssCh}, preset=${hasLssChPreset}), WH-LTS=${whLtsComplete} (saved=${hasWhLts}, preset=${hasWhLtsPreset})`);
+
+        // Beide Systeme müssen ausgefüllt sein (entweder gespeichert ODER Preset)
+        if (!lssChComplete || !whLtsComplete) {
+            console.log(`    → Frage NICHT komplett (Spalte ${spalte} fehlt)`);
+            return false;
+        }
+    }
+
+    console.log(`    → Frage KOMPLETT ✓`);
+    return true;
+}
+
+function getSpaltenfuerFrage(question) {
+    // Verwende die bereits definierten Spalten aus der Frage
+    // Diese werden vom Backend basierend auf der WHK-Konfiguration generiert
+    if (question.spalten && question.spalten.length > 0) {
+        return question.spalten;
+    }
+
+    // Fallback: Sollte normalerweise nicht benötigt werden
+    console.warn('Keine Spalten für Frage gefunden:', question);
+    return [];
+}
+
+function updateButtonText(btn, component, index, progress) {
+    // Speichere den originalen Button-Text wenn noch nicht vorhanden
+    if (!btn.dataset.originalText) {
+        btn.dataset.originalText = btn.textContent.trim().replace(' ✓', '');
+    }
+
+    const originalText = btn.dataset.originalText;
+
+    if (progress === 100) {
+        if (!btn.textContent.includes('✓')) {
+            btn.textContent = originalText + ' ✓';
+        }
+    } else {
+        // Entferne Häkchen wenn nicht mehr 100%
+        btn.textContent = originalText;
+    }
+}
+
+// ==================== BEMERKUNG MODAL-FUNKTIONEN ====================
+function openBemerkungModal(questionId, system, spalte) {
+    const modal = document.getElementById('bemerkung-modal');
+    const textarea = document.getElementById('modal-bemerkung-input');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContext = document.getElementById('modal-context');
+    const deleteBtn = document.getElementById('btn-delete-bemerkung');
+    const charCount = document.getElementById('char-count');
+
+    // Speichere Kontext für spätere Verwendung
+    currentModalContext = {
+        questionId: questionId,
+        system: system,
+        spalte: spalte
+    };
+
+    // Erstelle Kontext-Text
+    const systemName = system.toUpperCase();
+    const contextText = `System: ${systemName} | Spalte: ${spalte}`;
+    modalContext.textContent = contextText;
+
+    // Lade vorhandene Bemerkung (falls vorhanden)
+    const spalteKey = spalte.replace(/ /g, '_');
+    const key = questionId + '_' + system + '_' + spalteKey;
+    const existingBemerkung = savedBemerkungen[key] || '';
+
+    textarea.value = existingBemerkung;
+    charCount.textContent = existingBemerkung.length;
+
+    // Zeige/Verstecke Löschen-Button
+    if (existingBemerkung) {
+        deleteBtn.style.display = 'inline-block';
+        modalTitle.textContent = 'Bemerkung bearbeiten';
+    } else {
+        deleteBtn.style.display = 'none';
+        modalTitle.textContent = 'Bemerkung hinzufügen';
+    }
+
+    // Öffne Modal
+    modal.showModal();
+
+    // Fokus auf Textarea
+    setTimeout(() => textarea.focus(), 100);
+
+    // Zeichenzähler-Event
+    textarea.oninput = function() {
+        charCount.textContent = textarea.value.length;
+    };
+}
+
+function closeBemerkungModal() {
+    const modal = document.getElementById('bemerkung-modal');
+    modal.close();
+    currentModalContext = null;
+}
+
+function saveBemerkung() {
+    console.log('=== SAVE BEMERKUNG ===');
+    if (!currentModalContext) {
+        console.error('Kein Modal-Kontext vorhanden!');
+        return;
+    }
+
+    const textarea = document.getElementById('modal-bemerkung-input');
+    const bemerkungText = textarea.value.trim();
+
+    const { questionId, system, spalte } = currentModalContext;
+    const spalteKey = spalte.replace(/ /g, '_');
+    const key = questionId + '_' + system + '_' + spalteKey;
+
+    console.log('Modal context:', currentModalContext);
+    console.log('Textarea value (raw):', textarea.value);
+    console.log('Textarea value (trimmed):', bemerkungText);
+    console.log('Key:', key);
+    console.log('spalteKey:', spalteKey);
+
+    // Speichere Bemerkung (auch leer = löschen)
+    if (bemerkungText) {
+        savedBemerkungen[key] = bemerkungText;
+        console.log('✓ Bemerkung in savedBemerkungen gespeichert');
+    } else {
+        delete savedBemerkungen[key];
+        console.log('✓ Bemerkung aus savedBemerkungen gelöscht');
+    }
+
+    console.log('Current savedBemerkungen:', savedBemerkungen);
+
+    // Sende an Backend
+    console.log('Calling autoSaveBemerkung...');
+    autoSaveBemerkung(questionId, system, spalteKey, bemerkungText);
+
+    // Aktualisiere Button-Darstellung
+    console.log('Updating button display...');
+    updateBemerkungButtons();
+
+    // Schließe Modal
+    closeBemerkungModal();
+    console.log('======================');
+}
+
+function deleteBemerkung() {
+    if (!currentModalContext) return;
+
+    if (confirm('Möchten Sie diese Bemerkung wirklich löschen?')) {
+        const { questionId, system, spalte } = currentModalContext;
+        const spalteKey = spalte.replace(/ /g, '_');
+        const key = questionId + '_' + system + '_' + spalteKey;
+
+        // Lösche Bemerkung
+        delete savedBemerkungen[key];
+
+        // Sende Löschen an Backend (leerer String)
+        autoSaveBemerkung(questionId, system, spalteKey, '');
+
+        // Aktualisiere Button-Darstellung
+        updateBemerkungButtons();
+
+        // Schließe Modal
+        closeBemerkungModal();
+    }
+}
+
+function autoSaveBemerkung(questionId, system, spalte, bemerkungText) {
+    console.log('=== AUTO-SAVE BEMERKUNG ===');
+    console.log('questionId:', questionId);
+    console.log('system:', system);
+    console.log('spalte:', spalte);
+    console.log('bemerkungText:', bemerkungText);
+    console.log('bemerkungText type:', typeof bemerkungText);
+    console.log('bemerkungText length:', bemerkungText ? bemerkungText.length : 0);
+
+    const data = {
+        projekt_id: projektId,
+        question_id: questionId,
+        system: system,
+        spalte: spalte,
+        ergebnis: null, // Nur Bemerkung speichern, kein Ergebnis
+        bemerkung: bemerkungText || null
+    };
+
+    console.log('Request data:', data);
+
+    fetch('/projekt/abnahmetest/save-answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            console.log('✓ Bemerkung erfolgreich gespeichert:', bemerkungText ? bemerkungText.substring(0, 30) + '...' : '[gelöscht]');
+        } else {
+            console.error('✗ Fehler beim Speichern der Bemerkung:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('✗ Netzwerkfehler beim Speichern der Bemerkung:', error);
+    });
+}
+
+function updateBemerkungButtons() {
+    // Aktualisiere alle Bemerkung-Buttons für die aktuelle Frage
+    const currentQuestion = currentFilteredQuestions[currentQuestionIndex];
+    if (currentQuestion) {
+        updateTable('lss-ch', currentQuestion);
+        updateTable('wh-lts', currentQuestion);
+    }
+}
+
+// ESC-Taste zum Schließen des Modals
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('bemerkung-modal');
+    if (e.key === 'Escape' && modal.open) {
+        closeBemerkungModal();
+    }
+});
+</script>
+
+{% endblock %}

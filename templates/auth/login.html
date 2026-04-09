@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmelden - Abnahmetest</title>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Abnahmetest</h1>
+                <p>WHS Testprotokoll - SBB AG</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Benutzername</label>
+                    <input type="text" id="username" name="username" required autofocus
+                           placeholder="Ihr Benutzername">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Passwort</label>
+                    <input type="password" id="password" name="password" required
+                           placeholder="Ihr Passwort">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="remember" value="1">
+                        <span>Angemeldet bleiben (30 Tage)</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full">Anmelden</button>
+            </form>
+
+            <div class="auth-links">
+                <a href="{{ url_for('auth.forgot_password') }}">Passwort vergessen?</a>
+                <span class="divider">|</span>
+                <a href="{{ url_for('auth.register') }}">Neuen Account erstellen</a>
+            </div>
+        </div>
+
+        <div class="auth-footer">
+            <p>&copy; 2025 Abnahmetest. Alle Rechte vorbehalten.</p>
+        </div>
+    </div>
+</body>
+</html>

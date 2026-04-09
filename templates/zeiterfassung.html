@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Zeiterfassung - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Zeiterfassung</h2>
+    </div>
+
+    <!-- Suchbereich mit Live-Suche -->
+    <div class="search-container">
+        <div class="search-form">
+            <input type="text"
+                   id="searchInput"
+                   placeholder="Suche nach Projektname, DIDOK oder IBN-Jahr"
+                   class="search-input">
+            <button type="button" id="resetBtn" class="btn-cancel" style="display: none;">Zurücksetzen</button>
+        </div>
+        <p id="searchInfo" class="search-info" style="display: none;"></p>
+    </div>
+
+    {% if stats_list %}
+    <table class="project-table zeiterfassung-table">
+        <colgroup>
+            <col style="width: 10%;">   <!-- Energie -->
+            <col style="width: 35%;">   <!-- Projektname -->
+            <col style="width: 20%;">   <!-- DIDOK -->
+            <col style="width: 15%;">   <!-- Gesamt -->
+            <col style="width: 20%;">   <!-- Detail -->
+        </colgroup>
+        <thead>
+            <tr>
+                <th class="text-center">Energie</th>
+                <th>Projektname</th>
+                <th class="text-center">DIDOK</th>
+                <th class="text-center">Gesamt</th>
+                <th class="text-center">Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in stats_list %}
+            <tr data-ibn="{{ stat.projekt.ibn_inbetriebnahme_jahre|lower if stat.projekt.ibn_inbetriebnahme_jahre else '' }}">
+                <td class="text-center">
+                    <span class="energie-badge energie-{{ stat.projekt.energie.lower() if stat.projekt.energie else 'unbekannt' }}">
+                        {%- if stat.projekt.energie and stat.projekt.energie.lower() == 'gas' -%}
+                        GWH
+                        {%- elif stat.projekt.energie and stat.projekt.energie.lower() == 'strom' -%}
+                        EWH
+                        {%- elif stat.projekt.energie and stat.projekt.energie.upper() == 'GWH' -%}
+                        GWH
+                        {%- elif stat.projekt.energie and stat.projekt.energie.upper() == 'EWH' -%}
+                        EWH
+                        {%- else -%}
+                        {{ stat.projekt.energie or '?' }}
+                        {%- endif -%}
+                    </span>
+                </td>
+                <td><strong>{{ stat.projekt.projektname }}</strong></td>
+                <td class="text-center">{{ stat.projekt.didok_betriebspunkt or '-' }}</td>
+                <td class="text-center"><strong>{{ stat.gesamt }}</strong></td>
+                <td class="text-center">
+                    <a href="{{ url_for('zeiterfassung.zeiterfassung_detail', projekt_id=stat.projekt.id) }}" class="detail-btn">Detail</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div id="noResults" class="no-data" style="display: none;">
+        <p>Keine Projekte gefunden.</p>
+    </div>
+    {% else %}
+    <div class="no-data">
+        <p>Noch keine Zeiterfassungsdaten vorhanden.</p>
+        <p>Die Zeiterfassung beginnt automatisch, wenn Sie Projektseiten besuchen.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Zeiterfassung spezifische Styles */
+.zeiterfassung-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.zeiterfassung-table th.text-center,
+.zeiterfassung-table td.text-center {
+    text-align: center !important;
+}
+
+.detail-btn {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    background: #d1fae5;
+    color: #065f46;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid #10b981;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.detail-btn:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .detail-btn {
+    background: #1e3a28;
+    color: #a7f3d0;
+    border-color: #10b981;
+}
+
+[data-theme="dark"] .detail-btn:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+}
+</style>
+
+<script>
+// Live-Suche für Zeiterfassung
+(function() {
+    const searchInput = document.getElementById('searchInput');
+    const resetBtn = document.getElementById('resetBtn');
+    const searchInfo = document.getElementById('searchInfo');
+    const projectRows = document.querySelectorAll('.project-table tbody tr');
+    const projectTable = document.querySelector('.project-table');
+    const noResults = document.getElementById('noResults');
+    const totalProjects = projectRows.length;
+
+    // Suchfunktion
+    function filterProjects() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        projectRows.forEach(row => {
+            // Extrahiere Text aus Spalten: Projektname (Index 1), DIDOK (Index 2)
+            const cells = row.querySelectorAll('td');
+            const projektname = cells[1]?.textContent.toLowerCase() || '';
+            const didok = cells[2]?.textContent.toLowerCase() || '';
+            const ibnJahre = row.getAttribute('data-ibn') || '';
+
+            // Prüfe ob Suchbegriff vorkommt
+            const matches = projektname.includes(searchTerm) ||
+                          didok.includes(searchTerm) ||
+                          ibnJahre.includes(searchTerm);
+
+            // Zeige oder verstecke Zeile
+            if (matches || searchTerm === '') {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // UI-Updates basierend auf Suchergebnissen
+        if (searchTerm) {
+            resetBtn.style.display = 'inline-block';
+            searchInfo.style.display = 'block';
+            searchInfo.textContent = `Suchergebnisse für "${searchInput.value}" (${visibleCount} Projekt${visibleCount !== 1 ? 'e' : ''} gefunden)`;
+        } else {
+            resetBtn.style.display = 'none';
+            searchInfo.style.display = 'none';
+        }
+
+        // Keine Ergebnisse Meldung anzeigen/verstecken
+        if (visibleCount === 0 && searchTerm) {
+            noResults.style.display = 'block';
+            if (projectTable) {
+                projectTable.style.display = 'none';
+            }
+        } else {
+            noResults.style.display = 'none';
+            if (projectTable) {
+                projectTable.style.display = 'table';
+            }
+        }
+    }
+
+    // Reset-Funktion
+    function resetSearch() {
+        searchInput.value = '';
+        filterProjects();
+        searchInput.focus();
+    }
+
+    // Event Listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', filterProjects);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Escape') {
+                resetSearch();
+            }
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetSearch);
+    }
+
+    // Initial Focus auf Suchfeld
+    if (totalProjects > 0 && searchInput) {
+        searchInput.focus();
+    }
+})();
+</script>
+{% endblock %}

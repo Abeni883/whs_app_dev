@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Benutzer bearbeiten - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Benutzer bearbeiten: {{ user.username }}</h2>
+    </div>
+
+    <div class="edit-section">
+        <form method="POST" class="edit-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Benutzername *</label>
+                    <input type="text" id="username" name="username" required
+                           value="{{ user.username }}"
+                           placeholder="Benutzername">
+                </div>
+                <div class="form-group">
+                    <label for="email">E-Mail-Adresse *</label>
+                    <input type="email" id="email" name="email" required
+                           value="{{ user.email }}"
+                           placeholder="E-Mail-Adresse">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">Vorname</label>
+                    <input type="text" id="first_name" name="first_name"
+                           value="{{ user.first_name or '' }}"
+                           placeholder="Vorname">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Nachname</label>
+                    <input type="text" id="last_name" name="last_name"
+                           value="{{ user.last_name or '' }}"
+                           placeholder="Nachname">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">Neues Passwort</label>
+                <input type="password" id="new_password" name="new_password"
+                       placeholder="Leer lassen um Passwort nicht zu ändern"
+                       minlength="6">
+                <small>Mindestens 6 Zeichen. Leer lassen um das Passwort nicht zu ändern. Das neue Passwort dem Benutzer mitteilen.</small>
+            </div>
+
+            <div class="form-row checkbox-row">
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %}>
+                        <span>Aktiv</span>
+                    </label>
+                    <small>Deaktivierte Benutzer können sich nicht anmelden.</small>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_admin" {% if user.is_admin %}checked{% endif %}>
+                        <span>Administrator</span>
+                    </label>
+                    <small>Administratoren haben Zugriff auf alle Einstellungen.</small>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Speichern</button>
+                <a href="{{ url_for('auth.admin_users') }}" class="btn-cancel">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="info-section">
+        <h3>Account-Informationen</h3>
+        <dl class="info-list">
+            <dt>Registriert am:</dt>
+            <dd>{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</dd>
+
+            <dt>Letzte Anmeldung:</dt>
+            <dd>{% if user.last_login %}{{ user.last_login.strftime('%d.%m.%Y %H:%M') }}{% else %}-{% endif %}</dd>
+        </dl>
+    </div>
+</div>
+
+<style>
+.edit-section, .info-section {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.info-section h3 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.edit-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .edit-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.edit-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.edit-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.edit-form input[type="text"],
+.edit-form input[type="email"],
+.edit-form input[type="password"] {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.edit-form input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.edit-form small {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+}
+
+.checkbox-row {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    color: var(--text-primary);
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.info-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+}
+
+.info-list dt {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.info-list dd {
+    color: var(--text-primary);
+    margin: 0;
+}
+</style>
+{% endblock %}

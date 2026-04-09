@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+
+{% block title %}Testabschluss-Texte - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h2>Testabschluss-Texte verwalten</h2>
+            <p class="page-subtitle">Verwalten Sie die Checklisten-Einträge für die Testabschluss-Seite</p>
+        </div>
+    </div>
+
+    <!-- Tabs für EWH und GWH -->
+    <div class="component-tabs">
+        <button class="tab-btn active" data-tab="ewh">EWH - Elektroweichenheizung</button>
+        <button class="tab-btn" data-tab="gwh">GWH - Gasweichenheizung</button>
+    </div>
+
+    <!-- EWH Tab -->
+    <div class="tab-content" id="tab-ewh">
+        <div class="section-header">
+            <h3>EWH Einstellungen nach dem Abnahmetest</h3>
+            <button type="button" class="btn-add" onclick="openModal('ewh')">+ Neuer Eintrag</button>
+        </div>
+
+        {% if ewh_items %}
+        <table class="settings-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Pos.</th>
+                    <th style="width: 200px;">Titel</th>
+                    <th>Beschreibung</th>
+                    <th style="width: 120px;">Highlight</th>
+                    <th style="width: 70px;">Aktiv</th>
+                    <th style="width: 140px;">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in ewh_items %}
+                <tr data-item-id="{{ item.id }}">
+                    <td class="center">{{ item.reihenfolge }}</td>
+                    <td><strong>{{ item.titel }}</strong></td>
+                    <td>{{ item.beschreibung }}</td>
+                    <td>
+                        {% if item.highlight_text %}
+                        <span class="highlight-badge">{{ item.highlight_text }}</span>
+                        {% else %}
+                        <span class="no-highlight">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if item.aktiv %}
+                        <span class="status-badge active">Ja</span>
+                        {% else %}
+                        <span class="status-badge inactive">Nein</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-cell">
+                        <button type="button" class="btn-edit" onclick="openEditModal({{ item.id }}, '{{ item.energie_typ }}', '{{ item.titel|e }}', '{{ item.beschreibung|e }}', '{{ item.highlight_text or ''|e }}', {{ item.reihenfolge }}, {{ item.aktiv|lower }})">Bearbeiten</button>
+                        <form method="POST" action="{{ url_for('testabschluss_item_loeschen', item_id=item.id) }}" style="display: inline;">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Eintrag wirklich löschen?')">Löschen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Keine EWH-Einträge vorhanden.</p>
+            <button type="button" class="btn-add" onclick="openModal('ewh')">+ Ersten Eintrag erstellen</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- GWH Tab -->
+    <div class="tab-content" id="tab-gwh" style="display: none;">
+        <div class="section-header">
+            <h3>GWH Einstellungen nach dem Abnahmetest</h3>
+            <button type="button" class="btn-add" onclick="openModal('gwh')">+ Neuer Eintrag</button>
+        </div>
+
+        {% if gwh_items %}
+        <table class="settings-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">Pos.</th>
+                    <th style="width: 200px;">Titel</th>
+                    <th>Beschreibung</th>
+                    <th style="width: 120px;">Highlight</th>
+                    <th style="width: 70px;">Aktiv</th>
+                    <th style="width: 140px;">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in gwh_items %}
+                <tr data-item-id="{{ item.id }}">
+                    <td class="center">{{ item.reihenfolge }}</td>
+                    <td><strong>{{ item.titel }}</strong></td>
+                    <td>{{ item.beschreibung }}</td>
+                    <td>
+                        {% if item.highlight_text %}
+                        <span class="highlight-badge">{{ item.highlight_text }}</span>
+                        {% else %}
+                        <span class="no-highlight">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        {% if item.aktiv %}
+                        <span class="status-badge active">Ja</span>
+                        {% else %}
+                        <span class="status-badge inactive">Nein</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-cell">
+                        <button type="button" class="btn-edit" onclick="openEditModal({{ item.id }}, '{{ item.energie_typ }}', '{{ item.titel|e }}', '{{ item.beschreibung|e }}', '{{ item.highlight_text or ''|e }}', {{ item.reihenfolge }}, {{ item.aktiv|lower }})">Bearbeiten</button>
+                        <form method="POST" action="{{ url_for('testabschluss_item_loeschen', item_id=item.id) }}" style="display: inline;">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Eintrag wirklich löschen?')">Löschen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="placeholder-content">
+            <div class="placeholder-icon">🚧</div>
+            <h3>GWH-Inhalte folgen in Kürze</h3>
+            <p>Die spezifischen Einstellungen für Gasweichenheizungen werden hier in Kürze ergänzt.</p>
+            <button type="button" class="btn-add" onclick="openModal('gwh')">+ Ersten GWH-Eintrag erstellen</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal für neuen Eintrag -->
+<div id="newItemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Neuer Eintrag</h3>
+            <button type="button" class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="itemForm" method="POST" action="{{ url_for('testabschluss_item_neu') }}">
+            <input type="hidden" name="energie_typ" id="form_energie_typ" value="EWH">
+
+            <div class="form-group">
+                <label for="form_titel">Titel *</label>
+                <input type="text" id="form_titel" name="titel" required maxlength="200" placeholder="z.B. Freigabe deaktivieren">
+            </div>
+
+            <div class="form-group">
+                <label for="form_beschreibung">Beschreibung *</label>
+                <textarea id="form_beschreibung" name="beschreibung" required rows="3" placeholder="Die WH-Anlage muss nach dem Abnahmetest auf {highlight} geschaltet werden."></textarea>
+                <small class="form-hint">Verwenden Sie <code>{highlight}</code> als Platzhalter für den hervorgehobenen Text.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="form_highlight_text">Highlight-Text</label>
+                <input type="text" id="form_highlight_text" name="highlight_text" maxlength="100" placeholder="z.B. Freigabe Aus">
+                <small class="form-hint">Der grün hervorgehobene Text in der Beschreibung.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="form_reihenfolge">Reihenfolge</label>
+                <input type="number" id="form_reihenfolge" name="reihenfolge" min="0" value="0" placeholder="0 = automatisch">
+                <small class="form-hint">0 = wird automatisch ans Ende gesetzt.</small>
+            </div>
+
+            <div class="form-group checkbox-group" id="aktiv_group" style="display: none;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="form_aktiv" name="aktiv" checked>
+                    <span>Aktiv</span>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Abbrechen</button>
+                <button type="submit" class="btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.page-subtitle {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.component-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.settings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.settings-table th,
+.settings-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-table th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.settings-table td {
+    color: var(--text-secondary);
+}
+
+.settings-table td.center {
+    text-align: center;
+}
+
+.highlight-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: var(--success-bg);
+    color: var(--success-text);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.no-highlight {
+    color: var(--text-tertiary);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.status-badge.inactive {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+
+.action-cell {
+    white-space: nowrap;
+}
+
+.btn-add {
+    padding: 0.5rem 1rem;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-add:hover {
+    background: var(--accent-primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-edit {
+    padding: 0.35rem 0.75rem;
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin-right: 0.5rem;
+}
+
+.btn-edit:hover {
+    background: var(--accent-blue-dark);
+}
+
+.btn-delete {
+    padding: 0.35rem 0.75rem;
+    background: var(--accent-red);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.btn-delete:hover {
+    background: var(--accent-red-dark);
+}
+
+.empty-state,
+.placeholder-content {
+    text-align: center;
+    padding: 3rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 2px dashed var(--border-color);
+}
+
+.placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.placeholder-content h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.placeholder-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+#itemForm {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.2);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
+.form-hint code {
+    background: var(--bg-tertiary);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+}
+
+.checkbox-group {
+    margin-top: 1rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-cancel {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-cancel:hover {
+    background: var(--bg-secondary);
+}
+
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: var(--accent-primary-hover);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab-Wechsel
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+
+            // Alle Tabs deaktivieren
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+            // Gewählten Tab aktivieren
+            this.classList.add('active');
+            document.getElementById('tab-' + tabId).style.display = 'block';
+        });
+    });
+
+    // Modal schließen bei Klick außerhalb
+    document.getElementById('newItemModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    // Escape-Taste zum Schließen
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+});
+
+function openModal(energieTyp) {
+    const modal = document.getElementById('newItemModal');
+    const form = document.getElementById('itemForm');
+
+    // Reset form
+    form.reset();
+    form.action = '{{ url_for("testabschluss_item_neu") }}';
+    document.getElementById('form_energie_typ').value = energieTyp.toUpperCase();
+    document.getElementById('modalTitle').textContent = 'Neuer ' + energieTyp.toUpperCase() + '-Eintrag';
+    document.getElementById('aktiv_group').style.display = 'none';
+
+    modal.classList.add('active');
+    document.getElementById('form_titel').focus();
+}
+
+function openEditModal(id, energieTyp, titel, beschreibung, highlightText, reihenfolge, aktiv) {
+    const modal = document.getElementById('newItemModal');
+    const form = document.getElementById('itemForm');
+
+    // Set form action for edit
+    form.action = '/einstellungen/testabschluss/' + id + '/bearbeiten';
+    document.getElementById('form_energie_typ').value = energieTyp;
+    document.getElementById('form_titel').value = titel;
+    document.getElementById('form_beschreibung').value = beschreibung;
+    document.getElementById('form_highlight_text').value = highlightText;
+    document.getElementById('form_reihenfolge').value = reihenfolge;
+    document.getElementById('form_aktiv').checked = aktiv;
+    document.getElementById('modalTitle').textContent = 'Eintrag bearbeiten';
+    document.getElementById('aktiv_group').style.display = 'block';
+
+    modal.classList.add('active');
+    document.getElementById('form_titel').focus();
+}
+
+function closeModal() {
+    document.getElementById('newItemModal').classList.remove('active');
+}
+</script>
+{% endblock %}

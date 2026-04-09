@@ -1,0 +1,8 @@
+DB Export/Import
+
+Export
+# Einfach die Datenbankdatei kopieren
+cp instance/weichenheizung.db instance/weichenheizung_backup.db
+
+# Backup zurückkopieren
+cp instance/weichenheizung_backup.db instance/weichenheizung.db

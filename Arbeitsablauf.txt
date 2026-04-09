@@ -1,0 +1,55 @@
+Vor dem Arbeiten
+
+# 1. Zum Projektordner navigieren
+cd C:\inetpub\whs_app
+
+# 2. Virtual Environment aktivieren
+.\venv\Scripts\activate
+
+# 3. Neueste Änderungen holen
+git pull origin main
+
+# 4. Server starten
+python run_dev.py
+
+-----------------------------------------
+URL: http://127.0.0.1:5000
+-----------------------------------------
+
+
+Nach dem Arbeiten
+
+# 1. Prüfen was geändert wurde
+git status
+
+# 2. Änderungen hinzufügen
+git add .
+
+# 3. Committen mit Beschreibung
+git commit -m "Beschreibung der Änderungen"
+
+# 4. Pushen
+git push origin main
+```
+
+---
+
+### 📌 Kurzversion zum Ausdrucken
+```
+┌─────────────────────────────────────────────┐
+│           VOR DEM ARBEITEN                  │
+├─────────────────────────────────────────────┤
+│  cd C:\inetpub\whs_app                      │
+│  .\venv\Scripts\activate                    │
+│  git pull origin main                       │
+│  python run_dev.py                          │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│           NACH DEM ARBEITEN                 │
+├─────────────────────────────────────────────┤
+│  git status                                 │
+│  git add .                                  │
+│  git commit -m "Beschreibung"               │
+│  git push origin main                       │
+└─────────────────────────────────────────────┘

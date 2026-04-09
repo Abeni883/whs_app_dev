@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Test-Uebersicht - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Test-Uebersicht</h2>
+
+    {% if tests %}
+    <table>
+        <thead>
+            <tr>
+                <th>Test-Name</th>
+                <th>Projekt</th>
+                <th>Hardware-ID</th>
+                <th>Software-Version</th>
+                <th>Ergebnis</th>
+                <th>Tester</th>
+                <th>Datum</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr>
+                <td>{{ test.test_name }}</td>
+                <td>
+                    {% if test.projekt %}
+                        <strong>{{ test.projekt.projektname }}</strong>
+                        {% if test.projekt.projektnummer %}
+                            <br><small class="project-number">{{ test.projekt.projektnummer }}</small>
+                        {% endif %}
+                    {% else %}
+                        <span class="no-project">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ test.hardware_id }}</td>
+                <td>{{ test.software_version }}</td>
+                <td class="result-{{ test.result.lower() }}">{{ test.result }}</td>
+                <td>{{ test.tester_name }}</td>
+                <td>{{ test.test_date.strftime('%d.%m.%Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">
+        <p>Keine Tests vorhanden.</p>
+        <p><a href="{{ url_for('new_test') }}">Erstellen Sie Ihren ersten Test!</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}EWH-Abnahmetest - {{ projekt.projektname }} - Übersicht{% endblock %}
+
+{# Macro für Fortschrittsfarbe basierend auf Prozent #}
+{% macro progress_color(percent) -%}
+    {%- if percent == 100 -%}inherit
+    {%- elif percent >= 70 -%}#7cbf3f
+    {%- elif percent >= 50 -%}#f5a623
+    {%- elif percent >= 30 -%}#e9621f
+    {%- else -%}#dc3545{%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>EWH-Abnahmetest: {{ projekt.projektname }}</h2>
+        <div class="header-buttons">
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-secondary">← Zurück zur Projektübersicht</a>
+        </div>
+    </div>
+
+    {% if whk_configs and whk_configs|length > 0 %}
+        <!-- Navigations-Übersicht -->
+        <div class="ewh-uebersicht">
+
+            <!-- Allgemein-Bereich -->
+            <div class="nav-section-allgemein">
+                <h4 class="nav-section-title">Allgemein</h4>
+                <div class="allgemein-buttons">
+                    <a href="{{ url_for('ewh.ewh_test_anlage', projekt_id=projekt.id) }}"
+                       class="nav-btn nav-btn-equal {% if fortschritt.anlage.percent == 100 %}completed{% endif %}">
+                        Anlage (<span style="color: {{ progress_color(fortschritt.anlage.percent) }}; font-weight: bold;">{{ fortschritt.anlage.percent }}%</span>)
+                    </a>
+                    <a href="{{ url_for('ewh.ewh_test_whk', projekt_id=projekt.id) }}"
+                       class="nav-btn nav-btn-equal {% if fortschritt.whk.percent == 100 %}completed{% endif %}">
+                        WHK (<span style="color: {{ progress_color(fortschritt.whk.percent) }}; font-weight: bold;">{{ fortschritt.whk.percent }}%</span>)
+                    </a>
+                </div>
+            </div>
+
+            <!-- WHK-Übersichtstabelle -->
+            <table class="nav-table">
+                <thead class="dark-header">
+                    <tr>
+                        <th>WHK Nr.</th>
+                        <th>Abgänge</th>
+                        <th>Temperatursonden</th>
+                        <th>Antriebsheizung</th>
+                        <th>Meteostation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for whk in whk_configs %}
+                    <tr>
+                        <td class="whk-label">{{ whk.whk_nummer }}</td>
+                        <td>
+                            {% if whk.anzahl_abgaenge and whk.anzahl_abgaenge > 0 %}
+                            <a href="{{ url_for('ewh.ewh_test_abgaenge', projekt_id=projekt.id, whk_nummer=whk.whk_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if fortschritt.abgaenge[whk.whk_nummer].percent == 100 %}completed{% endif %}">
+                                Abgänge (<span style="color: {{ progress_color(fortschritt.abgaenge[whk.whk_nummer].percent) }}; font-weight: bold;">{{ fortschritt.abgaenge[whk.whk_nummer].percent }}%</span>)
+                            </a>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if whk.anzahl_temperatursonden and whk.anzahl_temperatursonden > 0 %}
+                            <a href="{{ url_for('ewh.ewh_test_temperatursonde', projekt_id=projekt.id, whk_nummer=whk.whk_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if fortschritt.temperatursonden[whk.whk_nummer].percent == 100 %}completed{% endif %}">
+                                TS (<span style="color: {{ progress_color(fortschritt.temperatursonden[whk.whk_nummer].percent) }}; font-weight: bold;">{{ fortschritt.temperatursonden[whk.whk_nummer].percent }}%</span>)
+                            </a>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if whk.hat_antriebsheizung %}
+                            <a href="{{ url_for('ewh.ewh_test_antriebsheizung', projekt_id=projekt.id, whk_nummer=whk.whk_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if fortschritt.antriebsheizung[whk.whk_nummer].percent == 100 %}completed{% endif %}">
+                                AH (<span style="color: {{ progress_color(fortschritt.antriebsheizung[whk.whk_nummer].percent) }}; font-weight: bold;">{{ fortschritt.antriebsheizung[whk.whk_nummer].percent }}%</span>)
+                            </a>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set zugeordnete_ms = whk_meteostation_map.get(whk.id) %}
+                            {% if zugeordnete_ms %}
+                            {% set ms_display = zugeordnete_ms.ms_nummer %}
+                            {% set ms_key = 'MS ' ~ zugeordnete_ms.ms_nummer if not zugeordnete_ms.ms_nummer.upper().startswith('MS') else zugeordnete_ms.ms_nummer %}
+                            <a href="{{ url_for('ewh.ewh_test_meteostation', projekt_id=projekt.id, ms_name=ms_key) }}"
+                               class="nav-btn nav-btn-compact {% if fortschritt.meteostationen.get(ms_key, {}).get('percent', 0) == 100 %}completed{% endif %}">
+                                {{ ms_key }} (<span style="color: {{ progress_color(fortschritt.meteostationen.get(ms_key, {}).get('percent', 0)) }}; font-weight: bold;">{{ fortschritt.meteostationen.get(ms_key, {}).get('percent', 0) }}%</span>)
+                            </a>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Info-Bereich -->
+            <div class="ewh-info-box">
+                <p><strong>Hinweis:</strong> Klicken Sie auf die Buttons, um die jeweiligen Tests durchzuführen.
+                   Buttons mit <span class="completed-indicator">100%</span> werden grün markiert.</p>
+            </div>
+
+        </div>
+
+    {% else %}
+        <!-- Keine WHK konfiguriert -->
+        <div class="alert alert-warning" style="margin-top: 2rem;">
+            <strong>Hinweis:</strong> Für dieses Projekt sind noch keine WHK konfiguriert.
+            <br><br>
+            <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}" class="btn-primary">Zur Konfiguration</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* EWH Übersichtsseite Styles */
+.ewh-uebersicht {
+    margin-top: 1.5rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.page-header h2 {
+    margin: 0;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Allgemein-Bereich */
+.nav-section-allgemein {
+    background: var(--card-bg, #f9fafb);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.nav-section-title {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+}
+
+.nav-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* Navigation Buttons */
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #d1d5db);
+    background: var(--bg-primary, #ffffff);
+    color: var(--text-primary, #374151);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+    border-color: var(--primary-color, #3b82f6);
+    color: var(--primary-color, #3b82f6);
+}
+
+.nav-btn.completed {
+    background: #dcfce7;
+    border-color: #22c55e;
+    color: #166534;
+}
+
+.nav-btn.completed:hover {
+    background: #bbf7d0;
+}
+
+.nav-btn-compact {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* WHK-Tabelle */
+.nav-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+/* Dark Header für Tabellen */
+.nav-table thead.dark-header {
+    background: #2c3e50;
+}
+
+.nav-table thead.dark-header th {
+    color: #ffffff;
+    border-bottom: 1px solid #1a252f;
+}
+
+.nav-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #6b7280);
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.nav-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    vertical-align: middle;
+}
+
+.nav-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.nav-table tbody tr:hover {
+    background: var(--bg-hover, #f9fafb);
+}
+
+.whk-label {
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+}
+
+.nav-empty {
+    color: var(--text-muted, #9ca3af);
+    font-style: italic;
+}
+
+/* Info-Box */
+.ewh-info-box {
+    background: var(--info-bg, #eff6ff);
+    border: 1px solid var(--info-border, #bfdbfe);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+}
+
+.ewh-info-box p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--info-text, #1e40af);
+}
+
+.completed-indicator {
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Dark Theme Support */
+[data-theme="dark"] .nav-section-allgemein {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .nav-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .nav-btn:hover {
+    background: #4b5563;
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .nav-btn.completed {
+    background: #166534;
+    border-color: #22c55e;
+    color: #dcfce7;
+}
+
+[data-theme="dark"] .nav-table {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .nav-table thead.dark-header {
+    background: #2c3e50;
+}
+
+[data-theme="dark"] .nav-table thead.dark-header th {
+    color: #ffffff;
+    border-color: #1a252f;
+}
+
+[data-theme="dark"] .nav-table td {
+    border-color: #374151;
+}
+
+[data-theme="dark"] .nav-table tbody tr:hover {
+    background: #374151;
+}
+
+[data-theme="dark"] .ewh-info-box {
+    background: #1e3a5f;
+    border-color: #3b82f6;
+}
+
+[data-theme="dark"] .ewh-info-box p {
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .page-header {
+    border-color: #374151;
+}
+
+[data-theme="dark"] .page-header .btn-secondary {
+    background: #374151;
+    color: #e5e7eb;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .page-header .btn-secondary:hover {
+    background: #4b5563;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{% if frage %}Testfrage bearbeiten{% else %}Neue Testfrage{% endif %} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{% if frage %}Testfrage bearbeiten{% else %}Neue Testfrage{% endif %}</h2>
+
+    <form method="POST" class="frage-form" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="komponente_typ">Komponententyp*</label>
+            {% set selected_typ = frage.komponente_typ if frage else tab %}
+            <select id="komponente_typ" name="komponente_typ" class="form-input" required autocomplete="off">
+                <option value="" disabled {% if not selected_typ %}selected{% endif %}>-- Bitte auswählen --</option>
+                <optgroup label="EWH-Komponenten">
+                    <option value="Anlage" {% if selected_typ == 'Anlage' %}selected{% endif %}>Anlage</option>
+                    <option value="WHK" {% if selected_typ == 'WHK' %}selected{% endif %}>WHK</option>
+                    <option value="Abgang" {% if selected_typ == 'Abgang' %}selected{% endif %}>Abgang</option>
+                    <option value="Temperatursonde" {% if selected_typ == 'Temperatursonde' %}selected{% endif %}>Temperatursonde</option>
+                    <option value="Antriebsheizung" {% if selected_typ == 'Antriebsheizung' %}selected{% endif %}>Antriebsheizung</option>
+                    <option value="Meteostation" {% if selected_typ == 'Meteostation' %}selected{% endif %}>Meteostation</option>
+                </optgroup>
+                <optgroup label="GWH-Komponenten">
+                    <option value="GWH_Anlage" {% if selected_typ == 'GWH_Anlage' %}selected{% endif %}>GWH-Anlage</option>
+                    <option value="HGLS" {% if selected_typ == 'HGLS' %}selected{% endif %}>HGLS</option>
+                    <option value="ZSK" {% if selected_typ == 'ZSK' %}selected{% endif %}>ZSK</option>
+                    <option value="GWH_Teile" {% if selected_typ == 'GWH_Teile' %}selected{% endif %}>Teile</option>
+                    <option value="GWH_Temperatursonde" {% if selected_typ == 'GWH_Temperatursonde' %}selected{% endif %}>Temperatursonde</option>
+                    <option value="GWH_Meteostation" {% if selected_typ == 'GWH_Meteostation' %}selected{% endif %}>Meteostation</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="frage_text">Testfrage*</label>
+            <textarea id="frage_text" name="frage_text" rows="3" class="form-textarea" required>{{ frage.frage_text if frage else '' }}</textarea>
+            <small>Die eigentliche Frage, die im Test angezeigt wird</small>
+        </div>
+
+        <div class="form-group">
+            <label for="test_information">Test-Information (optional)</label>
+            <textarea id="test_information" name="test_information" rows="3" class="form-textarea"
+                      placeholder="Zusätzliche Hinweise zur Durchführung des Tests">{{ frage.test_information if frage else '' }}</textarea>
+            <small>Wird in roter kursiver Schrift unter der Testfrage angezeigt</small>
+        </div>
+
+        <div class="form-group">
+            <label for="erwartetes_ergebnis">Erwartetes Ergebnis (optional)</label>
+            <textarea id="erwartetes_ergebnis" name="erwartetes_ergebnis" rows="3" class="form-textarea"
+                      placeholder="z.B. Ereignis 205, Notbetrieb wenn nur 1 Station">{{ frage.erwartetes_ergebnis if frage else '' }}</textarea>
+            <small>Was wird als Ergebnis des Tests erwartet?</small>
+        </div>
+
+        <div class="form-group">
+            <label for="screenshot">Screenshot (optional)</label>
+            <input type="file" id="screenshot" name="screenshot" class="form-input" accept="image/*">
+            {% if frage and frage.screenshot_pfad %}
+                <p class="screenshot-info">
+                    Aktuell: <a href="{{ url_for('testfragen.uploaded_screenshot', filename=frage.screenshot_pfad) }}" target="_blank">{{ frage.screenshot_pfad }}</a>
+                </p>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="screenshot_loeschen">
+                    Screenshot löschen
+                </label>
+            {% endif %}
+            <small>Erlaubte Formate: PNG, JPG, JPEG, GIF (max. 16 MB)</small>
+        </div>
+
+        <!-- Preset-Antworten -->
+        <div class="form-group preset-section">
+            <label>Preset-Antworten (optional)</label>
+            <small>Definieren Sie Standard-Checkboxen-Werte, die beim ersten Laden gesetzt werden</small>
+
+            <div class="preset-group">
+                <div class="preset-label">LSS-CH:</div>
+                <div class="preset-options-row">
+                    <label class="preset-option preset-none">
+                        <input type="radio" name="preset_lss_ch" value=""
+                               {% if not frage or not frage.preset_antworten or not frage.preset_antworten.get('lss_ch') %}checked{% endif %}>
+                        <span>Kein Preset</span>
+                    </label>
+                    <label class="preset-option preset-richtig">
+                        <input type="radio" name="preset_lss_ch" value="richtig"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('lss_ch') == 'richtig' %}checked{% endif %}>
+                        <span>✓ Richtig</span>
+                    </label>
+                    <label class="preset-option preset-falsch">
+                        <input type="radio" name="preset_lss_ch" value="falsch"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('lss_ch') == 'falsch' %}checked{% endif %}>
+                        <span>✗ Falsch</span>
+                    </label>
+                    <label class="preset-option preset-nicht-testbar">
+                        <input type="radio" name="preset_lss_ch" value="nicht_testbar"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('lss_ch') == 'nicht_testbar' %}checked{% endif %}>
+                        <span>− Nicht testbar</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="preset-group">
+                <div class="preset-label">WH-LTS:</div>
+                <div class="preset-options-row">
+                    <label class="preset-option preset-none">
+                        <input type="radio" name="preset_wh_lts" value=""
+                               {% if not frage or not frage.preset_antworten or not frage.preset_antworten.get('wh_lts') %}checked{% endif %}>
+                        <span>Kein Preset</span>
+                    </label>
+                    <label class="preset-option preset-richtig">
+                        <input type="radio" name="preset_wh_lts" value="richtig"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('wh_lts') == 'richtig' %}checked{% endif %}>
+                        <span>✓ Richtig</span>
+                    </label>
+                    <label class="preset-option preset-falsch">
+                        <input type="radio" name="preset_wh_lts" value="falsch"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('wh_lts') == 'falsch' %}checked{% endif %}>
+                        <span>✗ Falsch</span>
+                    </label>
+                    <label class="preset-option preset-nicht-testbar">
+                        <input type="radio" name="preset_wh_lts" value="nicht_testbar"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('wh_lts') == 'nicht_testbar' %}checked{% endif %}>
+                        <span>− Nicht testbar</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Speichern</button>
+            {% set gwh_komponenten = ['GWH_Anlage', 'HGLS', 'ZSK', 'GWH_Teile', 'GWH_Temperatursonde', 'GWH_Meteostation'] %}
+            {% if tab in gwh_komponenten %}
+                <a href="{{ url_for('testfragen.gwh_testfragen_verwaltung', tab=tab) }}" class="btn-cancel">Abbrechen</a>
+            {% else %}
+                <a href="{{ url_for('testfragen.testfragen_verwaltung', tab=tab) }}" class="btn-cancel">Abbrechen</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<script>
+// Validierung: Warnung wenn kein Komponententyp ausgewählt wurde
+document.querySelector('.frage-form').addEventListener('submit', function(e) {
+    const select = document.getElementById('komponente_typ');
+    if (!select.value) {
+        alert('Bitte wählen Sie einen Komponententyp aus.');
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+
+{% endblock %}

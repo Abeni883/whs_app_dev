@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Benutzerverwaltung - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Benutzerverwaltung</h2>
+    </div>
+
+    <table class="project-table">
+        <thead>
+            <tr>
+                <th>Benutzer</th>
+                <th>E-Mail</th>
+                <th>Status</th>
+                <th>Rolle</th>
+                <th>Registriert</th>
+                <th>Letzte Anmeldung</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr class="{% if not user.is_active %}inactive-row{% endif %}">
+                <td>
+                    <strong>{{ user.username }}</strong>
+                    {% if user.first_name or user.last_name %}
+                    <br><small>{{ user.full_name }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.is_active %}
+                    <span class="status-badge status-active">Aktiv</span>
+                    {% else %}
+                    <span class="status-badge status-inactive">Deaktiviert</span>
+                    {% endif %}
+                    {% if user.is_locked() %}
+                    <span class="status-badge status-locked">Gesperrt</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_admin %}
+                    <span class="role-badge role-admin">Admin</span>
+                    {% else %}
+                    <span class="role-badge role-user">Benutzer</span>
+                    {% endif %}
+                </td>
+                <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                <td>{% if user.last_login %}{{ user.last_login.strftime('%d.%m.%Y %H:%M') }}{% else %}-{% endif %}</td>
+                <td class="actions-cell">
+                    {% if user.id != current_user.id %}
+                    <div class="action-buttons">
+                        <a href="{{ url_for('auth.admin_edit_user', user_id=user.id) }}" class="btn-small btn-edit" title="Benutzer bearbeiten">
+                            Bearbeiten
+                        </a>
+
+                        <form method="POST" action="{{ url_for('auth.admin_toggle_user_active', user_id=user.id) }}" class="inline-form">
+                            <button type="submit" class="btn-small {% if user.is_active %}btn-warning{% else %}btn-success{% endif %}"
+                                    title="{% if user.is_active %}Deaktivieren{% else %}Aktivieren{% endif %}">
+                                {% if user.is_active %}Deaktivieren{% else %}Aktivieren{% endif %}
+                            </button>
+                        </form>
+
+                        <form method="POST" action="{{ url_for('auth.admin_toggle_user_admin', user_id=user.id) }}" class="inline-form">
+                            <button type="submit" class="btn-small {% if user.is_admin %}btn-secondary{% else %}btn-primary{% endif %}"
+                                    title="{% if user.is_admin %}Admin-Rechte entziehen{% else %}Zum Admin machen{% endif %}">
+                                {% if user.is_admin %}Admin entziehen{% else %}Zum Admin{% endif %}
+                            </button>
+                        </form>
+
+                        <button type="button" class="btn-small btn-danger"
+                                onclick="confirmDelete('{{ user.id }}', '{{ user.username }}')"
+                                title="Benutzer löschen">
+                            ✕ Löschen
+                        </button>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">Sie selbst</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<style>
+.inactive-row {
+    opacity: 0.6;
+    background: var(--bg-tertiary);
+}
+
+.status-badge, .role-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-right: 0.25rem;
+}
+
+.status-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-locked {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+[data-theme="dark"] .status-active {
+    background: #1e3a28;
+    color: #a7f3d0;
+}
+
+[data-theme="dark"] .status-inactive {
+    background: #3a1e1e;
+    color: #fecaca;
+}
+
+[data-theme="dark"] .status-locked {
+    background: #3a321e;
+    color: #fde68a;
+}
+
+.role-admin {
+    background: var(--accent-primary);
+    color: var(--text-inverse);
+}
+
+.role-user {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.actions-cell {
+    min-width: 280px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.btn-small {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-small.btn-primary {
+    background: var(--accent-primary);
+    color: var(--text-inverse);
+}
+
+.btn-small.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-small.btn-warning {
+    background: #f59e0b;
+    color: #ffffff;
+}
+
+.btn-small.btn-success {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.btn-small.btn-edit {
+    background: #3b82f6;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.btn-small.btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.btn-small.btn-danger:hover {
+    background: #b91c1c;
+}
+
+.btn-small:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+/* Delete Confirmation Modal */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.modal-header .warning-icon {
+    color: #dc2626;
+    font-size: 1.5rem;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.modal-body strong {
+    color: var(--text-primary);
+}
+
+.modal-footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.modal-footer .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.modal-footer .btn-cancel {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-footer .btn-confirm-delete {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.text-muted {
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+.admin-info {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-primary);
+}
+
+.admin-info p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+</style>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="warning-icon">⚠</span>
+            <h3>Benutzer löschen</h3>
+        </div>
+        <div class="modal-body">
+            <p>Benutzer <strong id="deleteUsername"></strong> wirklich dauerhaft löschen?</p>
+            <p>Diese Aktion kann nicht rückgängig gemacht werden.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" onclick="closeDeleteModal()">Abbrechen</button>
+            <form id="deleteForm" method="POST" class="inline-form">
+                <button type="submit" class="btn btn-confirm-delete">Dauerhaft löschen</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(userId, username) {
+    document.getElementById('deleteUsername').textContent = username;
+    document.getElementById('deleteForm').action = "{{ url_for('auth.admin_delete_user', user_id=0) }}".replace('/0/', '/' + userId + '/');
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
+
+// Close modal on overlay click
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+</script>
+{% endblock %}

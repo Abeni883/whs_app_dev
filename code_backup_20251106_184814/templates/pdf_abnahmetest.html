@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Abnahmetest {{ projektname }}</title>
+    <style>
+        /* PDF-spezifisches CSS */
+        @page {
+            size: A4;
+            margin-top: 3.5cm;
+            margin-bottom: 2.5cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+
+            @top-center {
+                content: element(header);
+            }
+
+            @bottom-left {
+                content: "{{ pruefdatum }}";
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                color: #666;
+            }
+            @bottom-center {
+                content: "{{ projektname }} {{ didok }}";
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                color: #666;
+            }
+            @bottom-right {
+                content: "Seite " counter(page) " von " counter(pages);
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        /* Header-Styling - Running Element */
+        .pdf-header {
+            position: running(header);
+        }
+
+        /* Header Table Layout - FINAL mit allen Anpassungen */
+        table.header-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+            margin: 0 0 15px 0;
+            border-bottom: 2px solid #333;
+        }
+
+        table.header-table tr {
+            height: 50px;
+        }
+
+        table.header-table td {
+            vertical-align: middle;
+            padding: 5px 5px;
+            border: none;
+        }
+
+        table.header-table td.header-left {
+            width: 18%;
+            text-align: left;
+            padding-left: 0;
+        }
+
+        table.header-table td.header-center {
+            width: 64%;
+            text-align: center;
+            font-size: 10pt;
+            font-weight: normal;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: visible;
+        }
+
+        table.header-table td.header-right {
+            width: 18%;
+            text-align: right;
+            padding-right: 0;
+        }
+
+        /* Logo-Größen: 36px (20% größer als 30px) */
+        table.header-table img {
+            height: 36px;
+            max-height: 36px;
+            max-width: 130px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        table.header-table td.header-left img {
+            margin: 0;
+        }
+
+        table.header-table td.header-right img {
+            margin: 0 0 0 auto;
+        }
+
+        .pdf-footer {
+            display: none; /* Verwende @page stattdessen */
+        }
+
+        /* Titelstyling */
+        h1 {
+            color: #000;
+            font-size: 18pt;
+            font-weight: bold;
+            border-bottom: none;
+            padding-bottom: 5px;
+            margin-top: 15px;
+            margin-bottom: 12px;
+            text-decoration: underline;
+        }
+
+        h2 {
+            color: #000;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+
+        h3 {
+            color: #000;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        /* Tabellen-Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 10pt;
+        }
+
+        table.info-table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table.info-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+        }
+
+        table.info-table td.field-label {
+            font-weight: bold;
+            width: 45%;
+            background-color: #e8e8e8;
+        }
+
+        table.test-table th {
+            background-color: #4472C4;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #2e5296;
+        }
+
+        table.test-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            vertical-align: top;
+        }
+
+        table.test-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        table.legend-table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table.legend-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+        }
+
+        table.legend-table td:first-child {
+            width: auto;
+        }
+
+        table.legend-table td:last-child {
+            text-align: center;
+            width: 100px;
+        }
+
+        /* Checkbox-Icons (SVG) */
+        .check-icon {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+        }
+
+        /* Icon in Legende */
+        table.legend-table .check-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Page-breaks */
+        .page-break {
+            page-break-after: always;
+        }
+
+        /* Werkabnahme Text */
+        .werkabnahme-text {
+            text-align: justify;
+            line-height: 1.5;
+            margin: 12px 0 20px 0;
+        }
+
+        /* Bemerkungen Box */
+        .bemerkungen-box {
+            min-height: 90px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0 20px 0;
+            background-color: #ffffff;
+        }
+
+        /* Signature Box */
+        .signature-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 20px 0;
+            min-height: 100px;
+            background-color: #fafafa;
+        }
+
+        /* Spaltenbreiten für Test-Tabellen */
+        .col-test {
+            width: 50%;
+        }
+
+        .col-system {
+            width: 13%;
+            text-align: center;
+        }
+
+        .col-bemerkung {
+            width: 24%;
+        }
+
+        /* Logo-Platzhalter falls Bild fehlt */
+        .logo-placeholder {
+            width: 150px;
+            height: 50px;
+            background-color: #e0e0e0;
+            border: 1px dashed #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8pt;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header auf jeder Seite -->
+    <div class="pdf-header">
+        <table class="header-table" cellpadding="0" cellspacing="0">
+            <tr>
+                <td class="header-left">
+                    {% if sbb_logo_exists %}<img src="file:///{{ assets_path }}/sbb06.gif" alt="SBB Logo">{% endif %}
+                </td>
+                <td class="header-center">WH_331 Funktionalit&auml;tstest<br>Abnahmetest V3.0</td>
+                <td class="header-right">
+                    {% if achermann_logo_exists %}<img src="file:///{{ assets_path }}/Logo Achermann black.svg" alt="Achermann Logo">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== SEITE 1: DECKBLATT ==================== -->
+    <h1>Abnahmetest Elektroweichenheizung</h1>
+
+    <h2>Projektinformationen</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold; width: 45%;">Betriebspunkt (Projektname):</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">{{ projektname }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold; width: 45%;">DIDOK:</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">{{ didok }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold; width: 45%;">Projektleiter SBB AG:</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">{{ projektleiter_sbb }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold; width: 45%;">Baumappen Version (Datum):</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">{{ baumappenversion }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold; width: 45%;">Prüfer:</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">{{ pruefer_achermann }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold; width: 45%;">Prüfdatum:</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">{{ pruefdatum }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Erläuterungen</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px;">Richtig</td>
+                <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; width: 100px;">
+                    <img src="file:///{{ assets_path }}/richtig.svg" style="width: 16px; height: 16px; vertical-align: middle;" alt="✓">
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px;">Falsch</td>
+                <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; width: 100px;">
+                    <img src="file:///{{ assets_path }}/falsch.svg" style="width: 16px; height: 16px; vertical-align: middle;" alt="✗">
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px;">Kann nicht getestet werden</td>
+                <td style="border: 1px solid #000; padding: 4px 8px; text-align: center; width: 100px;">
+                    <img src="file:///{{ assets_path }}/nicht_testbar.svg" style="width: 16px; height: 16px; vertical-align: middle;" alt="⊘">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Werkabnahme</h2>
+    <p style="text-align: justify; line-height: 1.5; margin: 12px 0 20px 0; text-decoration: none;">
+        Die Gesamte Anlage wurde getestet und auf Richtigkeit geprüft. Alle Parameter wurden eingestellt und sämtliche Alarme/Meldungen ausgetestet und für richtig befunden. LSS-CH seitig trägt Achermann &amp; Co. AG keine Verantwortung. Protokolliert wurde der IST-Zustand bei Werkabnahme.
+    </p>
+
+    <h3>Bemerkungen:</h3>
+    <div style="min-height: 90px; border: 1px solid #ccc; padding: 10px; margin: 10px 0 20px 0; background-color: #ffffff;">
+        <!-- Platz für handschriftliche Bemerkungen -->
+    </div>
+
+    <div style="margin-top: 30px; page-break-inside: avoid;">
+        <h3 style="margin-bottom: 5px; font-size: 11pt; font-weight: bold;">Unterschrift des Prüfers:</h3>
+        <p style="margin: 0 0 10px 0; font-size: 10pt;">Achermann &amp; Co. AG</p>
+        <div style="min-height: 60px; margin: 20px 0;">
+            <!-- Leer für handschriftliche Unterschrift -->
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SEITE 2+: WH-ANLAGE ==================== -->
+    {% if anlage_tests and anlage_tests|length > 0 %}
+    <h1>Abnahmetest WH-Anlage</h1>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th class="col-test">Test</th>
+                <th class="col-system">WH-LTS</th>
+                <th class="col-system">LSS-CH</th>
+                <th class="col-bemerkung">Bemerkung</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in anlage_tests %}
+            <tr>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+                <td>{{ test.bemerkung }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== WHK-TESTS ==================== -->
+    {% for whk in whk_data %}
+    <!-- WHK Hauptseite -->
+    <h1>Abnahmetest {{ whk.whk_nummer }}</h1>
+
+    {% if whk.whk_tests and whk.whk_tests|length > 0 %}
+    <h2>WHK-Tests</h2>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th class="col-test">Test</th>
+                <th class="col-system">WH-LTS</th>
+                <th class="col-system">LSS-CH</th>
+                <th class="col-bemerkung">Bemerkung</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in whk.whk_tests %}
+            <tr>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+                <td>{{ test.bemerkung }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- Abgänge - jeder auf eigener Seite -->
+    {% if whk.abgang_tests and whk.abgang_tests|length > 0 %}
+    {% for abgang_num in range(1, whk.anzahl_abgaenge + 1) %}
+    {% set abgang_name = "Abgang %02d"|format(abgang_num) %}
+    {% set abgang_tests = whk.abgang_tests|selectattr('spalte', 'equalto', abgang_name)|list %}
+    {% if abgang_tests|length > 0 %}
+    <h1>Abnahmetest {{ whk.whk_nummer }} {{ abgang_name }}</h1>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th class="col-test">Test</th>
+                <th class="col-system">WH-LTS</th>
+                <th class="col-system">LSS-CH</th>
+                <th class="col-bemerkung">Bemerkung</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in abgang_tests %}
+            <tr>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+                <td>{{ test.bemerkung }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Temperatursonden - jede auf eigener Seite -->
+    {% if whk.ts_tests and whk.ts_tests|length > 0 %}
+    {% for ts_num in range(1, whk.anzahl_temperatursonden + 1) %}
+    {% set ts_name = "TS %02d"|format(ts_num) %}
+    {% set ts_tests = whk.ts_tests|selectattr('spalte', 'equalto', ts_name)|list %}
+    {% if ts_tests|length > 0 %}
+    <h1>Abnahmetest {{ whk.whk_nummer }} Temperatursonde {{ ts_num }}</h1>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th class="col-test">Test</th>
+                <th class="col-system">WH-LTS</th>
+                <th class="col-system">LSS-CH</th>
+                <th class="col-bemerkung">Bemerkung</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in ts_tests %}
+            <tr>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+                <td>{{ test.bemerkung }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Antriebsheizung - auf eigener Seite -->
+    {% if whk.ah_tests and whk.ah_tests|length > 0 %}
+    <h1>Abnahmetest {{ whk.whk_nummer }} Antriebsheizung</h1>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th class="col-test">Test</th>
+                <th class="col-system">WH-LTS</th>
+                <th class="col-system">LSS-CH</th>
+                <th class="col-bemerkung">Bemerkung</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in whk.ah_tests %}
+            <tr>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+                <td>{{ test.bemerkung }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    {% endfor %}
+
+    <!-- ==================== METEOSTATION-TESTS ==================== -->
+    {% if meteo_data and meteo_data|length > 0 %}
+    {% for meteo in meteo_data %}
+    <div class="page-break"></div>
+    <h1>Abnahmetest Meteostation {{ meteo.meteostation }}</h1>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th class="col-test">Test</th>
+                <th class="col-system">WH-LTS</th>
+                <th class="col-system">LSS-CH</th>
+                <th class="col-bemerkung">Bemerkung</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in meteo.tests %}
+            <tr>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+                <td>{{ test.bemerkung }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Footer auf jeder Seite -->
+    <div class="pdf-footer">
+        <span>{{ pruefdatum }}</span>
+        <span>{{ projektname }} {{ didok }}</span>
+        <span>Seite <span class="page">1</span> von <span class="pages">1</span></span>
+    </div>
+</body>
+</html>

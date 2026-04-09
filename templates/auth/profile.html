@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Mein Profil</h2>
+    </div>
+
+    <!-- Profildaten -->
+    <div class="profile-section">
+        <h3>Persönliche Daten</h3>
+        <form method="POST" class="profile-form">
+            <input type="hidden" name="action" value="profile">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">Vorname</label>
+                    <input type="text" id="first_name" name="first_name"
+                           value="{{ current_user.first_name or '' }}"
+                           placeholder="Ihr Vorname">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Nachname</label>
+                    <input type="text" id="last_name" name="last_name"
+                           value="{{ current_user.last_name or '' }}"
+                           placeholder="Ihr Nachname">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="username">Benutzername</label>
+                <input type="text" id="username" value="{{ current_user.username }}" disabled>
+                <small>Der Benutzername kann nicht geändert werden.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="email">E-Mail-Adresse</label>
+                <input type="email" id="email" name="email" required
+                       value="{{ current_user.email }}"
+                       placeholder="Ihre E-Mail-Adresse">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Profil speichern</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Passwort ändern -->
+    <div class="profile-section">
+        <h3>Passwort ändern</h3>
+        <form method="POST" class="profile-form">
+            <input type="hidden" name="action" value="password">
+
+            <div class="form-group">
+                <label for="current_password">Aktuelles Passwort</label>
+                <input type="password" id="current_password" name="current_password" required
+                       placeholder="Ihr aktuelles Passwort">
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">Neues Passwort</label>
+                <input type="password" id="new_password" name="new_password" required
+                       placeholder="Mindestens 8 Zeichen" minlength="8">
+                <small>Mindestens 8 Zeichen</small>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password_confirm">Neues Passwort bestätigen</label>
+                <input type="password" id="new_password_confirm" name="new_password_confirm" required
+                       placeholder="Passwort wiederholen" minlength="8">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Passwort ändern</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Account-Info -->
+    <div class="profile-section profile-info">
+        <h3>Account-Informationen</h3>
+        <dl class="info-list">
+            <dt>Registriert am:</dt>
+            <dd>{{ current_user.created_at.strftime('%d.%m.%Y %H:%M') }}</dd>
+
+            <dt>Letzte Anmeldung:</dt>
+            <dd>{% if current_user.last_login %}{{ current_user.last_login.strftime('%d.%m.%Y %H:%M') }}{% else %}-{% endif %}</dd>
+
+            <dt>Status:</dt>
+            <dd>
+                {% if current_user.is_admin %}
+                <span class="badge badge-admin">Administrator</span>
+                {% else %}
+                <span class="badge badge-user">Benutzer</span>
+                {% endif %}
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<style>
+.profile-section {
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.profile-section h3 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.profile-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 600px) {
+    .profile-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.profile-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.profile-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.profile-form input {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.profile-form input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.profile-form input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.profile-form small {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+}
+
+.form-actions {
+    margin-top: 1rem;
+}
+
+.info-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+}
+
+.info-list dt {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.info-list dd {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-admin {
+    background: var(--accent-primary);
+    color: var(--text-inverse);
+}
+
+.badge-user {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,33 @@
+{
+  "anzahl_whk": 1,
+  "felder": [
+    {
+      "name": "WHK 01",
+      "abgang": "8",
+      "temp": "1",
+      "ah": false,
+      "meteo": "MS 01"
+    }
+  ],
+  "projektinfo": {
+    "projektname": "Granges-Lens",
+    "didok": "GRAL",
+    "projektleiter": "Norbert Küng",
+    "baumappe": "01.05.2025",
+    "pruefer": "Nicolas Abé/Patrick Schläppi",
+    "pruefdatum": "09.10.2025",
+    "bemerkungen": ""
+  },
+  "export": {
+    "filename": "WH_331 Granges-Lens GRAL",
+    "selected_path": "O:/Projekte/2025/Granges-Lens (GRAL)/4. Fotos, Prüfprotokolle, Seriennummern/Prüfprotokolle"
+  },
+  "abgaenge": {
+    "ABG": {},
+    "TS": {},
+    "AH": {},
+    "MS": {},
+    "WHK": {},
+    "ANLAGE": {}
+  }
+}

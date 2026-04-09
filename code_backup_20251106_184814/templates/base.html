@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Abnahmetest{% endblock %}</title>
+    <script>
+        // Prevent flash of wrong theme - load theme before rendering
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Abnahmetest</h1>
+            <ul>
+                <li><a href="{{ url_for('projekte') }}">Projekte</a></li>
+                <li><a href="{{ url_for('testfragen_verwaltung') }}">Testfragen</a></li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Theme umschalten" title="Dark Mode umschalten">
+                        <div class="theme-toggle-slider">
+                            <span class="theme-toggle-icon">🌙</span>
+                        </div>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Abnahmetest. Alle Rechte vorbehalten.</p>
+    </footer>
+
+    <script>
+        // Theme Toggle Functionality
+        (function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.querySelector('.theme-toggle-icon');
+
+            // Get current theme
+            function getCurrentTheme() {
+                return document.documentElement.getAttribute('data-theme') || 'light';
+            }
+
+            // Update icon based on current theme
+            function updateIcon() {
+                const currentTheme = getCurrentTheme();
+                themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+                themeToggle.setAttribute('aria-label',
+                    currentTheme === 'dark' ? 'Zu Light Mode wechseln' : 'Zu Dark Mode wechseln'
+                );
+            }
+
+            // Toggle theme
+            function toggleTheme() {
+                const currentTheme = getCurrentTheme();
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                // Set theme attribute
+                document.documentElement.setAttribute('data-theme', newTheme);
+
+                // Save to localStorage
+                localStorage.setItem('theme', newTheme);
+
+                // Update icon
+                updateIcon();
+            }
+
+            // Initialize icon on page load
+            updateIcon();
+
+            // Add click event listener
+            themeToggle.addEventListener('click', toggleTheme);
+
+            // Listen for system theme changes
+            const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            darkModeQuery.addEventListener('change', (e) => {
+                // Only update if user hasn't manually set a preference
+                if (!localStorage.getItem('theme')) {
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    updateIcon();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

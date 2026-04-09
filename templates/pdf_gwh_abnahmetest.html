@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<!-- DEBUG MARKER: Template Version 2024-12-15 v2 -->
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>GWH Abnahmetest {{ projektname }}</title>
+    <style>
+        /* PDF-spezifisches CSS für xhtml2pdf */
+        /* WICHTIG: Kein 'margin' auf @page verwenden - verursacht Tabellenfehler in xhtml2pdf 0.2.17 */
+        /* Stattdessen explizite @frame Definitionen für content und footer */
+        @page {
+            size: A4 portrait;
+
+            @frame content_frame {
+                left: 1.5cm;
+                top: 2cm;
+                right: 1.5cm;
+                bottom: 2.5cm;
+            }
+
+            @frame footer_frame {
+                -pdf-frame-content: footerContent;
+                bottom: 0.5cm;
+                left: 1.5cm;
+                right: 1.5cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        /* Header Styling */
+        .page-header {
+            margin-bottom: 5px;
+        }
+
+        .page-header table {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .page-header td {
+            padding: 5px;
+            vertical-align: middle;
+            border: none;
+        }
+
+        .page-header img {
+            height: 35px;
+            max-height: 35px;
+        }
+
+        /* Footer Content - wird durch @frame footer_frame referenziert */
+        #footerContent {
+            font-size: 9px;
+            color: #333;
+        }
+
+        #footerContent table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #footerContent td {
+            border: none;
+            padding: 0;
+        }
+
+        /* Titelstyling */
+        h1 {
+            color: #000;
+            font-size: 18pt;
+            font-weight: bold;
+            border-bottom: none;
+            padding-bottom: 2px;
+            margin-top: 0;
+            margin-bottom: 6px;
+            text-decoration: underline;
+        }
+
+        h2 {
+            color: #000;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        h3 {
+            color: #000;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* Tabellen-Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0;
+            font-size: 10pt;
+        }
+
+        table.test-table {
+            width: 100%;
+            table-layout: fixed;  /* Erzwingt feste Spaltenbreiten */
+        }
+
+        table.test-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 6px 4px;
+            line-height: 1.2;
+            font-weight: bold;
+        }
+
+        table.test-table td {
+            border: 1px solid #ddd;
+            padding: 4px;
+            vertical-align: top;
+            line-height: 1.2;
+        }
+
+        /* Spaltenbreiten für Test-Tabellen: Test breit, WH-LTS/LSS-CH schmal */
+        table.test-table .col-test { width: 50%; }
+        table.test-table .col-system { width: 10%; }
+        table.test-table .col-bemerkung { width: 30%; }
+
+        /* System-Spalten (WH-LTS, LSS-CH) zentrieren */
+        table.test-table td:nth-child(2),
+        table.test-table td:nth-child(3),
+        table.test-table th:nth-child(2),
+        table.test-table th:nth-child(3) {
+            text-align: center;
+        }
+
+        table.test-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Parameter-Tabelle */
+        table.param-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 4px 6px 2px 6px; line-height: 1.0;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #1a252f;
+        }
+
+        table.param-table td {
+            border: 1px solid #ddd;
+            padding: 3px 6px;
+            vertical-align: middle;
+        }
+
+        table.param-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Checkbox-Icons */
+        .check-icon {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+        }
+
+        /* Spaltenbreiten für Test-Tabellen - nicht mehr verwendet, inline styles stattdessen */
+
+        /* Page-breaks */
+        .page-break {
+            page-break-after: always;
+        }
+
+        /* Bemerkungen Box - height statt min-height für xhtml2pdf */
+        .bemerkungen-box {
+            height: 100px;
+            border: 1px solid #ccc !important;
+            padding: 8px !important;
+            margin: 6px 0 10px 0;
+            background-color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Footer Content - wird durch @frame footer_frame auf jeder Seite angezeigt -->
+    <div id="footerContent">
+        <table width="100%" style="font-size: 9px; border-top: 1px solid #ccc; padding-top: 3px;">
+            <tr>
+                <td width="33%" style="text-align: left;">{{ export_datum }}</td>
+                <td width="34%" style="text-align: center;">{{ projektname }} {{ didok }}</td>
+                <td width="33%" style="text-align: right;">Seite <pdf:pagenumber/> von <pdf:pagecount/></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== SEITE 1: DECKBLATT ==================== -->
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest Gasweichenheizung (GWH)</h1>
+
+    <h2 style="margin-top: 8px; margin-bottom: 3px;">Projektinformationen</h2>
+    <table style="border-collapse: collapse; margin-bottom: 6px; font-size: 9pt;">
+        <colgroup>
+            <col style="width: 50%;">
+            <col style="width: 50%;">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2; font-weight: bold;">Betriebspunkt (Projektname):</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2;">{{ projektname }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2; font-weight: bold;">DIDOK:</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2;">{{ didok }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2; font-weight: bold;">Projektleiter SBB AG:</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2;">{{ projektleiter_sbb }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2; font-weight: bold;">Baumappen Version (Datum):</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2;">{{ baumappenversion or '&nbsp;'|safe }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2; font-weight: bold;">Pr&uuml;fer:</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2;">{{ pruefer_achermann }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2; font-weight: bold;">Pr&uuml;fdatum:</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.2;">{{ pruefdatum }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 style="margin-top: 8px; margin-bottom: 3px;">Erl&auml;uterungen</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 9pt;">
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">Richtig</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; text-align: center; width: 80px;">
+                    <span style="color: #22c55e; font-size: 12pt; font-weight: bold;">&#10003;</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">Falsch</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; text-align: center; width: 80px;">
+                    <span style="color: #ef4444; font-size: 12pt; font-weight: bold;">&#10007;</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">Kann nicht getestet werden</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; text-align: center; width: 80px;">
+                    <span style="color: #6b7280; font-size: 12pt; font-weight: bold;">&#8709;</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 style="margin-top: 8px; margin-bottom: 3px;">Testergebnis</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 9pt;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; background-color: #f0f0f0; text-align: left; width: 70px;">System</th>
+                <th style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; background-color: #f0f0f0; text-align: left;">Ergebnis</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; font-weight: bold;">WH-LTS</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">
+                    <span style="color: #16a34a; font-weight: bold;">&#10003; {{ wh_lts_bestanden }} bestanden</span>
+                    <span style="margin: 0 4px; color: #999;">&middot;</span>
+                    <span style="color: #dc2626; font-weight: bold;">&#10007; {{ wh_lts_fehlgeschlagen }} fehlgeschlagen</span>
+                    <span style="margin: 0 4px; color: #999;">&middot;</span>
+                    <span style="color: #6b7280; font-weight: bold;">&#8709; {{ wh_lts_nicht_testbar }} n.t.</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; font-weight: bold;">LSS-CH</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">
+                    <span style="color: #16a34a; font-weight: bold;">&#10003; {{ lss_ch_bestanden }} bestanden</span>
+                    <span style="margin: 0 4px; color: #999;">&middot;</span>
+                    <span style="color: #dc2626; font-weight: bold;">&#10007; {{ lss_ch_fehlgeschlagen }} fehlgeschlagen</span>
+                    <span style="margin: 0 4px; color: #999;">&middot;</span>
+                    <span style="color: #6b7280; font-weight: bold;">&#8709; {{ lss_ch_nicht_testbar }} n.t.</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 style="margin-top: 8px; margin-bottom: 3px;">Werkabnahme</h2>
+    <p style="text-align: justify; line-height: 1.3; margin: 3px 0 6px 0; font-size: 9pt;">
+        Die Gesamte GWH-Anlage wurde getestet und auf Richtigkeit gepr&uuml;ft. Alle Parameter wurden eingestellt und s&auml;mtliche Alarme/Meldungen ausgetestet und f&uuml;r richtig befunden. LSS-CH seitig tr&auml;gt Achermann &amp; Co. AG keine Verantwortung. Protokolliert wurde der IST-Zustand bei Werkabnahme.
+    </p>
+
+    <h3 style="margin-top: 6px; margin-bottom: 2px;">Bemerkungen:</h3>
+    <table style="width: 100%; border: 1px solid #ccc; margin: 6px 0 10px 0;">
+        <tr>
+            <td style="height: 105px; padding: 8px; vertical-align: top; font-size: 9pt;">
+                {% if projekt.bemerkung %}{{ projekt.bemerkung }}{% else %}&nbsp;{% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 15px; page-break-inside: avoid;">
+        <h3 style="margin-bottom: 3px; font-size: 11pt; font-weight: bold;">Unterschrift des Pr&uuml;fers:</h3>
+        <p style="margin: 0 0 5px 0; font-size: 10pt;">Achermann &amp; Co. AG</p>
+        <div style="min-height: 50px; margin: 10px 0;">
+            <!-- Leer f&uuml;r handschriftliche Unterschrift -->
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== ZUSAMMENFASSUNG FEHLGESCHLAGENER TESTS ==================== -->
+    {% if failed_tests and failed_tests|length > 0 %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Zusammenfassung fehlgeschlagener Tests</h1>
+    <p style="margin-bottom: 15px; font-size: 10pt;">
+        Die folgenden {{ failed_tests|length }} Test(s) wurden als "falsch" markiert:
+    </p>
+    <table class="test-table">
+        <thead>
+            <tr>
+                <th>Komponente</th>
+                <th>Test</th>
+                <th style="text-align: center;">WH-LTS</th>
+                <th style="text-align: center;">LSS-CH</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in failed_tests %}
+            <tr>
+                <td><strong>{{ test.komponente }}</strong></td>
+                <td>{{ test.frage_text }}</td>
+                <td style="text-align: center;">{{ test.wh_lts_icon|safe }}</td>
+                <td style="text-align: center;">{{ test.lss_ch_icon|safe }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== GWH-ANLAGE TESTS ==================== -->
+    {% if anlage_tests and anlage_tests|length > 0 %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest GWH-Anlage</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in anlage_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung|default('&nbsp;', true)|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== HGLS TESTS ==================== -->
+    {% if hgls_config %}
+    {% if hgls_tests and hgls_tests|length > 0 %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest HGLS</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in hgls_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung|default('&nbsp;', true)|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <!-- HGLS Parameter -->
+    {% if hgls_parameter and hgls_parameter|length > 0 %}
+    <div class="page-break"></div>
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>HGLS Parameter</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="40%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: left; padding: 6px 8px; border: 1px solid #1a252f;">Parameter</td>
+            <td width="12%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">Einheit</td>
+            <td width="18%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">Ist-Wert</td>
+            <td width="15%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">Gepr&uuml;ft</td>
+            <td width="15%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">n.t.</td>
+        </tr>
+        {% for param in hgls_parameter %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="40%" style="padding: 4px 6px; border: 1px solid #ddd;">{{ param.label }}</td>
+            <td width="12%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{{ param.einheit|default('&nbsp;', true)|safe }}</td>
+            <td width="18%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{{ param.ist_wert|default('&nbsp;', true)|safe }}</td>
+            <td width="15%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{% if param.geprueft %}<span style="color: #22c55e;">&#10003;</span>{% else %}&nbsp;{% endif %}</td>
+            <td width="15%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{% if param.nicht_testbar %}<span style="color: #6b7280;">&#10003;</span>{% else %}&nbsp;{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== ZSK TESTS ==================== -->
+    {% for zsk in zsk_data %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest {{ zsk.zsk_nummer }}</h1>
+
+    <!-- ZSK Tests -->
+    {% if zsk.zsk_tests and zsk.zsk_tests|length > 0 %}
+    <h2>ZSK-Tests</h2>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in zsk.zsk_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung|default('&nbsp;', true)|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <!-- ZSK Parameter -->
+    {% if zsk.zsk_parameter and zsk.zsk_parameter|length > 0 %}
+    <div class="page-break"></div>
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>{{ zsk.zsk_nummer }} Parameter</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="40%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: left; padding: 6px 8px; border: 1px solid #1a252f;">Parameter</td>
+            <td width="12%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">Einheit</td>
+            <td width="18%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">Ist-Wert</td>
+            <td width="15%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">Gepr&uuml;ft</td>
+            <td width="15%" style="background-color: #2c3e50; color: white; font-weight: bold; text-align: center; padding: 6px 4px; border: 1px solid #1a252f;">n.t.</td>
+        </tr>
+        {% for param in zsk.zsk_parameter %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="40%" style="padding: 4px 6px; border: 1px solid #ddd;">{{ param.label }}</td>
+            <td width="12%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{{ param.einheit|default('&nbsp;', true)|safe }}</td>
+            <td width="18%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{{ param.ist_wert|default('&nbsp;', true)|safe }}</td>
+            <td width="15%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{% if param.geprueft %}<span style="color: #22c55e;">&#10003;</span>{% else %}&nbsp;{% endif %}</td>
+            <td width="15%" style="text-align: center; padding: 4px; border: 1px solid #ddd;">{% if param.nicht_testbar %}<span style="color: #6b7280;">&#10003;</span>{% else %}&nbsp;{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <div class="page-break"></div>
+
+    <!-- Teile Tests -->
+    {% if zsk.teile_tests and zsk.teile_tests|length > 0 %}
+    {% for teil_num in range(1, zsk.anzahl_teile + 1) %}
+    {% set teil_name = "Teil %02d"|format(teil_num) %}
+    {% set teil_tests = zsk.teile_tests|selectattr('spalte', 'equalto', teil_name)|list %}
+    {% if teil_tests|length > 0 %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest {{ zsk.zsk_nummer }} {{ teil_name }}</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in teil_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung|default('&nbsp;', true)|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% if teil_num < zsk.anzahl_teile or zsk.hat_temperatursonde %}
+    <div class="page-break"></div>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Temperatursonde Tests -->
+    {% if zsk.hat_temperatursonde and zsk.ts_tests and zsk.ts_tests|length > 0 %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest {{ zsk.zsk_nummer }} Temperatursonde</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in zsk.ts_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung|default('&nbsp;', true)|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if not loop.last or (meteo_data and meteo_data|length > 0) %}
+    <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- ==================== METEOSTATION TESTS ==================== -->
+    {% if meteo_data and meteo_data|length > 0 %}
+    {% for meteo in meteo_data %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Abnahmetest Meteostation {{ meteo.ms_nummer }}</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in meteo.tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung|default('&nbsp;', true)|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% if not loop.last %}
+    <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+</body>
+</html>

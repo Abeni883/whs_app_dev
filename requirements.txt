@@ -1,0 +1,13 @@
+﻿Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
+email-validator==2.1.0
+xhtml2pdf>=0.2.17
+Pillow==10.1.0
+python-docx==1.1.0
+python-pptx==0.6.23
+openpyxl==3.1.2
+reportlab==4.0.7
+waitress==2.1.2
+wfastcgi==3.0.0

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{% if frage %}Testfrage bearbeiten{% else %}Neue Testfrage{% endif %} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{% if frage %}Testfrage bearbeiten{% else %}Neue Testfrage{% endif %}</h2>
+
+    <form method="POST" class="frage-form">
+        <div class="form-group">
+            <label for="komponente_typ">Komponententyp*</label>
+            <select id="komponente_typ" name="komponente_typ" class="form-input" required autocomplete="off">
+                <option value="" disabled selected>-- Bitte auswählen --</option>
+                <option value="Anlage" {% if frage and frage.komponente_typ == 'Anlage' %}selected{% endif %}>Anlage</option>
+                <option value="WHK" {% if frage and frage.komponente_typ == 'WHK' %}selected{% endif %}>WHK</option>
+                <option value="Abgang" {% if frage and frage.komponente_typ == 'Abgang' %}selected{% endif %}>Abgang</option>
+                <option value="Temperatursonde" {% if frage and frage.komponente_typ == 'Temperatursonde' %}selected{% endif %}>Temperatursonde</option>
+                <option value="Antriebsheizung" {% if frage and frage.komponente_typ == 'Antriebsheizung' %}selected{% endif %}>Antriebsheizung</option>
+                <option value="Meteostation" {% if frage and frage.komponente_typ == 'Meteostation' %}selected{% endif %}>Meteostation</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="frage_text">Testfrage*</label>
+            <textarea id="frage_text" name="frage_text" rows="3" class="form-textarea" required>{{ frage.frage_text if frage else '' }}</textarea>
+            <small>Die eigentliche Frage, die im Test angezeigt wird</small>
+        </div>
+
+        <div class="form-group">
+            <label for="test_information">Test-Information (optional)</label>
+            <textarea id="test_information" name="test_information" rows="3" class="form-textarea"
+                      placeholder="Zusätzliche Hinweise zur Durchführung des Tests">{{ frage.test_information if frage else '' }}</textarea>
+            <small>Wird in roter kursiver Schrift unter der Testfrage angezeigt</small>
+        </div>
+
+        <!-- Preset-Antworten -->
+        <div class="form-group preset-section">
+            <label>Preset-Antworten (optional)</label>
+            <small>Definieren Sie Standard-Checkboxen-Werte, die beim ersten Laden gesetzt werden</small>
+
+            <div class="preset-row">
+                <div class="preset-label">LSS-CH:</div>
+                <div class="preset-options">
+                    <label class="preset-option preset-none">
+                        <input type="radio" name="preset_lss_ch" value=""
+                               {% if not frage or not frage.preset_antworten or not frage.preset_antworten.get('lss_ch') %}checked{% endif %}>
+                        <span>Kein Preset</span>
+                    </label>
+                    <label class="preset-option preset-richtig">
+                        <input type="radio" name="preset_lss_ch" value="richtig"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('lss_ch') == 'richtig' %}checked{% endif %}>
+                        <span>✓ Richtig</span>
+                    </label>
+                    <label class="preset-option preset-falsch">
+                        <input type="radio" name="preset_lss_ch" value="falsch"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('lss_ch') == 'falsch' %}checked{% endif %}>
+                        <span>✗ Falsch</span>
+                    </label>
+                    <label class="preset-option preset-nicht-testbar">
+                        <input type="radio" name="preset_lss_ch" value="nicht_testbar"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('lss_ch') == 'nicht_testbar' %}checked{% endif %}>
+                        <span>− Nicht testbar</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="preset-row">
+                <div class="preset-label">WH-LTS:</div>
+                <div class="preset-options">
+                    <label class="preset-option preset-none">
+                        <input type="radio" name="preset_wh_lts" value=""
+                               {% if not frage or not frage.preset_antworten or not frage.preset_antworten.get('wh_lts') %}checked{% endif %}>
+                        <span>Kein Preset</span>
+                    </label>
+                    <label class="preset-option preset-richtig">
+                        <input type="radio" name="preset_wh_lts" value="richtig"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('wh_lts') == 'richtig' %}checked{% endif %}>
+                        <span>✓ Richtig</span>
+                    </label>
+                    <label class="preset-option preset-falsch">
+                        <input type="radio" name="preset_wh_lts" value="falsch"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('wh_lts') == 'falsch' %}checked{% endif %}>
+                        <span>✗ Falsch</span>
+                    </label>
+                    <label class="preset-option preset-nicht-testbar">
+                        <input type="radio" name="preset_wh_lts" value="nicht_testbar"
+                               {% if frage and frage.preset_antworten and frage.preset_antworten.get('wh_lts') == 'nicht_testbar' %}checked{% endif %}>
+                        <span>− Nicht testbar</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-save">Speichern</button>
+            <a href="{{ url_for('testfragen_verwaltung', tab=tab) }}" class="btn-cancel">Abbrechen</a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Validierung: Warnung wenn kein Komponententyp ausgewählt wurde
+document.querySelector('.frage-form').addEventListener('submit', function(e) {
+    const select = document.getElementById('komponente_typ');
+    if (!select.value) {
+        alert('Bitte wählen Sie einen Komponententyp aus.');
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+
+{% endblock %}

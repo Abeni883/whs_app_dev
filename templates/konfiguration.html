@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}WH-Anlage Konfiguration - {{ projekt.projektname }} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container config-page">
+    <h2>WH-Anlage Konfiguration für Projekt: {{ projekt.projektname }}</h2>
+
+    <!-- Energie-Typ-spezifische Konfiguration -->
+    {% if projekt.energie == 'EWH' %}
+    <!-- EWH-Konfiguration -->
+    <div class="ewh-config-area" style="margin-top: 2rem;">
+
+        <!-- ==================== WHK-SEKTION ==================== -->
+        <div class="config-section whk-section" style="margin-bottom: 3rem;">
+            <div class="config-title-container">
+                <h3>Weichenheizkabinen WHK (max. 32)</h3>
+                <div class="whk-button-container">
+                    <button type="button" id="btn-add-whk" class="btn-add-whk" onclick="addWHKRow()">+ WHK hinzufügen</button>
+                    <span id="whk-counter" class="whk-counter">({% if whk_configs %}{{ whk_configs|length }}{% else %}1{% endif %} von 32 WHK)</span>
+                </div>
+            </div>
+
+            <div class="config-table-section" style="margin-top: 1.5rem;">
+                <table class="config-table whk-table" style="table-layout: fixed; width: 100%;">
+                    <colgroup>
+                        <col style="width: 25%;">
+                        <col style="width: 20%;">
+                        <col style="width: 20%;">
+                        <col style="width: 20%;">
+                        <col style="width: 15%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>WHK Nr.</th>
+                            <th>Abgänge</th>
+                            <th>Temperatursonden</th>
+                            <th>Antriebsheizung</th>
+                            <th style="text-align: center;">Löschen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ewh-config-tbody">
+                        {% if whk_configs and whk_configs|length > 0 %}
+                            {% for config in whk_configs %}
+                            <tr>
+                                <td>
+                                    <input type="text" name="whk_nr_{{ loop.index }}" class="whk-input whk-nummer" value="{{ config.whk_nummer }}" required>
+                                </td>
+                                <td>
+                                    <select name="abgaenge_{{ loop.index }}" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == config.anzahl_abgaenge %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="temperatursonden_{{ loop.index }}" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == config.anzahl_temperatursonden %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <input type="checkbox" name="antriebsheizung_{{ loop.index }}" class="whk-checkbox" {% if config.hat_antriebsheizung %}checked{% endif %}>
+                                </td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <button type="button" class="btn-delete-whk" title="WHK löschen" onclick="deleteWHKRow(this)">×</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td>
+                                    <input type="text" name="whk_nr_1" class="whk-input whk-nummer" value="WHK 01" required>
+                                </td>
+                                <td>
+                                    <select name="abgaenge_1" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == 1 %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="temperatursonden_1" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == 1 %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <input type="checkbox" name="antriebsheizung_1" class="whk-checkbox">
+                                </td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <button type="button" class="btn-delete-whk" title="WHK löschen" onclick="deleteWHKRow(this)">×</button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== METEOSTATIONEN-SEKTION ==================== -->
+        <div class="config-section meteostationen-section" style="margin-top: 3rem;">
+            <div class="config-title-container">
+                <h3>Meteostationen MS (max. 5)</h3>
+                <div class="whk-button-container">
+                    <button type="button" id="btn-add-ms" class="btn-add-whk" onclick="addMeteostationRow()">+ MS hinzufügen</button>
+                    <span id="ms-counter" class="whk-counter">({% if ewh_meteostationen %}{{ ewh_meteostationen|length }}{% else %}0{% endif %} von 5 MS)</span>
+                </div>
+            </div>
+
+            <div class="config-table-section" style="margin-top: 1.5rem;">
+                <table class="config-table meteostation-table">
+                    <colgroup>
+                        <col style="width: 42.5%;">
+                        <col style="width: 42.5%;">
+                        <col style="width: 15%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>MS Nr.</th>
+                            <th>Zugeordnete WHK</th>
+                            <th style="text-align: center;">Löschen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="meteostationen-tbody">
+                        {% if ewh_meteostationen and ewh_meteostationen|length > 0 %}
+                            {% for ms in ewh_meteostationen %}
+                            <tr>
+                                <td>
+                                    <input type="text" class="whk-input ms-nummer" value="{{ ms.ms_nummer }}" maxlength="20" required>
+                                </td>
+                                <td>
+                                    <select class="whk-select ms-whk">
+                                        <option value="">-- Nicht zugeordnet --</option>
+                                        <!-- Wird dynamisch befüllt -->
+                                    </select>
+                                </td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <button type="button" class="btn-delete-whk" title="Meteostation löschen" onclick="deleteMeteostationRow(this)">×</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Auto-Save Status Anzeige -->
+        <div id="save-status" class="save-status" style="display: none;">
+            <!-- Wird per JavaScript befüllt -->
+        </div>
+
+        <div class="auto-save-info" style="margin-top: 1.5rem;">
+            <p class="auto-save-hint">💾 Alle Änderungen werden automatisch gespeichert</p>
+        </div>
+
+        <div class="form-actions" style="margin-top: 1rem;">
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-primary">Zurück zur Projektübersicht</a>
+        </div>
+    </div>
+
+    {% elif projekt.energie == 'GWH' %}
+    <!-- GWH-Konfiguration -->
+    <div class="gwh-config-area" style="margin-top: 2rem;">
+        <h3>GWH-Konfiguration</h3>
+
+        <div class="config-section" style="margin-top: 1.5rem;">
+            <p class="placeholder-text">Die GWH-Konfiguration wird später implementiert.</p>
+        </div>
+
+        <div class="form-actions" style="margin-top: 1.5rem;">
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-secondary">Zurück zur Projektübersicht</a>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Unbekannter Energie-Typ -->
+    <div class="alert alert-error" style="margin-top: 2rem;">
+        <strong>Fehler:</strong> Unbekannter Energie-Typ "{{ projekt.energie }}". Bitte prüfen Sie die Projektkonfiguration.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const MAX_WHK_ROWS = 32;
+const MAX_MS_ROWS = 5;
+const projektId = {{ projekt.id }};
+
+// Bestehende Meteostationen-Zuordnungen speichern (für initiales Laden)
+const existingMSZuordnungen = {
+    {% if ewh_meteostationen %}
+        {% for ms in ewh_meteostationen %}
+            '{{ loop.index0 }}': '{{ ms.zugeordnete_whk.whk_nummer if ms.zugeordnete_whk else "" }}'{% if not loop.last %},{% endif %}
+        {% endfor %}
+    {% endif %}
+};
+
+// ==================== INITIALISIERUNG ====================
+document.addEventListener('DOMContentLoaded', function() {
+    checkAddButtonStatus();
+    updateWHKCounter();
+    updateMSCounter();
+    updateAllWHKDropdowns();
+    setupAutoSave();
+
+    // Setze gespeicherte WHK-Zuordnungen für Meteostationen
+    const msRows = document.querySelectorAll('#meteostationen-tbody tr');
+    msRows.forEach((row, index) => {
+        const select = row.querySelector('.ms-whk');
+        const savedWHK = existingMSZuordnungen[index];
+        if (select && savedWHK) {
+            select.value = savedWHK;
+        }
+    });
+});
+
+// ==================== WHK FUNKTIONEN ====================
+function getNextFreeWHKNumber() {
+    // Sammle alle existierenden WHK-Nummern
+    const existingNumbers = [];
+    document.querySelectorAll('#ewh-config-tbody .whk-nummer').forEach(input => {
+        const match = input.value.match(/WHK\s*(\d+)/i);
+        if (match) {
+            existingNumbers.push(parseInt(match[1]));
+        }
+    });
+
+    // Finde die nächste freie Nummer (1-32)
+    let nextNum = 1;
+    while (existingNumbers.includes(nextNum) && nextNum <= MAX_WHK_ROWS) {
+        nextNum++;
+    }
+    return nextNum;
+}
+
+function addWHKRow() {
+    const tbody = document.getElementById('ewh-config-tbody');
+    if (!tbody) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    if (currentRows >= MAX_WHK_ROWS) {
+        alert(`Maximal ${MAX_WHK_ROWS} WHK können konfiguriert werden.`);
+        return;
+    }
+
+    const nextNumber = getNextFreeWHKNumber();
+    const whkNumber = nextNumber.toString().padStart(2, '0');
+    const whkLabel = 'WHK ' + whkNumber;
+
+    const newRow = document.createElement('tr');
+
+    let selectOptions = '';
+    for (let i = 1; i <= 12; i++) {
+        selectOptions += `<option value="${i}"${i === 1 ? ' selected' : ''}>${i}</option>`;
+    }
+
+    newRow.innerHTML = `
+        <td>
+            <input type="text" name="whk_nr_${nextNumber}" class="whk-input whk-nummer" value="${whkLabel}" required>
+        </td>
+        <td>
+            <select name="abgaenge_${nextNumber}" class="whk-select" required>
+                ${selectOptions}
+            </select>
+        </td>
+        <td>
+            <select name="temperatursonden_${nextNumber}" class="whk-select" required>
+                ${selectOptions}
+            </select>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+            <input type="checkbox" name="antriebsheizung_${nextNumber}" class="whk-checkbox">
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+            <button type="button" class="btn-delete-whk" title="WHK löschen" onclick="deleteWHKRow(this)">×</button>
+        </td>
+    `;
+
+    tbody.appendChild(newRow);
+    checkAddButtonStatus();
+    updateWHKCounter();
+    updateAllWHKDropdowns();
+    triggerAutoSave();
+}
+
+function deleteWHKRow(button) {
+    const tbody = document.getElementById('ewh-config-tbody');
+    if (!tbody) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    if (currentRows <= 1) {
+        alert('Mindestens eine WHK-Zeile muss vorhanden bleiben.');
+        return;
+    }
+
+    const confirmed = confirm('Möchten Sie diese WHK-Zeile wirklich löschen?');
+
+    if (confirmed) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+            checkAddButtonStatus();
+            updateWHKCounter();
+            updateAllWHKDropdowns();
+            triggerAutoSave();
+        }
+    }
+}
+
+function checkAddButtonStatus() {
+    const whkTbody = document.getElementById('ewh-config-tbody');
+    const whkButton = document.getElementById('btn-add-whk');
+    const msTbody = document.getElementById('meteostationen-tbody');
+    const msButton = document.getElementById('btn-add-ms');
+
+    if (whkTbody && whkButton) {
+        const whkRows = whkTbody.getElementsByTagName('tr').length;
+        whkButton.disabled = whkRows >= MAX_WHK_ROWS;
+    }
+
+    if (msTbody && msButton) {
+        const msRows = msTbody.getElementsByTagName('tr').length;
+        msButton.disabled = msRows >= MAX_MS_ROWS;
+    }
+}
+
+function updateWHKCounter() {
+    const tbody = document.getElementById('ewh-config-tbody');
+    const counter = document.getElementById('whk-counter');
+
+    if (!tbody || !counter) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+    counter.textContent = `(${currentRows} von ${MAX_WHK_ROWS} WHK)`;
+
+    if (currentRows >= MAX_WHK_ROWS) {
+        counter.classList.add('whk-counter-max');
+    } else {
+        counter.classList.remove('whk-counter-max');
+    }
+}
+
+// ==================== METEOSTATIONEN FUNKTIONEN ====================
+function getNextFreeMSNumber() {
+    // Sammle alle existierenden MS-Nummern
+    const existingNumbers = [];
+    document.querySelectorAll('#meteostationen-tbody .ms-nummer').forEach(input => {
+        const match = input.value.match(/MS\s*(\d+)/i);
+        if (match) {
+            existingNumbers.push(parseInt(match[1]));
+        }
+    });
+
+    // Finde die nächste freie Nummer (1-5)
+    let nextNum = 1;
+    while (existingNumbers.includes(nextNum) && nextNum <= MAX_MS_ROWS) {
+        nextNum++;
+    }
+    return nextNum;
+}
+
+function addMeteostationRow() {
+    const tbody = document.getElementById('meteostationen-tbody');
+    if (!tbody) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    if (currentRows >= MAX_MS_ROWS) {
+        alert(`Maximal ${MAX_MS_ROWS} Meteostationen können konfiguriert werden.`);
+        return;
+    }
+
+    const nextNumber = getNextFreeMSNumber();
+    const msNumber = 'MS ' + nextNumber.toString().padStart(2, '0');
+
+    const newRow = document.createElement('tr');
+
+    newRow.innerHTML = `
+        <td>
+            <input type="text" class="whk-input ms-nummer" value="${msNumber}" maxlength="20" required>
+        </td>
+        <td>
+            <select class="whk-select ms-whk">
+                <option value="">-- Nicht zugeordnet --</option>
+            </select>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+            <button type="button" class="btn-delete-whk" title="Meteostation löschen" onclick="deleteMeteostationRow(this)">×</button>
+        </td>
+    `;
+
+    tbody.appendChild(newRow);
+    updateMSCounter();
+    checkAddButtonStatus();
+    updateAllWHKDropdowns();
+    triggerAutoSave();
+}
+
+function deleteMeteostationRow(button) {
+    // Mindestens 1 Meteostation muss vorhanden bleiben
+    const tbody = document.getElementById('meteostationen-tbody');
+    const rows = tbody ? tbody.getElementsByTagName('tr').length : 0;
+
+    if (rows <= 1) {
+        alert('Es muss mindestens eine Meteostation vorhanden sein.');
+        return;
+    }
+
+    const confirmed = confirm('Möchten Sie diese Meteostation wirklich löschen?');
+
+    if (confirmed) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+            updateMSCounter();
+            checkAddButtonStatus();
+            updateDeleteButtons();
+            triggerAutoSave();
+        }
+    }
+}
+
+function updateMSCounter() {
+    const tbody = document.getElementById('meteostationen-tbody');
+    const counter = document.getElementById('ms-counter');
+
+    if (!tbody || !counter) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+    counter.textContent = `(${currentRows} von ${MAX_MS_ROWS} MS)`;
+
+    if (currentRows >= MAX_MS_ROWS) {
+        counter.classList.add('whk-counter-max');
+    } else {
+        counter.classList.remove('whk-counter-max');
+    }
+
+    // Löschen-Buttons aktualisieren
+    updateDeleteButtons();
+}
+
+function updateDeleteButtons() {
+    const tbody = document.getElementById('meteostationen-tbody');
+    if (!tbody) return;
+
+    const rows = tbody.getElementsByTagName('tr');
+    const deleteButtons = tbody.querySelectorAll('.btn-delete-whk');
+
+    // Wenn nur 1 MS vorhanden, Löschen-Button deaktivieren
+    if (rows.length <= 1) {
+        deleteButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.3';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'Mindestens 1 Meteostation erforderlich';
+        });
+    } else {
+        deleteButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.title = 'Meteostation löschen';
+        });
+    }
+}
+
+// Aktualisiere alle Meteostation WHK-Dropdowns basierend auf vorhandenen WHKs
+function updateAllWHKDropdowns() {
+    // Sammle alle WHK-Nummern
+    const whkRows = document.querySelectorAll('#ewh-config-tbody tr');
+    const whkNummern = [];
+
+    whkRows.forEach(row => {
+        const nummer = row.querySelector('.whk-nummer')?.value.trim();
+        if (nummer) {
+            whkNummern.push(nummer);
+        }
+    });
+
+    // Aktualisiere alle MS WHK-Dropdowns
+    const msSelects = document.querySelectorAll('.ms-whk');
+    msSelects.forEach(select => {
+        const currentValue = select.value;
+
+        select.innerHTML = '<option value="">-- Nicht zugeordnet --</option>';
+
+        whkNummern.forEach(nummer => {
+            const option = document.createElement('option');
+            option.value = nummer;
+            option.textContent = nummer;
+            select.appendChild(option);
+        });
+
+        if (currentValue && whkNummern.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    });
+}
+
+// ==================== AUTO-SAVE FUNKTIONEN ====================
+let autoSaveTimeout = null;
+const AUTO_SAVE_DELAY = 500;
+
+function setupAutoSave() {
+    // Event Delegation für WHK-Tabelle
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.whk-input, .whk-nummer, .ms-nummer')) {
+            triggerAutoSave();
+        }
+        // Aktualisiere MS-Dropdowns wenn WHK-Nummern geändert werden
+        if (e.target.matches('.whk-nummer')) {
+            updateAllWHKDropdowns();
+        }
+    });
+
+    // Event Delegation für Selects und Checkboxen
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('.whk-checkbox, .whk-select, .ms-whk, input[type="checkbox"], select')) {
+            triggerAutoSave();
+        }
+    });
+
+    // Verhindere Standard-Formular-Submit
+    const form = document.getElementById('ewh-config-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            performAutoSave();
+        });
+    }
+}
+
+function triggerAutoSave() {
+    if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+    }
+
+    showSaveStatus('saving');
+
+    autoSaveTimeout = setTimeout(() => {
+        performAutoSave();
+    }, AUTO_SAVE_DELAY);
+}
+
+function performAutoSave() {
+    // Sammle WHK-Daten
+    const whkRows = document.querySelectorAll('#ewh-config-tbody tr');
+    const whkData = [];
+
+    whkRows.forEach((row) => {
+        const whkNr = row.querySelector('.whk-nummer')?.value;
+        const abgaenge = row.querySelector('select[name^="abgaenge"]')?.value;
+        const temperatursonden = row.querySelector('select[name^="temperatursonden"]')?.value;
+        const antriebsheizung = row.querySelector('input[name^="antriebsheizung"]')?.checked;
+
+        if (whkNr && whkNr.trim() !== '') {
+            whkData.push({
+                whk_nummer: whkNr.trim(),
+                anzahl_abgaenge: parseInt(abgaenge) || 1,
+                anzahl_temperatursonden: parseInt(temperatursonden) || 1,
+                hat_antriebsheizung: antriebsheizung || false
+            });
+        }
+    });
+
+    // Sammle Meteostationen-Daten
+    const msRows = document.querySelectorAll('#meteostationen-tbody tr');
+    const meteostationen = [];
+
+    msRows.forEach((row) => {
+        const nummer = row.querySelector('.ms-nummer')?.value.trim();
+        if (nummer) {
+            meteostationen.push({
+                ms_nummer: nummer,
+                zugeordnete_whk: row.querySelector('.ms-whk')?.value || ''
+            });
+        }
+    });
+
+    // Sende Daten an Server
+    fetch(`/projekt/konfiguration/auto-save/${projektId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            whk_rows: whkData,
+            meteostationen: meteostationen
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const counts = data.counts || {};
+            const message = `WHK: ${counts.whk || data.count || 0}, MS: ${counts.meteostationen || 0}`;
+            showSaveStatus('saved', message);
+        } else {
+            showSaveStatus('error', data.error || 'Unbekannter Fehler');
+            console.error('Fehler beim Speichern:', data.error);
+        }
+    })
+    .catch(error => {
+        showSaveStatus('error', 'Netzwerkfehler');
+        console.error('Fehler beim Speichern:', error);
+    });
+}
+
+// showSaveStatus wird aus shared.js verwendet
+</script>
+
+{% endblock %}

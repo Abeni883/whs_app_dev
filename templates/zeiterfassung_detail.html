@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Zeiterfassung - {{ projekt.projektname }} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Zeiterfassung: {{ projekt.projektname }}</h2>
+        <div class="header-buttons">
+            <a href="{{ url_for('zeiterfassung.zeiterfassung') }}" class="back-btn">← Zurück zur Übersicht</a>
+            <a href="{{ url_for('zeiterfassung.zeiterfassung_detail_pdf', projekt_id=projekt.id) }}" class="pdf-btn">PDF Export</a>
+        </div>
+    </div>
+
+    {% if detail_list %}
+    <table class="project-table detail-table">
+        <colgroup>
+            <col style="width: 12%;">   <!-- Datum -->
+            <col style="width: 15%;">   <!-- Benutzer -->
+            <col style="width: 15%;">   <!-- Projekt Eröffnung -->
+            <col style="width: 14%;">   <!-- Konfiguration -->
+            <col style="width: 14%;">   <!-- Abnahmetest -->
+            <col style="width: 12%;">   <!-- Export -->
+            <col style="width: 18%;">   <!-- Gesamt -->
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Benutzer</th>
+                <th class="text-center">Projekt Eröffnung</th>
+                <th class="text-center">Konfiguration</th>
+                <th class="text-center">Abnahmetest</th>
+                <th class="text-center">Export</th>
+                <th class="text-center">Gesamt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in detail_list %}
+            <tr>
+                <td>{{ item.datum }}</td>
+                <td>{{ item.user }}</td>
+                <td class="text-center">{{ item.projekt_eroeffnung_fmt }}</td>
+                <td class="text-center">{{ item.konfiguration_fmt }}</td>
+                <td class="text-center">{{ item.abnahmetest_fmt }}</td>
+                <td class="text-center">{{ item.export_fmt }}</td>
+                <td class="text-center"><strong>{{ item.gesamt_fmt }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="summen-row">
+                <td><strong>Summe</strong></td>
+                <td></td>
+                <td class="text-center"><strong>{{ summen.projekt_eroeffnung_fmt }}</strong></td>
+                <td class="text-center"><strong>{{ summen.konfiguration_fmt }}</strong></td>
+                <td class="text-center"><strong>{{ summen.abnahmetest_fmt }}</strong></td>
+                <td class="text-center"><strong>{{ summen.export_fmt }}</strong></td>
+                <td class="text-center"><strong>{{ summen.gesamt_fmt }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+    {% else %}
+    <div class="no-data">
+        <p>Noch keine Zeiterfassungsdaten für dieses Projekt vorhanden.</p>
+        <p>Die Zeiterfassung beginnt automatisch, wenn Sie Projektseiten besuchen.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Detail-Seite spezifische Styles */
+.header-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.back-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.pdf-btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #d1fae5;
+    color: #065f46;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid #10b981;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.pdf-btn:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+}
+
+[data-theme="dark"] .pdf-btn {
+    background: #1e3a28;
+    color: #a7f3d0;
+    border-color: #10b981;
+}
+
+[data-theme="dark"] .pdf-btn:hover {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+}
+
+.detail-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.detail-table th.text-center,
+.detail-table td.text-center {
+    text-align: center !important;
+}
+
+.summen-row {
+    background: var(--bg-tertiary);
+    border-top: 2px solid var(--border-color);
+}
+
+.summen-row td {
+    font-weight: 600;
+}
+
+[data-theme="dark"] .summen-row {
+    background: rgba(55, 65, 81, 0.5);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Neuer Test - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Neuen Test erfassen</h2>
+
+    <form method="POST" action="{{ url_for('new_test') }}">
+        <div class="form-group">
+            <label for="test_name">Test-Name:</label>
+            <input type="text" id="test_name" name="test_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="hardware_id">Hardware-ID:</label>
+            <input type="text" id="hardware_id" name="hardware_id" required>
+        </div>
+
+        <div class="form-group">
+            <label for="software_version">Software-Version:</label>
+            <input type="text" id="software_version" name="software_version" required>
+        </div>
+
+        <div class="form-group">
+            <label for="project_id">Projekt (optional):</label>
+            <select id="project_id" name="project_id">
+                <option value="">-- Kein Projekt --</option>
+                {% for projekt in projekte %}
+                    <option value="{{ projekt.id }}">{{ projekt.projektname }}{% if projekt.projektnummer %} ({{ projekt.projektnummer }}){% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="result">Ergebnis:</label>
+            <select id="result" name="result" required>
+                <option value="">Bitte waehlen...</option>
+                <option value="PASS">PASS</option>
+                <option value="FAIL">FAIL</option>
+                <option value="PENDING">PENDING</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="tester_name">Tester-Name:</label>
+            <input type="text" id="tester_name" name="tester_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Notizen:</label>
+            <textarea id="notes" name="notes" rows="4"></textarea>
+        </div>
+
+        <div class="form-group">
+            <button type="submit" class="btn-primary">Test speichern</button>
+            <a href="{{ url_for('index') }}" class="btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

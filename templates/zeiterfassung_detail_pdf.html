@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zeiterfassung - {{ projekt.projektname }}</title>
+    <style>
+        /* PDF-spezifisches CSS für xhtml2pdf mit @frame für Footer */
+        /* WICHTIG: Kein 'margin' auf @page verwenden - verursacht Tabellenfehler in xhtml2pdf 0.2.17 */
+        /* Stattdessen explizite @frame Definition für content */
+        @page {
+            size: A4;
+
+            @frame content_frame {
+                left: 1.5cm;
+                top: 2cm;
+                right: 1.5cm;
+                bottom: 2cm;
+            }
+
+            @frame footer_frame {
+                -pdf-frame-content: footerContent;
+                bottom: 0.3cm;
+                left: 1.5cm;
+                right: 1.5cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Footer Content für @frame (auf jeder Seite) -->
+    <div id="footerContent" style="width: 100%; border-top: 1px solid #d1d5db; padding-top: 5px;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 50%; text-align: left; font-size: 9px; color: #9ca3af; padding: 0; border: none;">Abnahmetest - Zeiterfassung | {{ export_datum }}</td>
+                <td style="width: 50%; text-align: right; font-size: 9px; color: #9ca3af; padding: 0; border: none;">Seite <pdf:pagenumber /> von <pdf:pagecount /></td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #2d3748;">
+        <h1 style="font-size: 18px; margin: 0 0 8px 0; color: #1f2937;">Zeiterfassung: {{ projekt.projektname }}</h1>
+        <p style="font-size: 12px; color: #6b7280; margin: 0;">Detaillierte Aufstellung der erfassten Projektzeiten</p>
+        <p style="margin-top: 10px; font-size: 10px; color: #6b7280;">Exportiert am: {{ export_datum }}</p>
+    </div>
+
+    <div style="margin-bottom: 15px; padding: 10px; background-color: #f3f4f6;">
+        <p style="margin: 3px 0; font-size: 10px;"><strong style="color: #374151;">Projekt:</strong> {{ projekt.projektname }}</p>
+        {% if projekt.didok_betriebspunkt %}
+        <p style="margin: 3px 0; font-size: 10px;"><strong style="color: #374151;">DIDOK:</strong> {{ projekt.didok_betriebspunkt }}</p>
+        {% endif %}
+        <p style="margin: 3px 0; font-size: 10px;"><strong style="color: #374151;">Energie:</strong>
+            {%- if projekt.energie and projekt.energie.lower() == 'gas' -%}
+            GWH
+            {%- elif projekt.energie and projekt.energie.lower() == 'strom' -%}
+            EWH
+            {%- elif projekt.energie and projekt.energie.upper() == 'GWH' -%}
+            GWH
+            {%- elif projekt.energie and projekt.energie.upper() == 'EWH' -%}
+            EWH
+            {%- else -%}
+            {{ projekt.energie or '-' }}
+            {%- endif -%}
+        </p>
+        {% if projekt.erstellt_am %}
+        <p style="margin: 3px 0; font-size: 10px;"><strong style="color: #374151;">Projekt erstellt:</strong> {{ projekt.erstellt_am.strftime('%d.%m.%Y') }}</p>
+        {% endif %}
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="width: 14%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: left; font-weight: 600; font-size: 9px;">Datum</th>
+                <th style="width: 14%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: left; font-weight: 600; font-size: 9px;">Benutzer</th>
+                <th style="width: 14%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: center; font-weight: 600; font-size: 9px;">Er&ouml;ffnung</th>
+                <th style="width: 14%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: center; font-weight: 600; font-size: 9px;">Konfig.</th>
+                <th style="width: 14%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: center; font-weight: 600; font-size: 9px;">Abnahme</th>
+                <th style="width: 14%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: center; font-weight: 600; font-size: 9px;">Export</th>
+                <th style="width: 16%; background-color: #2d3748; color: white; padding: 8px 4px; text-align: center; font-weight: 600; font-size: 9px;">Gesamt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in detail_list %}
+            <tr>
+                <td style="width: 14%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: left; font-size: 10px;">{{ item.datum }}</td>
+                <td style="width: 14%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: left; font-size: 10px;">{{ item.user }}</td>
+                <td style="width: 14%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: center; font-size: 10px;">{{ item.projekt_eroeffnung_fmt }}</td>
+                <td style="width: 14%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: center; font-size: 10px;">{{ item.konfiguration_fmt }}</td>
+                <td style="width: 14%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: center; font-size: 10px;">{{ item.abnahmetest_fmt }}</td>
+                <td style="width: 14%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: center; font-size: 10px;">{{ item.export_fmt }}</td>
+                <td style="width: 16%; border: 1px solid #d1d5db; padding: 6px 4px; text-align: center; font-size: 10px; font-weight: bold;">{{ item.gesamt_fmt }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td style="width: 14%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: left; font-size: 10px; background-color: #e5e7eb;"><strong>Summe</strong></td>
+                <td style="width: 14%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: left; font-size: 10px; background-color: #e5e7eb;"></td>
+                <td style="width: 14%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: center; font-size: 10px; background-color: #e5e7eb;"><strong>{{ summen.projekt_eroeffnung_fmt }}</strong></td>
+                <td style="width: 14%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: center; font-size: 10px; background-color: #e5e7eb;"><strong>{{ summen.konfiguration_fmt }}</strong></td>
+                <td style="width: 14%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: center; font-size: 10px; background-color: #e5e7eb;"><strong>{{ summen.abnahmetest_fmt }}</strong></td>
+                <td style="width: 14%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: center; font-size: 10px; background-color: #e5e7eb;"><strong>{{ summen.export_fmt }}</strong></td>
+                <td style="width: 16%; border: 1px solid #d1d5db; border-top: 2px solid #2d3748; padding: 8px 4px; text-align: center; font-size: 10px; background-color: #e5e7eb; font-weight: bold;"><strong>{{ summen.gesamt_fmt }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+</body>
+</html>

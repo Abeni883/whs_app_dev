@@ -1,0 +1,712 @@
+{% extends "base.html" %}
+
+{% block title %}GWH-Konfiguration - {{ projekt.projektname }} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container config-page">
+    <h2>GWH-Konfiguration für Projekt: {{ projekt.projektname }}</h2>
+
+    <div class="gwh-config-area" style="margin-top: 2rem;">
+
+        <!-- ==================== HGLS-SEKTION ==================== -->
+        <div class="config-section hgls-section" style="margin-bottom: 3rem;">
+            <div class="config-title-container">
+                <h3>Hauptgasleitungssteuerung (HGLS)</h3>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <label class="checkbox-label" style="display: inline-flex; align-items: center; font-size: 1.1rem; margin-bottom: 1.5rem;">
+                    <input type="checkbox" id="hgls-aktiv" class="whk-checkbox"
+                           {% if hgls_config %}checked{% endif %}
+                           onchange="toggleHGLSOptions()">
+                    <span style="margin-left: 0.5rem; font-weight: 500;">HGLS vorhanden</span>
+                </label>
+
+                <div id="hgls-options" style="{% if not hgls_config %}display: none;{% endif %}">
+                    <!-- Gastyp -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label for="hgls-typ" style="font-weight: 500; margin-bottom: 0.5rem; display: block;">Gastyp:</label>
+                        <select id="hgls-typ" class="whk-select" style="min-width: 220px !important; width: auto;">
+                            <option value="">-- Bitte wählen --</option>
+                            <option value="Propan" {% if hgls_config and hgls_config.hgls_typ == 'Propan' %}selected{% endif %}>Propan</option>
+                            <option value="Erdgas" {% if hgls_config and hgls_config.hgls_typ == 'Erdgas' %}selected{% endif %}>Erdgas</option>
+                        </select>
+                    </div>
+
+                    <!-- HGLS-Optionen (3 Spalten) -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-fuellventil" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_fuellventil %}checked{% endif %}>
+                            <span>Füllventil</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-bypassventil" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_bypassventil %}checked{% endif %}>
+                            <span>Bypassventil</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-gaswarnanlage" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_gaswarnanlage %}checked{% endif %}>
+                            <span>Gaswarnanlage</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-lueftungsanlage" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_lueftungsanlage %}checked{% endif %}>
+                            <span>Lüftungsanlage</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-mengenmesser-blockade" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_mengenmesser_blockade %}checked{% endif %}>
+                            <span>Mengenmesser/Blockade</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-elektroverdampfer" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_elektroverdampfer %}checked{% endif %}>
+                            <span>Elektroverdampfer</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-tankdruckueberwachung" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_tankdruckueberwachung %}checked{% endif %}>
+                            <span>Tankdrucküberwachung</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-tankberieselung" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_tankberieselung %}checked{% endif %}>
+                            <span>Tankberieselung</span>
+                        </label>
+
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="hgls-kathodenschutz" class="whk-checkbox"
+                                   {% if hgls_config and hgls_config.hat_kathodenschutz %}checked{% endif %}>
+                            <span>Kathodenschutz</span>
+                        </label>
+                    </div>
+
+                    <!-- Gasverdampfer-Anzahl -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label for="hgls-gasverdampfer" style="font-weight: 500; margin-bottom: 0.5rem; display: block;">Anzahl Gasverdampfer:</label>
+                        <select id="hgls-gasverdampfer" class="whk-select" style="width: 100px;">
+                            <option value="0" {% if not hgls_config or hgls_config.gasverdampfer_anzahl == 0 %}selected{% endif %}>0</option>
+                            <option value="1" {% if hgls_config and hgls_config.gasverdampfer_anzahl == 1 %}selected{% endif %}>1</option>
+                            <option value="2" {% if hgls_config and hgls_config.gasverdampfer_anzahl == 2 %}selected{% endif %}>2</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ZSK-SEKTION ==================== -->
+        <div class="config-section zsk-section" style="margin-bottom: 3rem;">
+            <div class="config-title-container">
+                <h3>Zündschaltkasten ZSK (max. 32)</h3>
+                <div class="whk-button-container">
+                    <button type="button" id="btn-add-zsk" class="btn-add-whk" onclick="addZSKRow()">+ ZSK hinzufügen</button>
+                    <span id="zsk-counter" class="whk-counter">({% if zsk_configs %}{{ zsk_configs|length }}{% else %}0{% endif %} von 32 ZSK)</span>
+                </div>
+            </div>
+
+            <div class="config-table-section" style="margin-top: 1.5rem;">
+                <table class="config-table">
+                    <colgroup>
+                        <col style="width: 28.33%;">
+                        <col style="width: 28.33%;">
+                        <col style="width: 28.33%;">
+                        <col style="width: 15%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>ZSK Nr.</th>
+                            <th>Anzahl Teile</th>
+                            <th>Gasversorgung</th>
+                            <th style="text-align: center;">Löschen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zsk-tbody">
+                        {% if zsk_configs and zsk_configs|length > 0 %}
+                            {% for zsk in zsk_configs %}
+                            <tr>
+                                <td>
+                                    <input type="text" class="whk-input zsk-nummer" value="{{ zsk.zsk_nummer }}" maxlength="20" required>
+                                </td>
+                                <td>
+                                    <select class="whk-select zsk-teile">
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if zsk.anzahl_teile == i %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="whk-select zsk-gasversorgung">
+                                        <option value="zentral" {% if zsk.gasversorgung == 'zentral' %}selected{% endif %}>Zentral</option>
+                                        <option value="dezentral" {% if zsk.gasversorgung == 'dezentral' %}selected{% endif %}>Dezentral</option>
+                                    </select>
+                                </td>
+                                <td style="text-align: center;">
+                                    <button type="button" class="btn-delete-whk" title="ZSK löschen" onclick="deleteZSKRow(this)">×</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== METEOSTATIONEN-SEKTION ==================== -->
+        <div class="config-section meteostationen-section" style="margin-bottom: 3rem;">
+            <div class="config-title-container">
+                <h3>Meteostationen MS (max. 5)</h3>
+                <div class="whk-button-container">
+                    <button type="button" id="btn-add-ms" class="btn-add-whk" onclick="addMeteostationRow()">+ MS hinzufügen</button>
+                    <span id="ms-counter" class="whk-counter">({% if gwh_meteostationen %}{{ gwh_meteostationen|length }}{% else %}0{% endif %} von 5 MS)</span>
+                </div>
+            </div>
+
+            <div class="config-table-section" style="margin-top: 1.5rem;">
+                <table class="config-table meteostation-table">
+                    <colgroup>
+                        <col style="width: 42.5%;">
+                        <col style="width: 42.5%;">
+                        <col style="width: 15%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>MS Nr.</th>
+                            <th>Zugeordneter ZSK</th>
+                            <th style="text-align: center;">Löschen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="meteostationen-tbody">
+                        {% if gwh_meteostationen and gwh_meteostationen|length > 0 %}
+                            {% for ms in gwh_meteostationen %}
+                            <tr>
+                                <td>
+                                    <input type="text" class="whk-input ms-nummer" value="{{ ms.ms_nummer }}" maxlength="20" required>
+                                </td>
+                                <td>
+                                    <select class="whk-select ms-zsk" style="width: 100% !important; box-sizing: border-box !important;">
+                                        <option value="">-- Nicht zugeordnet --</option>
+                                        <!-- Wird dynamisch befüllt -->
+                                    </select>
+                                </td>
+                                <td style="text-align: center;">
+                                    <button type="button" class="btn-delete-whk" title="Meteostation löschen" onclick="deleteMeteostationRow(this)">×</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Auto-Save Status Anzeige -->
+        <div id="save-status" class="save-status" style="display: none;">
+            <!-- Wird per JavaScript befüllt -->
+        </div>
+
+        <div class="auto-save-info" style="margin-top: 1.5rem;">
+            <p class="auto-save-hint">💾 Alle Änderungen werden automatisch gespeichert</p>
+        </div>
+
+        <div class="form-actions" style="margin-top: 1rem;">
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-primary">Zurück zur Projektübersicht</a>
+        </div>
+    </div>
+</div>
+
+<script>
+const MAX_ZSK_ROWS = 32;
+const MAX_MS_ROWS = 5;
+const projektId = {{ projekt.id }};
+
+// Bestehende Meteostationen-Zuordnungen speichern (für initiales Laden)
+const existingMSZuordnungen = {
+    {% if gwh_meteostationen %}
+        {% for ms in gwh_meteostationen %}
+            '{{ loop.index0 }}': '{{ ms.zugeordneter_zsk.zsk_nummer if ms.zugeordneter_zsk else "" }}'{% if not loop.last %},{% endif %}
+        {% endfor %}
+    {% endif %}
+};
+
+// ==================== INITIALISIERUNG ====================
+document.addEventListener('DOMContentLoaded', function() {
+    updateZSKCounter();
+    updateMSCounter();
+    checkAddButtonStatus();
+    updateAllMSDropdowns();
+    updateZSKDeleteButtons();
+    updateMSDeleteButtons();
+    setupAutoSave();
+
+    // Setze gespeicherte ZSK-Zuordnungen für Meteostationen
+    const msRows = document.querySelectorAll('#meteostationen-tbody tr');
+    msRows.forEach((row, index) => {
+        const select = row.querySelector('.ms-zsk');
+        const savedZSK = existingMSZuordnungen[index];
+        if (select && savedZSK) {
+            select.value = savedZSK;
+        }
+    });
+});
+
+// ==================== HGLS FUNKTIONEN ====================
+function toggleHGLSOptions() {
+    const checkbox = document.getElementById('hgls-aktiv');
+    const options = document.getElementById('hgls-options');
+
+    if (checkbox.checked) {
+        options.style.display = 'block';
+    } else {
+        options.style.display = 'none';
+    }
+
+    triggerAutoSave();
+}
+
+// ==================== ZSK FUNKTIONEN ====================
+function getNextFreeZSKNumber() {
+    // Sammle alle existierenden ZSK-Nummern
+    const existingNumbers = [];
+    document.querySelectorAll('#zsk-tbody .zsk-nummer').forEach(input => {
+        const match = input.value.match(/(\d+)/);
+        if (match) {
+            existingNumbers.push(parseInt(match[1]));
+        }
+    });
+
+    // Finde die nächste freie Nummer (1-32)
+    let nextNum = 1;
+    while (existingNumbers.includes(nextNum) && nextNum <= MAX_ZSK_ROWS) {
+        nextNum++;
+    }
+    return nextNum;
+}
+
+function addZSKRow() {
+    const tbody = document.getElementById('zsk-tbody');
+    if (!tbody) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    if (currentRows >= MAX_ZSK_ROWS) {
+        alert(`Maximal ${MAX_ZSK_ROWS} ZSK können konfiguriert werden.`);
+        return;
+    }
+
+    const nextNumber = getNextFreeZSKNumber();
+    const zskNumber = 'ZSK ' + nextNumber.toString().padStart(2, '0');
+
+    const newRow = document.createElement('tr');
+
+    let teileOptions = '';
+    for (let i = 1; i <= 12; i++) {
+        teileOptions += `<option value="${i}"${i === 1 ? ' selected' : ''}>${i}</option>`;
+    }
+
+    newRow.innerHTML = `
+        <td>
+            <input type="text" class="whk-input zsk-nummer" value="${zskNumber}" maxlength="20" required>
+        </td>
+        <td>
+            <select class="whk-select zsk-teile">
+                ${teileOptions}
+            </select>
+        </td>
+        <td>
+            <select class="whk-select zsk-gasversorgung">
+                <option value="zentral" selected>Zentral</option>
+                <option value="dezentral">Dezentral</option>
+            </select>
+        </td>
+        <td style="text-align: center;">
+            <button type="button" class="btn-delete-whk" title="ZSK löschen" onclick="deleteZSKRow(this)">×</button>
+        </td>
+    `;
+
+    tbody.appendChild(newRow);
+
+    updateZSKCounter();
+    checkAddButtonStatus();
+    updateAllMSDropdowns(); // Aktualisiere Meteostation-Dropdowns
+    triggerAutoSave();
+}
+
+function deleteZSKRow(button) {
+    const tbody = document.getElementById('zsk-tbody');
+    const rows = tbody ? tbody.getElementsByTagName('tr').length : 0;
+
+    // Mindestens 1 ZSK muss vorhanden bleiben
+    if (rows <= 1) {
+        alert('Es muss mindestens ein ZSK vorhanden sein.');
+        return;
+    }
+
+    const confirmed = confirm('Möchten Sie diesen ZSK wirklich löschen?');
+
+    if (confirmed) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+            updateZSKCounter();
+            checkAddButtonStatus();
+            updateAllMSDropdowns(); // Aktualisiere Meteostation-Dropdowns
+            updateZSKDeleteButtons(); // Löschen-Buttons aktualisieren
+            triggerAutoSave();
+        }
+    }
+}
+
+function updateZSKCounter() {
+    const tbody = document.getElementById('zsk-tbody');
+    const counter = document.getElementById('zsk-counter');
+
+    if (!tbody || !counter) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+    counter.textContent = `(${currentRows} von ${MAX_ZSK_ROWS} ZSK)`;
+
+    if (currentRows >= MAX_ZSK_ROWS) {
+        counter.classList.add('whk-counter-max');
+    } else {
+        counter.classList.remove('whk-counter-max');
+    }
+
+    // Löschen-Buttons aktualisieren
+    updateZSKDeleteButtons();
+}
+
+function updateZSKDeleteButtons() {
+    const tbody = document.getElementById('zsk-tbody');
+    if (!tbody) return;
+
+    const rows = tbody.getElementsByTagName('tr');
+    const deleteButtons = tbody.querySelectorAll('.btn-delete-whk');
+
+    // Wenn nur 1 ZSK vorhanden, Löschen-Button deaktivieren
+    if (rows.length <= 1) {
+        deleteButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.3';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'Mindestens 1 ZSK erforderlich';
+        });
+    } else {
+        deleteButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.title = 'ZSK löschen';
+        });
+    }
+}
+
+// ==================== METEOSTATIONEN FUNKTIONEN ====================
+function getNextFreeMSNumber() {
+    // Sammle alle existierenden MS-Nummern
+    const existingNumbers = [];
+    document.querySelectorAll('#meteostationen-tbody .ms-nummer').forEach(input => {
+        const match = input.value.match(/(\d+)/);
+        if (match) {
+            existingNumbers.push(parseInt(match[1]));
+        }
+    });
+
+    // Finde die nächste freie Nummer (1-5)
+    let nextNum = 1;
+    while (existingNumbers.includes(nextNum) && nextNum <= MAX_MS_ROWS) {
+        nextNum++;
+    }
+    return nextNum;
+}
+
+function addMeteostationRow() {
+    const tbody = document.getElementById('meteostationen-tbody');
+    if (!tbody) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    if (currentRows >= MAX_MS_ROWS) {
+        alert(`Maximal ${MAX_MS_ROWS} Meteostationen können konfiguriert werden.`);
+        return;
+    }
+
+    const nextNumber = getNextFreeMSNumber();
+    const msNumber = 'MS ' + nextNumber.toString().padStart(2, '0');
+
+    const newRow = document.createElement('tr');
+
+    newRow.innerHTML = `
+        <td>
+            <input type="text" class="whk-input ms-nummer" value="${msNumber}" maxlength="20" required>
+        </td>
+        <td>
+            <select class="whk-select ms-zsk" style="width: 100% !important; box-sizing: border-box !important;">
+                <option value="">-- Nicht zugeordnet --</option>
+            </select>
+        </td>
+        <td style="text-align: center;">
+            <button type="button" class="btn-delete-whk" title="Meteostation löschen" onclick="deleteMeteostationRow(this)">×</button>
+        </td>
+    `;
+
+    tbody.appendChild(newRow);
+
+    updateMSCounter();
+    checkAddButtonStatus();
+    updateAllMSDropdowns(); // Befülle ZSK-Dropdown
+    triggerAutoSave();
+}
+
+function deleteMeteostationRow(button) {
+    // Mindestens 1 Meteostation muss vorhanden bleiben
+    const tbody = document.getElementById('meteostationen-tbody');
+    const rows = tbody ? tbody.getElementsByTagName('tr').length : 0;
+
+    if (rows <= 1) {
+        alert('Es muss mindestens eine Meteostation vorhanden sein.');
+        return;
+    }
+
+    const confirmed = confirm('Möchten Sie diese Meteostation wirklich löschen?');
+
+    if (confirmed) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+            updateMSCounter();
+            checkAddButtonStatus();
+            updateMSDeleteButtons();
+            triggerAutoSave();
+        }
+    }
+}
+
+function updateMSCounter() {
+    const tbody = document.getElementById('meteostationen-tbody');
+    const counter = document.getElementById('ms-counter');
+
+    if (!tbody || !counter) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+    counter.textContent = `(${currentRows} von ${MAX_MS_ROWS} MS)`;
+
+    if (currentRows >= MAX_MS_ROWS) {
+        counter.classList.add('whk-counter-max');
+    } else {
+        counter.classList.remove('whk-counter-max');
+    }
+
+    // Löschen-Buttons aktualisieren
+    updateMSDeleteButtons();
+}
+
+function updateMSDeleteButtons() {
+    const tbody = document.getElementById('meteostationen-tbody');
+    if (!tbody) return;
+
+    const rows = tbody.getElementsByTagName('tr');
+    const deleteButtons = tbody.querySelectorAll('.btn-delete-whk');
+
+    // Wenn nur 1 MS vorhanden, Löschen-Button deaktivieren
+    if (rows.length <= 1) {
+        deleteButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.3';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'Mindestens 1 Meteostation erforderlich';
+        });
+    } else {
+        deleteButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.title = 'Meteostation löschen';
+        });
+    }
+}
+
+// Aktualisiere alle Meteostation ZSK-Dropdowns basierend auf vorhandenen ZSKs
+function updateAllMSDropdowns() {
+    // Sammle alle ZSK-Nummern
+    const zskRows = document.querySelectorAll('#zsk-tbody tr');
+    const zskNummern = [];
+
+    zskRows.forEach(row => {
+        const nummer = row.querySelector('.zsk-nummer')?.value.trim();
+        if (nummer) {
+            zskNummern.push(nummer);
+        }
+    });
+
+    // Aktualisiere alle MS ZSK-Dropdowns
+    const msSelects = document.querySelectorAll('.ms-zsk');
+    msSelects.forEach(select => {
+        const currentValue = select.value; // Merke aktuellen Wert
+
+        // Leere Dropdown
+        select.innerHTML = '<option value="">-- Nicht zugeordnet --</option>';
+
+        // Füge alle ZSKs hinzu
+        zskNummern.forEach(nummer => {
+            const option = document.createElement('option');
+            option.value = nummer;
+            option.textContent = nummer;
+            select.appendChild(option);
+        });
+
+        // Stelle vorherigen Wert wieder her (falls noch vorhanden)
+        if (currentValue && zskNummern.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    });
+}
+
+// ==================== BUTTON STATUS ====================
+function checkAddButtonStatus() {
+    const zskTbody = document.getElementById('zsk-tbody');
+    const zskButton = document.getElementById('btn-add-zsk');
+    const msTbody = document.getElementById('meteostationen-tbody');
+    const msButton = document.getElementById('btn-add-ms');
+
+    if (zskTbody && zskButton) {
+        const zskRows = zskTbody.getElementsByTagName('tr').length;
+        zskButton.disabled = zskRows >= MAX_ZSK_ROWS;
+    }
+
+    if (msTbody && msButton) {
+        const msRows = msTbody.getElementsByTagName('tr').length;
+        msButton.disabled = msRows >= MAX_MS_ROWS;
+    }
+}
+
+// ==================== AUTO-SAVE FUNKTIONEN ====================
+let autoSaveTimeout = null;
+let saveStatusTimeout = null;
+const AUTO_SAVE_DELAY = 500; // 500ms Verzögerung
+
+function setupAutoSave() {
+    // Event Delegation für Text-Inputs
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.whk-input, .zsk-nummer, .ms-nummer')) {
+            triggerAutoSave();
+        }
+    });
+
+    // Event Delegation für Selects und Checkboxen (change Event)
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('.whk-checkbox, .whk-select, input[type="checkbox"], select')) {
+            triggerAutoSave();
+        }
+    });
+
+    // Aktualisiere MS-Dropdowns wenn ZSK-Nummern geändert werden
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.zsk-nummer')) {
+            updateAllMSDropdowns();
+        }
+    });
+}
+
+function triggerAutoSave() {
+    if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+    }
+
+    showSaveStatus('saving');
+
+    autoSaveTimeout = setTimeout(() => {
+        performAutoSave();
+    }, AUTO_SAVE_DELAY);
+}
+
+function performAutoSave() {
+    // Sammle HGLS-Daten
+    const hglsAktiv = document.getElementById('hgls-aktiv')?.checked || false;
+    const hglsData = {
+        aktiv: hglsAktiv,
+        typ: hglsAktiv ? (document.getElementById('hgls-typ')?.value || null) : null,
+        fuellventil: hglsAktiv ? (document.getElementById('hgls-fuellventil')?.checked || false) : false,
+        bypassventil: hglsAktiv ? (document.getElementById('hgls-bypassventil')?.checked || false) : false,
+        gaswarnanlage: hglsAktiv ? (document.getElementById('hgls-gaswarnanlage')?.checked || false) : false,
+        lueftungsanlage: hglsAktiv ? (document.getElementById('hgls-lueftungsanlage')?.checked || false) : false,
+        mengenmesser_blockade: hglsAktiv ? (document.getElementById('hgls-mengenmesser-blockade')?.checked || false) : false,
+        elektroverdampfer: hglsAktiv ? (document.getElementById('hgls-elektroverdampfer')?.checked || false) : false,
+        gasverdampfer_anzahl: hglsAktiv ? parseInt(document.getElementById('hgls-gasverdampfer')?.value || 0) : 0,
+        tankdruckueberwachung: hglsAktiv ? (document.getElementById('hgls-tankdruckueberwachung')?.checked || false) : false,
+        tankberieselung: hglsAktiv ? (document.getElementById('hgls-tankberieselung')?.checked || false) : false,
+        kathodenschutz: hglsAktiv ? (document.getElementById('hgls-kathodenschutz')?.checked || false) : false
+    };
+
+    // Sammle ZSK-Daten
+    const zskRows = document.querySelectorAll('#zsk-tbody tr');
+    const zskListe = [];
+
+    zskRows.forEach(row => {
+        const nummer = row.querySelector('.zsk-nummer')?.value.trim();
+        if (nummer) {
+            zskListe.push({
+                zsk_nummer: nummer,
+                anzahl_teile: parseInt(row.querySelector('.zsk-teile')?.value || 1),
+                gasversorgung: row.querySelector('.zsk-gasversorgung')?.value || 'zentral'
+            });
+        }
+    });
+
+    // Sammle Meteostationen-Daten
+    const msRows = document.querySelectorAll('#meteostationen-tbody tr');
+    const meteostationen = [];
+
+    msRows.forEach(row => {
+        const nummer = row.querySelector('.ms-nummer')?.value.trim();
+        if (nummer) {
+            meteostationen.push({
+                ms_nummer: nummer,
+                name: row.querySelector('.ms-name')?.value.trim() || `MS ${nummer}`,
+                zugeordneter_zsk: row.querySelector('.ms-zsk')?.value || '',
+                modbus_adresse: parseInt(row.querySelector('.ms-modbus')?.value || 50)
+            });
+        }
+    });
+
+    // Sende Daten an Server
+    fetch(`/projekt/${projektId}/gwh-konfiguration`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            hgls: hglsData,
+            zsk_liste: zskListe,
+            meteostationen: meteostationen
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const counts = data.counts || {};
+            const message = `HGLS: ${counts.hgls || 0}, ZSK: ${counts.zsk || 0}, MS: ${counts.meteostationen || 0}`;
+            showSaveStatus('saved', message);
+        } else {
+            showSaveStatus('error', data.error || 'Unbekannter Fehler');
+            console.error('Fehler beim Speichern:', data.error);
+        }
+    })
+    .catch(error => {
+        showSaveStatus('error', 'Netzwerkfehler');
+        console.error('Fehler beim Speichern:', error);
+    });
+}
+
+// showSaveStatus wird aus shared.js verwendet
+</script>
+
+{% endblock %}

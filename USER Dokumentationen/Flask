@@ -1,0 +1,35 @@
+Flask
+________________
+
+# STARTEN
+nssm start WHSApp
+
+# STOPPEN  
+nssm stop WHSApp
+
+# NEUSTARTEN
+nssm restart WHSApp
+
+--------------------------------
+
+# Starten
+cd C:\Projekte\whs_app
+.\venv\Scripts\activate
+flask run
+# Oder: python app.py
+
+# Stoppen
+Ctrl + C
+
+# Neustarten
+Ctrl + C, dann wieder: flask run
+
+------------------------------
+
+Status prüfen
+
+# Service-Status
+nssm status WHSApp
+
+# Server testen
+Invoke-WebRequest http://localhost:5000

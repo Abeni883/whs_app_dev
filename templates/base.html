@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Abnahmetest{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
+    <script>
+        // Prevent flash of wrong theme - load theme before rendering
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-brand">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="nav-logo">
+                <h1>Abnahmetest</h1>
+            </div>
+            {% if current_user.is_authenticated %}
+            <ul>
+                <li><a href="{{ url_for('projekte.projekte') }}">Projekte</a></li>
+                <li><a href="{{ url_for('testabschluss') }}">Testabschluss</a></li>
+                <li><a href="{{ url_for('export.export') }}">Export</a></li>
+                <li class="nav-dropdown">
+                    <button class="nav-dropdown-toggle">Einstellungen ▼</button>
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url_for('testfragen.testfragen_verwaltung') }}">EWH Testfragen</a>
+                        <a href="{{ url_for('testfragen.gwh_testfragen_verwaltung') }}">GWH Testfragen</a>
+                        <a href="{{ url_for('testabschluss_settings') }}">Testabschluss-Texte</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('zeiterfassung.zeiterfassung') }}">Zeiterfassung</a>
+                        {% if current_user.is_admin %}
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('auth.admin_users') }}">Benutzerverwaltung</a>
+                        <a href="{{ url_for('einstellungen_allgemein') }}">Allgemeine Einstellungen</a>
+                        {% endif %}
+                    </div>
+                </li>
+                <li class="user-dropdown">
+                    <button class="user-dropdown-toggle">
+                        <span class="user-avatar">{{ current_user.username[0]|upper }}</span>
+                        <span>{{ current_user.username }}</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="user-dropdown-menu">
+                        <div class="user-dropdown-header">
+                            <div class="user-name">{{ current_user.full_name }}</div>
+                            <div class="user-email">{{ current_user.email }}</div>
+                        </div>
+                        <a href="{{ url_for('auth.profile') }}">Profil</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('auth.logout') }}" class="logout-link">Abmelden</a>
+                    </div>
+                </li>
+                <li>
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Theme umschalten" title="Dark Mode umschalten">
+                        <div class="theme-toggle-slider">
+                            <span class="theme-toggle-icon">🌙</span>
+                        </div>
+                    </button>
+                </li>
+            </ul>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Abnahmetest. Alle Rechte vorbehalten.</p>
+    </footer>
+
+    <!-- Shared JavaScript Functions -->
+    <script src="{{ url_for('static', filename='js/shared.js') }}"></script>
+
+    <script>
+        // Theme Toggle Functionality
+        (function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.querySelector('.theme-toggle-icon');
+
+            // Get current theme
+            function getCurrentTheme() {
+                return document.documentElement.getAttribute('data-theme') || 'light';
+            }
+
+            // Update icon based on current theme
+            function updateIcon() {
+                const currentTheme = getCurrentTheme();
+                themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+                themeToggle.setAttribute('aria-label',
+                    currentTheme === 'dark' ? 'Zu Light Mode wechseln' : 'Zu Dark Mode wechseln'
+                );
+            }
+
+            // Toggle theme
+            function toggleTheme() {
+                const currentTheme = getCurrentTheme();
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                // Set theme attribute
+                document.documentElement.setAttribute('data-theme', newTheme);
+
+                // Save to localStorage
+                localStorage.setItem('theme', newTheme);
+
+                // Update icon
+                updateIcon();
+            }
+
+            // Initialize icon on page load
+            updateIcon();
+
+            // Add click event listener
+            themeToggle.addEventListener('click', toggleTheme);
+
+            // Listen for system theme changes
+            const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            darkModeQuery.addEventListener('change', (e) => {
+                // Only update if user hasn't manually set a preference
+                if (!localStorage.getItem('theme')) {
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    updateIcon();
+                }
+            });
+        })();
+
+        // Zeiterfassung Tracking
+        (function() {
+            const currentPath = window.location.pathname;
+            let activityType = null;
+            let projektId = null;
+
+            // Ermittle Aktivitätstyp basierend auf URL
+            if (currentPath.includes('/projekt/konfiguration/') || currentPath.includes('/gwh-konfiguration')) {
+                activityType = 'konfiguration';
+                let match = currentPath.match(/\/projekt\/konfiguration\/(\d+)/);
+                if (!match) match = currentPath.match(/\/projekt\/(\d+)\/gwh-konfiguration/);
+                if (match) projektId = parseInt(match[1]);
+            } else if (currentPath.includes('/projekt/abnahmetest/') || currentPath.includes('/gwh-abnahmetest') || currentPath.includes('/ewh-test/') || currentPath.includes('/gwh-test/')) {
+                activityType = 'abnahmetest';
+                let match = currentPath.match(/\/projekt\/abnahmetest\/(\d+)/);
+                if (!match) match = currentPath.match(/\/projekt\/(\d+)\/gwh-abnahmetest/);
+                if (!match) match = currentPath.match(/\/projekt\/(\d+)\/ewh-test\//);
+                if (!match) match = currentPath.match(/\/projekt\/(\d+)\/gwh-test\//);
+                if (match) projektId = parseInt(match[1]);
+            } else if (currentPath.includes('/export/projekt/')) {
+                activityType = 'export';
+                const match = currentPath.match(/\/export\/projekt\/(\d+)/);
+                if (match) projektId = parseInt(match[1]);
+            } else if (currentPath === '/export') {
+                activityType = 'export';
+            } else if (currentPath === '/testabschluss') {
+                activityType = 'testabschluss';
+            } else if (currentPath.includes('/testfragen')) {
+                activityType = 'testfragen';
+            }
+
+            // Nur tracken wenn relevante Seite
+            if (!activityType) return;
+
+            const sessionKey = 'timeLog_' + activityType + '_' + (projektId || 'general');
+            let logId = sessionStorage.getItem(sessionKey);
+
+            // Starte neuen Log
+            function startLog() {
+                fetch('/api/time-log/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projekt_id: projektId,
+                        activity_type: activityType,
+                        page_url: window.location.href
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.log_id) {
+                        logId = data.log_id;
+                        sessionStorage.setItem(sessionKey, logId);
+                    }
+                })
+                .catch(err => console.log('Zeiterfassung Start Fehler:', err));
+            }
+
+            // Beende Log
+            function stopLog() {
+                if (!logId) return;
+
+                // Synchroner Request beim Verlassen der Seite
+                const data = JSON.stringify({ log_id: parseInt(logId) });
+                navigator.sendBeacon('/api/time-log/stop', new Blob([data], { type: 'application/json' }));
+                sessionStorage.removeItem(sessionKey);
+            }
+
+            // Heartbeat alle 60 Sekunden
+            function heartbeat() {
+                if (!logId) return;
+
+                fetch('/api/time-log/heartbeat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ log_id: parseInt(logId) })
+                }).catch(() => {});
+            }
+
+            // Event Listeners
+            window.addEventListener('beforeunload', stopLog);
+            window.addEventListener('pagehide', stopLog);
+
+            // Starte Log wenn keine aktive Session existiert
+            if (!logId) {
+                startLog();
+            }
+
+            // Heartbeat Intervall
+            setInterval(heartbeat, 60000);
+        })();
+    </script>
+</body>
+</html>

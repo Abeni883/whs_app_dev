@@ -1,0 +1,92 @@
+===============================================================================
+BACKUP-INFORMATIONEN
+===============================================================================
+
+Backup-Zeitpunkt: 2025-11-06 18:48:14
+Backup-Grund:     Code-Aufräumen vor Reorganisation
+Erstellt von:     Claude Code (automatisches Backup)
+
+===============================================================================
+GESICHERTE DATEN
+===============================================================================
+
+1. DATENBANK
+   Pfad:   database_backups/whs_before_cleanup_20251106_184814.db
+   Größe:  124 KB
+   Status: ✓ GESICHERT
+
+2. PYTHON-DATEIEN
+   Anzahl: 26 Dateien
+   Status: ✓ GESICHERT
+
+   Wichtigste Dateien:
+   - app.py (49 KB)
+   - models.py (4.9 KB)
+   - config.py
+   - config_dev.py
+   - Alle Migrations-Scripts
+   - Alle Helper-Scripts
+
+3. TEMPLATES
+   Anzahl: 10 HTML-Dateien
+   Status: ✓ GESICHERT
+
+===============================================================================
+GEPLANTE ÄNDERUNGEN (nach diesem Backup)
+===============================================================================
+
+PHASE 1: Sofort löschen
+- reset_db.py.py (falscher Dateiname)
+
+PHASE 2: Migrations archivieren (in migrations_archive/)
+- migrate_database.py
+- migrate_weichenheizung.py
+- migrate_abnahmetest.py
+- add_preset_antworten.py
+- add_spalte_column.py
+- fix_foreign_keys.py
+- fix_komponente_index.py
+- update_projects_table.py
+- clear_test_results.py
+
+PHASE 3: Helper-Scripts organisieren (in scripts/)
+- create_test_project.py
+- update_all_presets.py
+- test_weasyprint.py
+- export_database.py
+- import_json_project.py
+- import_obermatt_testfragen.py
+- generate_test_data.py
+- test_waitress.py
+- verify_import.py
+
+===============================================================================
+WIEDERHERSTELLUNG
+===============================================================================
+
+Falls etwas schiefgeht:
+
+1. Datenbank wiederherstellen:
+   cp database_backups/whs_before_cleanup_20251106_184814.db database/whs.db
+
+2. Code-Dateien wiederherstellen:
+   cp code_backup_20251106_184814/*.py .
+   cp -r code_backup_20251106_184814/templates .
+
+3. Server neu starten:
+   venv\Scripts\python.exe run_dev_alt.py
+
+===============================================================================
+BACKUP-INTEGRITÄT
+===============================================================================
+
+Datenbank-Tabellen:
+- projects
+- whk_configs
+- test_questions
+- abnahme_test_results
+- test_results
+
+Alle Tabellen und Daten sind vollständig gesichert!
+
+===============================================================================

@@ -1,0 +1,31 @@
+Branch:
+
+1. Dann erstellen wir jetzt deinen ersten Feature-Branch:
+
+git checkout -b feature-pdf-export
+
+--------------------------------------------------------
+
+2. Workflow:
+
+Arbeite am PDF-Export - mach deine Änderungen
+Speichere regelmäßig:
+
+git add .
+git commit -m "PDF Export: Beschreibung der Änderung"
+
+---------------------------------------------------------
+
+3. Wenn fertig, zurück zu main und mergen:
+
+git checkout main
+git merge feature-pdf-export
+git push
+
+---------------------------------------------------------
+
+Tipp: Du kannst jederzeit checken, auf welchem Branch du bist:
+
+git branch
+
+Der aktive Branch hat ein * davor.

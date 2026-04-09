@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Abnahmetest {{ projektname }}</title>
+    <style>
+        /* PDF-spezifisches CSS für xhtml2pdf mit @frame für Header/Footer */
+        /* WICHTIG: Kein 'margin' auf @page verwenden - verursacht Tabellenfehler in xhtml2pdf 0.2.17 */
+        /* Stattdessen explizite @frame Definitionen für content */
+        @page {
+            size: A4;
+
+            @frame content_frame {
+                left: 1.5cm;
+                top: 2.5cm;
+                right: 1.5cm;
+                bottom: 2.5cm;
+            }
+
+            @frame header_frame {
+                -pdf-frame-content: headerContent;
+                top: 0.5cm;
+                left: 1.5cm;
+                right: 1.5cm;
+                height: 1.8cm;
+            }
+
+            @frame footer_frame {
+                -pdf-frame-content: footerContent;
+                bottom: 0.3cm;
+                left: 1.5cm;
+                right: 1.5cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        /* Header Content (wird auf jeder Seite wiederholt) */
+        #headerContent {
+            width: 100%;
+        }
+
+        #headerContent table {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 2px solid #333;
+        }
+
+        #headerContent td {
+            padding: 5px;
+            vertical-align: middle;
+            border: none;
+        }
+
+        /* Logo-Styles: nur height setzen, width auto für korrektes Seitenverhältnis */
+        #headerContent img {
+            height: 35px;
+            max-height: 35px;
+        }
+
+        /* Footer Content (wird auf jeder Seite wiederholt) */
+        #footerContent {
+            width: 100%;
+            border-top: 1px solid #ccc;
+            padding-top: 5px;
+        }
+
+        #footerContent table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #footerContent td {
+            font-size: 9pt;
+            color: #666;
+            padding: 0;
+            border: none;
+        }
+
+        #footerContent .footer-left {
+            width: 33%;
+            text-align: left;
+        }
+
+        #footerContent .footer-center {
+            width: 34%;
+            text-align: center;
+        }
+
+        #footerContent .footer-right {
+            width: 33%;
+            text-align: right;
+        }
+
+        /* Titelstyling - kompakter */
+        h1 {
+            color: #000;
+            font-size: 18pt;
+            font-weight: bold;
+            border-bottom: none;
+            padding-bottom: 2px;
+            margin-top: 0;
+            margin-bottom: 6px;
+            text-decoration: underline;
+        }
+
+        h2 {
+            color: #000;
+            font-size: 14pt;
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        h3 {
+            color: #000;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* Tabellen-Styling - kompakter */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0;
+            font-size: 10pt;
+        }
+
+        table.info-table {
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.info-table td {
+            border: 1px solid #000;
+            padding: 4px 8px;
+        }
+
+        table.info-table td.field-label {
+            font-weight: bold;
+            width: 45%;
+            background-color: #e8e8e8;
+        }
+
+        /* Test-Tabellen verwenden jetzt Inline-Styles (wie GWH) */
+
+        table.legend-table {
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        table.legend-table td {
+            border: 1px solid #000;
+            padding: 4px 8px;
+        }
+
+        table.legend-table td:first-child {
+            width: auto;
+        }
+
+        table.legend-table td:last-child {
+            text-align: center;
+            width: 100px;
+        }
+
+        /* Checkbox-Icons (SVG) */
+        .check-icon {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+        }
+
+        /* Icon in Legende */
+        table.legend-table .check-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Page-breaks */
+        .page-break {
+            page-break-after: always;
+        }
+
+        /* Werkabnahme Text */
+        .werkabnahme-text {
+            text-align: justify;
+            line-height: 1.4;
+            margin: 6px 0 10px 0;
+        }
+
+        /* Bemerkungen Box - height statt min-height für xhtml2pdf */
+        .bemerkungen-box {
+            height: 100px;
+            border: 1px solid #ccc !important;
+            padding: 8px !important;
+            margin: 6px 0 10px 0;
+            background-color: #ffffff;
+        }
+
+        /* Signature Box */
+        .signature-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 15px 0;
+            min-height: 80px;
+            background-color: #fafafa;
+        }
+
+        /* Logo-Platzhalter falls Bild fehlt */
+        .logo-placeholder {
+            width: 150px;
+            height: 50px;
+            background-color: #e0e0e0;
+            border: 1px dashed #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8pt;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Content für @frame (auf jeder Seite) -->
+    <div id="headerContent">
+        <table>
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    WH_331 Funktionalit&auml;tstest<br>Abnahmetest V3.0
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer Content für @frame (auf jeder Seite) -->
+    <div id="footerContent">
+        <table>
+            <tr>
+                <td class="footer-left">{{ export_datum }}</td>
+                <td class="footer-center">{{ projektname }} {{ didok }}</td>
+                <td class="footer-right">Seite <pdf:pagenumber /> von <pdf:pagecount /></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== SEITE 1: DECKBLATT ==================== -->
+    {% if 'deckblatt' in selected_sections %}
+    <h1>Abnahmetest Elektroweichenheizung</h1>
+
+    <h2>Projektinformationen</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Betriebspunkt (Projektname):</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ projektname }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">DIDOK:</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ didok }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Projektleiter SBB AG:</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ projektleiter_sbb }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Baumappen Version (Datum):</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ baumappenversion }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Pr&uuml;fer:</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ pruefer_achermann }}</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Pr&uuml;fdatum:</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ pruefdatum }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 style="margin-top: 8px; margin-bottom: 3px;">Erl&auml;uterungen</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 9pt;">
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">Richtig</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; text-align: center; width: 80px;">
+                    <span style="color: #22c55e; font-size: 12pt; font-weight: bold;">&#10003;</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">Falsch</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; text-align: center; width: 80px;">
+                    <span style="color: #ef4444; font-size: 12pt; font-weight: bold;">&#10007;</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0;">Kann nicht getestet werden</td>
+                <td style="border: 1px solid #000; padding: 4px 6px 2px 6px; line-height: 1.0; text-align: center; width: 80px;">
+                    <span style="color: #6b7280; font-size: 12pt; font-weight: bold;">&#8709;</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Testergebnis</h2>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+        <thead>
+            <tr>
+                <th style="border: 1px solid #000; padding: 4px 8px; background-color: #f0f0f0; text-align: left; width: 80px;">System</th>
+                <th style="border: 1px solid #000; padding: 4px 8px; background-color: #f0f0f0; text-align: left;">Ergebnis</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold;">WH-LTS</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">
+                    <span style="color: #16a34a; font-weight: bold;">&#10003; {{ wh_lts_bestanden }} bestanden</span>
+                    <span style="margin: 0 6px; color: #999;">&middot;</span>
+                    <span style="color: #dc2626; font-weight: bold;">&#10007; {{ wh_lts_fehlgeschlagen }} fehlgeschlagen</span>
+                    <span style="margin: 0 6px; color: #999;">&middot;</span>
+                    <span style="color: #6b7280; font-weight: bold;">&#8709; {{ wh_lts_nicht_testbar }} nicht testbar</span>
+                </td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 4px 8px; font-weight: bold;">LSS-CH</td>
+                <td style="border: 1px solid #000; padding: 4px 8px;">
+                    <span style="color: #16a34a; font-weight: bold;">&#10003; {{ lss_ch_bestanden }} bestanden</span>
+                    <span style="margin: 0 6px; color: #999;">&middot;</span>
+                    <span style="color: #dc2626; font-weight: bold;">&#10007; {{ lss_ch_fehlgeschlagen }} fehlgeschlagen</span>
+                    <span style="margin: 0 6px; color: #999;">&middot;</span>
+                    <span style="color: #6b7280; font-weight: bold;">&#8709; {{ lss_ch_nicht_testbar }} nicht testbar</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Werkabnahme</h2>
+    <p style="text-align: justify; line-height: 1.4; margin: 6px 0 10px 0;">
+        Die Gesamte Anlage wurde getestet und auf Richtigkeit gepr&uuml;ft. Alle Parameter wurden eingestellt und s&auml;mtliche Alarme/Meldungen ausgetestet und f&uuml;r richtig befunden. LSS-CH seitig tr&auml;gt Achermann &amp; Co. AG keine Verantwortung. Protokolliert wurde der IST-Zustand bei Werkabnahme.
+    </p>
+
+    <h3 style="margin-top: 6px; margin-bottom: 2px;">Bemerkungen:</h3>
+    <table style="width: 100%; border: 1px solid #ccc; margin: 6px 0 10px 0;">
+        <tr>
+            <td style="height: 105px; padding: 8px; vertical-align: top; font-size: 9pt;">
+                {% if projekt.bemerkung %}{{ projekt.bemerkung }}{% else %}&nbsp;{% endif %}
+            </td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 15px; page-break-inside: avoid;">
+        <h3 style="margin-bottom: 3px; font-size: 11pt; font-weight: bold;">Unterschrift des Pr&uuml;fers:</h3>
+        <p style="margin: 0 0 5px 0; font-size: 10pt;">Achermann &amp; Co. AG</p>
+        <div style="min-height: 50px; margin: 10px 0;">
+            <!-- Leer f&uuml;r handschriftliche Unterschrift -->
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== ZUSAMMENFASSUNG FEHLGESCHLAGENER TESTS ==================== -->
+    {% if 'zusammenfassung_fehler' in selected_sections and failed_tests and failed_tests|length > 0 %}
+    <h1>Zusammenfassung fehlgeschlagener Tests</h1>
+    <p style="margin-bottom: 15px; font-size: 10pt;">
+        Die folgenden {{ failed_tests|length }} Test(s) wurden als "falsch" markiert:
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="25%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Komponente</td>
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="15%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="15%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+        </tr>
+        {% for test in failed_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="25%" style="padding: 6px; border: 1px solid #ccc;"><strong>{{ test.komponente }}</strong></td>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="15%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="15%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== SEITE 2+: WH-ANLAGE ==================== -->
+    {% if anlage_tests and anlage_tests|length > 0 %}
+    <h1>Abnahmetest WH-Anlage</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in anlage_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung or '&nbsp;'|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- ==================== WHK-TESTS ==================== -->
+    {% for whk in whk_data %}
+    <!-- WHK Hauptseite -->
+    <h1>Abnahmetest {{ whk.whk_nummer }}</h1>
+
+    {% if whk.whk_tests and whk.whk_tests|length > 0 %}
+    <h2>WHK-Tests</h2>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in whk.whk_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung or '&nbsp;'|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+
+    <!-- Abg&auml;nge - jeder auf eigener Seite -->
+    {% if whk.abgang_tests and whk.abgang_tests|length > 0 %}
+    {% for abgang_num in range(1, whk.anzahl_abgaenge + 1) %}
+    {% set abgang_name = "Abgang %02d"|format(abgang_num) %}
+    {% set abgang_tests = whk.abgang_tests|selectattr('spalte', 'equalto', abgang_name)|list %}
+    {% if abgang_tests|length > 0 %}
+    <h1>Abnahmetest {{ whk.whk_nummer }} {{ abgang_name }}</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in abgang_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung or '&nbsp;'|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Temperatursonden - jede auf eigener Seite -->
+    {% if whk.ts_tests and whk.ts_tests|length > 0 %}
+    {% for ts_num in range(1, whk.anzahl_temperatursonden + 1) %}
+    {% set ts_name = "TS %02d"|format(ts_num) %}
+    {% set ts_tests = whk.ts_tests|selectattr('spalte', 'equalto', ts_name)|list %}
+    {% if ts_tests|length > 0 %}
+    <h1>Abnahmetest {{ whk.whk_nummer }} Temperatursonde {{ ts_num }}</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in ts_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung or '&nbsp;'|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% set has_more_ts = ts_num < whk.anzahl_temperatursonden %}
+    {% set has_ah = whk.ah_tests and whk.ah_tests|length > 0 %}
+    {% if has_more_ts or has_ah %}
+    <div class="page-break"></div>
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+    <!-- Antriebsheizung - auf eigener Seite -->
+    {% if whk.ah_tests and whk.ah_tests|length > 0 %}
+    <h1>Abnahmetest {{ whk.whk_nummer }} Antriebsheizung</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in whk.ah_tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung or '&nbsp;'|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {# Page-break nach WHK nur wenn weitere WHKs oder Meteostationen folgen #}
+    {% if not loop.last or (meteo_data and meteo_data|length > 0) %}
+    <div class="page-break"></div>
+    {% endif %}
+
+    {% endfor %}
+
+    <!-- ==================== METEOSTATION-TESTS ==================== -->
+    {% if meteo_data and meteo_data|length > 0 %}
+    {% for meteo in meteo_data %}
+    <h1>Abnahmetest Meteostation {{ meteo.meteostation }}</h1>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr style="background-color: #2c3e50;">
+            <td width="45%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Test</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">WH-LTS</td>
+            <td width="12%" style="color: white; font-weight: bold; padding: 8px 4px; text-align: center; border: 1px solid #2c3e50;">LSS-CH</td>
+            <td width="31%" style="color: white; font-weight: bold; padding: 8px 6px; text-align: left; border: 1px solid #2c3e50;">Bemerkung</td>
+        </tr>
+        {% for test in meteo.tests %}
+        <tr{% if loop.index is divisibleby 2 %} style="background-color: #f9f9f9;"{% endif %}>
+            <td width="45%" style="padding: 6px; border: 1px solid #ccc;">{{ test.frage_text }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.wh_lts_icon|safe }}</td>
+            <td width="12%" style="text-align: center; padding: 6px; border: 1px solid #ccc;">{{ test.lss_ch_icon|safe }}</td>
+            <td width="31%" style="padding: 6px; border: 1px solid #ccc;">{{ test.bemerkung or '&nbsp;'|safe }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% if not loop.last %}
+    <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+</body>
+</html>

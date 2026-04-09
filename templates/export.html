@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Export - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Projekt-Export</h2>
+    </div>
+
+    <!-- Suchbereich -->
+    <div class="search-container">
+        <div class="search-form">
+            <input type="text" id="searchInput" placeholder="Suche nach Projektname, DIDOK oder IBN-Jahr..." class="search-input">
+            <button type="button" id="resetBtn" class="btn-cancel" style="display: none;">Zurücksetzen</button>
+        </div>
+        <p id="searchInfo" class="search-info" style="display: none;"></p>
+    </div>
+
+    {% if projekte %}
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>Energie</th>
+                    <th>Projektname</th>
+                    <th>DIDOK</th>
+                    <th>Exportieren</th>
+                </tr>
+            </thead>
+            <tbody id="projectTableBody">
+                {% for projekt in projekte %}
+                <tr class="project-row" data-projektname="{{ projekt.projektname|lower }}" data-didok="{{ projekt.didok_betriebspunkt|lower if projekt.didok_betriebspunkt else '' }}" data-ibn="{{ projekt.ibn_inbetriebnahme_jahre|lower if projekt.ibn_inbetriebnahme_jahre else '' }}">
+                    <td>
+                        <span class="energie-badge energie-{{ projekt.energie.lower() if projekt.energie else 'unbekannt' }}">
+                            {%- if projekt.energie and projekt.energie.lower() == 'gas' -%}
+                            GWH
+                            {%- elif projekt.energie and projekt.energie.lower() == 'strom' -%}
+                            EWH
+                            {%- elif projekt.energie and projekt.energie.upper() == 'GWH' -%}
+                            GWH
+                            {%- elif projekt.energie and projekt.energie.upper() == 'EWH' -%}
+                            EWH
+                            {%- else -%}
+                            {{ projekt.energie or '?' }}
+                            {%- endif -%}
+                        </span>
+                    </td>
+                    <td><strong>{{ projekt.projektname }}</strong></td>
+                    <td>{{ projekt.didok_betriebspunkt or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('export.export_config', projekt_id=projekt.id) }}" class="action-link" title="Export konfigurieren">
+                            Exportieren
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div id="noResults" class="no-data" style="display: none;">
+            <p>Keine Projekte gefunden.</p>
+        </div>
+    {% else %}
+        <div class="no-data">
+            <p>Noch keine Projekte vorhanden.</p>
+            <p>Klicken Sie auf <a href="{{ url_for('projekte.neues_projekt') }}">Neues Projekt anlegen</a>, um zu beginnen!</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Clientseitige Suchfunktion
+    (function() {
+        const searchInput = document.getElementById('searchInput');
+        const resetBtn = document.getElementById('resetBtn');
+        const searchInfo = document.getElementById('searchInfo');
+        const projectRows = document.querySelectorAll('.project-row');
+        const noResults = document.getElementById('noResults');
+        const projectTable = document.querySelector('.project-table');
+        const totalProjects = projectRows.length;
+
+        // Suchfunktion
+        function filterProjects() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            projectRows.forEach(row => {
+                const projektname = row.getAttribute('data-projektname') || '';
+                const didok = row.getAttribute('data-didok') || '';
+                const ibnJahre = row.getAttribute('data-ibn') || '';
+
+                if (projektname.includes(searchTerm) || didok.includes(searchTerm) || ibnJahre.includes(searchTerm)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // UI-Updates basierend auf Suchergebnissen
+            if (searchTerm) {
+                resetBtn.style.display = 'inline-block';
+                searchInfo.style.display = 'block';
+                searchInfo.textContent = `Suchergebnisse für "${searchInput.value}" (${visibleCount} Projekt${visibleCount !== 1 ? 'e' : ''} gefunden)`;
+            } else {
+                resetBtn.style.display = 'none';
+                searchInfo.style.display = 'none';
+            }
+
+            // Keine Ergebnisse Meldung anzeigen/verstecken
+            if (visibleCount === 0 && searchTerm) {
+                noResults.style.display = 'block';
+                if (projectTable) {
+                    projectTable.style.display = 'none';
+                }
+            } else {
+                noResults.style.display = 'none';
+                if (projectTable) {
+                    projectTable.style.display = 'table';
+                }
+            }
+        }
+
+        // Reset-Funktion
+        function resetSearch() {
+            searchInput.value = '';
+            filterProjects();
+            searchInput.focus();
+        }
+
+        // Event Listeners
+        searchInput.addEventListener('input', filterProjects);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Escape') {
+                resetSearch();
+            }
+        });
+        resetBtn.addEventListener('click', resetSearch);
+
+        // Initial Focus auf Suchfeld
+        if (totalProjects > 0) {
+            searchInput.focus();
+        }
+    })();
+</script>
+
+{% endblock %}

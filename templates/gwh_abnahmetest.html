@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}GWH-Abnahmetest - {{ projekt.projektname }} - Übersicht{% endblock %}
+
+{# Macro für Fortschrittsfarbe basierend auf Prozent #}
+{% macro progress_color(percent) -%}
+    {%- if percent == 100 -%}inherit
+    {%- elif percent >= 70 -%}#7cbf3f
+    {%- elif percent >= 50 -%}#f5a623
+    {%- elif percent >= 30 -%}#e9621f
+    {%- else -%}#dc3545{%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>GWH-Abnahmetest: {{ projekt.projektname }}</h2>
+        <div class="header-buttons">
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-secondary">← Zurück zur Projektübersicht</a>
+        </div>
+    </div>
+
+    {% if zsk_configs and zsk_configs|length > 0 %}
+        <!-- Navigations-Übersicht -->
+        <div class="gwh-uebersicht">
+
+            <!-- Allgemein-Bereich -->
+            <div class="nav-section-allgemein">
+                <h4 class="nav-section-title">Allgemein</h4>
+                <div class="allgemein-buttons">
+                    <a href="{{ url_for('gwh.gwh_test_anlage', projekt_id=projekt.id) }}"
+                       class="nav-btn nav-btn-equal {% if anlage_percent == 100 %}completed{% endif %}">
+                        Anlage (<span style="color: {{ progress_color(anlage_percent) }}; font-weight: bold;">{{ anlage_percent }}%</span>)
+                    </a>
+                    {% if hgls_config %}
+                    <a href="{{ url_for('gwh.gwh_test_hgls', projekt_id=projekt.id) }}"
+                       class="nav-btn nav-btn-equal {% if hgls_percent == 100 %}completed{% endif %}">
+                        HGLS (<span style="color: {{ progress_color(hgls_percent) }}; font-weight: bold;">{{ hgls_percent }}%</span>)
+                    </a>
+                    <a href="{{ url_for('gwh.hgls_parameter', projekt_id=projekt.id) }}"
+                       class="nav-btn nav-btn-equal {% if hgls_param_percent == 100 %}completed{% endif %}">
+                        HGLS-Parameter (<span style="color: {{ progress_color(hgls_param_percent) }}; font-weight: bold;">{{ hgls_param_percent }}%</span>)
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('gwh.gwh_test_zsk_allgemein', projekt_id=projekt.id) }}"
+                       class="nav-btn nav-btn-equal {% if zsk_allgemein_percent == 100 %}completed{% endif %}">
+                        ZSK (<span style="color: {{ progress_color(zsk_allgemein_percent) }}; font-weight: bold;">{{ zsk_allgemein_percent }}%</span>)
+                    </a>
+                </div>
+            </div>
+
+            <!-- ZSK-Übersichtstabelle -->
+            <table class="nav-table">
+                <thead class="dark-header">
+                    <tr>
+                        <th>ZSK Nr.</th>
+                        <th>Parameter</th>
+                        <th>Teile</th>
+                        <th>Temperatursonde</th>
+                        <th>Meteostation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for zsk in zsk_configs %}
+                    <tr>
+                        <td class="whk-label">{{ zsk.zsk_nummer }}</td>
+                        <td>
+                            <a href="{{ url_for('gwh.zsk_parameter', projekt_id=projekt.id, zsk_nummer=zsk.zsk_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if zsk_param_fortschritt[zsk.zsk_nummer].percent == 100 %}completed{% endif %}">
+                                Parameter (<span style="color: {{ progress_color(zsk_param_fortschritt[zsk.zsk_nummer].percent) }}; font-weight: bold;">{{ zsk_param_fortschritt[zsk.zsk_nummer].percent }}%</span>)
+                            </a>
+                        </td>
+                        <td>
+                            {% if zsk.anzahl_teile and zsk.anzahl_teile > 0 %}
+                            <a href="{{ url_for('gwh.gwh_test_teile', projekt_id=projekt.id, zsk_nummer=zsk.zsk_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if teile_fortschritt[zsk.zsk_nummer].percent == 100 %}completed{% endif %}">
+                                Teile (<span style="color: {{ progress_color(teile_fortschritt[zsk.zsk_nummer].percent) }}; font-weight: bold;">{{ teile_fortschritt[zsk.zsk_nummer].percent }}%</span>)
+                            </a>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- TS-Button immer anzeigen (jeder ZSK hat eine Temperatursonde) -->
+                            <a href="{{ url_for('gwh.gwh_test_temperatursonde', projekt_id=projekt.id, zsk_nummer=zsk.zsk_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if ts_fortschritt.get(zsk.zsk_nummer, {}).get('percent', 0) == 100 %}completed{% endif %}">
+                                TS (<span style="color: {{ progress_color(ts_fortschritt.get(zsk.zsk_nummer, {}).get('percent', 0)) }}; font-weight: bold;">{{ ts_fortschritt.get(zsk.zsk_nummer, {}).get('percent', 0) }}%</span>)
+                            </a>
+                        </td>
+                        <td>
+                            {% set ms_found = namespace(found=false, ms_name='', ms_nummer='') %}
+                            {% for ms in gwh_meteostationen %}
+                                {% if ms.zugeordneter_zsk_id == zsk.id %}
+                                    {% set ms_found.found = true %}
+                                    {% set ms_found.ms_name = ms.name %}
+                                    {% set ms_found.ms_nummer = ms.ms_nummer %}
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if ms_found.found %}
+                            <a href="{{ url_for('gwh.gwh_test_meteostation', projekt_id=projekt.id, ms_nummer=ms_found.ms_nummer) }}"
+                               class="nav-btn nav-btn-compact {% if ms_fortschritt[ms_found.ms_nummer].percent == 100 %}completed{% endif %}">
+                                {{ ms_found.ms_name }} (<span style="color: {{ progress_color(ms_fortschritt[ms_found.ms_nummer].percent) }}; font-weight: bold;">{{ ms_fortschritt[ms_found.ms_nummer].percent }}%</span>)
+                            </a>
+                            {% else %}
+                            <span class="nav-empty">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Info-Bereich -->
+            <div class="gwh-info-box">
+                <p><strong>Hinweis:</strong> Klicken Sie auf die Buttons, um die jeweiligen Tests durchzuführen.
+                   Buttons mit <span class="completed-indicator">100%</span> werden grün markiert.</p>
+            </div>
+
+        </div>
+
+    {% else %}
+        <!-- Keine ZSK konfiguriert -->
+        <div class="alert alert-warning" style="margin-top: 2rem;">
+            <strong>Hinweis:</strong> Für dieses Projekt sind noch keine ZSK konfiguriert.
+            <br><br>
+            <a href="{{ url_for('konfiguration.gwh_konfiguration', projekt_id=projekt.id) }}" class="btn-primary">Zur Konfiguration</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* GWH Übersichtsseite Styles */
+.gwh-uebersicht {
+    margin-top: 1.5rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.page-header h2 {
+    margin: 0;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Allgemein-Bereich */
+.nav-section-allgemein {
+    background: var(--card-bg, #f9fafb);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.nav-section-title {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+}
+
+.nav-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* Navigation Buttons */
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #d1d5db);
+    background: var(--bg-primary, #ffffff);
+    color: var(--text-primary, #374151);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    background: var(--bg-hover, #f3f4f6);
+    border-color: var(--primary-color, #3b82f6);
+    color: var(--primary-color, #3b82f6);
+}
+
+.nav-btn.completed {
+    background: #dcfce7;
+    border-color: #22c55e;
+    color: #166534;
+}
+
+.nav-btn.completed:hover {
+    background: #bbf7d0;
+}
+
+.nav-btn-compact {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+/* ZSK-Tabelle */
+.nav-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+/* Dark Header für Tabellen (wie gwh_test_seite.html) */
+.nav-table thead.dark-header {
+    background: #2c3e50;
+}
+
+.nav-table thead.dark-header th {
+    color: #ffffff;
+    border-bottom: 1px solid #1a252f;
+}
+
+.nav-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #6b7280);
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.nav-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    vertical-align: middle;
+}
+
+.nav-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.nav-table tbody tr:hover {
+    background: var(--bg-hover, #f9fafb);
+}
+
+.whk-label {
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+}
+
+.nav-empty {
+    color: var(--text-muted, #9ca3af);
+    font-style: italic;
+}
+
+/* Info-Box */
+.gwh-info-box {
+    background: var(--info-bg, #eff6ff);
+    border: 1px solid var(--info-border, #bfdbfe);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-top: 1rem;
+}
+
+.gwh-info-box p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--info-text, #1e40af);
+}
+
+.completed-indicator {
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* Dark Theme Support */
+[data-theme="dark"] .nav-section-allgemein {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .nav-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .nav-btn:hover {
+    background: #4b5563;
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .nav-btn.completed {
+    background: #166534;
+    border-color: #22c55e;
+    color: #dcfce7;
+}
+
+[data-theme="dark"] .nav-table {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .nav-table thead.dark-header {
+    background: #2c3e50;
+}
+
+[data-theme="dark"] .nav-table thead.dark-header th {
+    color: #ffffff;
+    border-color: #1a252f;
+}
+
+[data-theme="dark"] .nav-table td {
+    border-color: #374151;
+}
+
+[data-theme="dark"] .nav-table tbody tr:hover {
+    background: #374151;
+}
+
+[data-theme="dark"] .gwh-info-box {
+    background: #1e3a5f;
+    border-color: #3b82f6;
+}
+
+[data-theme="dark"] .gwh-info-box p {
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .page-header {
+    border-color: #374151;
+}
+
+[data-theme="dark"] .page-header .btn-secondary {
+    background: #374151;
+    color: #e5e7eb;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .page-header .btn-secondary:hover {
+    background: #4b5563;
+}
+</style>
+
+{% endblock %}

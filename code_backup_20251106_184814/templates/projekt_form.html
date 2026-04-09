@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{% if edit_mode %}Projekt bearbeiten{% else %}Neues Weichenheizungsprojekt{% endif %} - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{% if edit_mode %}Projekt bearbeiten{% else %}Neues Weichenheizungsprojekt anlegen{% endif %}</h2>
+
+    <form method="POST" action="{% if edit_mode %}{{ url_for('projekt_bearbeiten', projekt_id=projekt.id) }}{% else %}{{ url_for('neues_projekt') }}{% endif %}">
+        <div class="form-group">
+            <label for="energie">Energie: <span class="required">*</span></label>
+            <select id="energie" name="energie" required>
+                <option value="EWH" {% if projekt and projekt.energie == 'EWH' %}selected{% endif %}>EWH</option>
+                <option value="GWH" {% if projekt and projekt.energie == 'GWH' %}selected{% endif %}>GWH</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="projektname">Projektname: <span class="required">*</span></label>
+            <input type="text" id="projektname" name="projektname" required maxlength="200" placeholder="z.B. Weichenheizung Bahnhof Zürich" value="{% if projekt %}{{ projekt.projektname }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="didok_betriebspunkt">DIDOK Betriebspunkt:</label>
+            <input type="text" id="didok_betriebspunkt" name="didok_betriebspunkt" maxlength="100" placeholder="z.B. 8503000" value="{% if projekt %}{{ projekt.didok_betriebspunkt or '' }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="baumappenversion">Baumappenversion (Datum):</label>
+            <input type="text" id="baumappenversion" name="baumappenversion" placeholder="TT.MM.JJJJ" value="{% if projekt and projekt.baumappenversion %}{{ projekt.baumappenversion.strftime('%d.%m.%Y') }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="projektleiter_sbb">Projektleiter (SBB AG):</label>
+            <input type="text" id="projektleiter_sbb" name="projektleiter_sbb" maxlength="150" placeholder="Vor- und Nachname" value="{% if projekt %}{{ projekt.projektleiter_sbb or '' }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="pruefer_achermann">Prüfer (Achermann & Co. AG):</label>
+            <input type="text" id="pruefer_achermann" name="pruefer_achermann" maxlength="150" placeholder="Vor- und Nachname" value="{% if projekt %}{{ projekt.pruefer_achermann or '' }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="pruefdatum">Prüfdatum:</label>
+            <input type="date" id="pruefdatum" name="pruefdatum" value="{% if projekt and projekt.pruefdatum %}{{ projekt.pruefdatum.strftime('%Y-%m-%d') }}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="bemerkung">Bemerkung:</label>
+            <textarea id="bemerkung" name="bemerkung" rows="6" placeholder="Zusätzliche Informationen zum Projekt...">{% if projekt %}{{ projekt.bemerkung or '' }}{% endif %}</textarea>
+        </div>
+
+        <div class="form-group form-actions">
+            <button type="submit" class="btn-primary">{% if edit_mode %}Änderungen speichern{% else %}Projekt speichern{% endif %}</button>
+            <a href="{{ url_for('projekte') }}" class="btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

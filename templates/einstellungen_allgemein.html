@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Allgemeine Einstellungen - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Allgemeine Einstellungen</h2>
+    </div>
+
+    <form method="POST" class="settings-form">
+        <div class="settings-section">
+            <h3>Zeiterfassung</h3>
+
+            <div class="form-group">
+                <label for="zeiterfassung_timeout">Timeout für Zeiterfassung (Minuten)</label>
+                <input type="number"
+                       id="zeiterfassung_timeout"
+                       name="zeiterfassung_timeout"
+                       value="{{ settings.zeiterfassung_timeout_minuten }}"
+                       min="1"
+                       max="480"
+                       class="form-input"
+                       required>
+                <p class="form-hint">
+                    Sessions ohne Aktivität werden nach dieser Zeit als abgebrochen markiert.
+                    <br>Standardwert: 60 Minuten | Bereich: 1 - 480 Minuten (8 Stunden)
+                </p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Speichern</button>
+        </div>
+    </form>
+
+    {% if settings.geaendert_am %}
+    <p class="last-modified">
+        Zuletzt geändert: {{ settings.geaendert_am.strftime('%d.%m.%Y %H:%M') }}
+    </p>
+    {% endif %}
+</div>
+
+<style>
+.settings-form {
+    max-width: 600px;
+}
+
+.settings-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.form-input {
+    width: 150px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-hint {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+}
+
+.btn-primary {
+    padding: 0.6rem 1.5rem;
+    background: var(--accent-primary);
+    color: var(--text-inverse);
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: var(--accent-primary-dark);
+    transform: translateY(-1px);
+}
+
+.last-modified {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+</style>
+{% endblock %}

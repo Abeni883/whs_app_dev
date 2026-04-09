@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+
+{% block title %}ZSK Parameter-Prüfung: ZSK {{ zsk_nummer }} - {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h2>ZSK Parameter-Prüfung: ZSK {{ zsk_nummer }}</h2>
+            <p class="project-info">Projekt: <strong>{{ projekt.projektname }}</strong></p>
+        </div>
+        <a href="{{ url_for('gwh.gwh_abnahmetest', projekt_id=projekt.id) }}" class="btn-secondary">← Zurück zum Abnahmetest</a>
+    </div>
+
+    <!-- Fortschrittsanzeige -->
+    <div class="progress-info">
+        <div style="width: 100%; height: 20px; background-color: #e5e7eb; border: 1px solid #d1d5db; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem;">
+            <div id="progress-bar" style="width: {{ ((geprueft_count / total_count * 100)|int) if total_count > 0 else 0 }}%; height: 100%; background: linear-gradient(90deg, #22c55e, #10b981); border-radius: 10px; transition: width 0.3s ease;"></div>
+        </div>
+        <p class="progress-text">
+            <span id="progress-text">{{ geprueft_count }} von {{ total_count }} erledigt</span>
+            <span id="auto-save-status" class="auto-save-status"></span>
+        </p>
+    </div>
+
+    <!-- Parameter-Tabelle -->
+    <table class="parameter-table">
+        <thead>
+            <tr>
+                <th style="width: 35%;">Parameter</th>
+                <th style="width: 12%;">Einheit</th>
+                <th style="width: 28%;">Ist-Wert</th>
+                <th style="width: 12%; text-align: center;">Geprüft</th>
+                <th style="width: 13%; text-align: center;">Nicht testbar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for param in parameter_liste %}
+            {% set pruefung = bestehende_pruefungen.get(param.name, {}) %}
+            <tr class="parameter-row {% if pruefung.geprueft %}row-geprueft{% elif pruefung.nicht_testbar %}row-nicht-testbar{% endif %}" data-param="{{ param.name }}">
+                <td class="param-label">
+                    {{ param.label }}
+                    {% if pruefung.geprueft_am %}
+                    <div class="param-meta">
+                        <small>Geprüft: {{ pruefung.geprueft_am }} von {{ pruefung.geprueft_von }}</small>
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="param-einheit">{{ param.einheit }}</td>
+                <td class="param-input">
+                    <input type="text"
+                           class="param-ist-wert"
+                           name="{{ param.name }}_ist_wert"
+                           value="{{ pruefung.ist_wert }}"
+                           placeholder="Wert eingeben..."
+                           data-param="{{ param.name }}">
+                </td>
+                <td class="param-checkbox">
+                    <input type="checkbox"
+                           class="param-geprueft"
+                           name="{{ param.name }}_geprueft"
+                           {% if pruefung.geprueft %}checked{% endif %}
+                           data-param="{{ param.name }}">
+                </td>
+                <td class="param-checkbox">
+                    <input type="checkbox"
+                           class="param-nicht-testbar"
+                           name="{{ param.name }}_nicht_testbar"
+                           {% if pruefung.nicht_testbar %}checked{% endif %}
+                           data-param="{{ param.name }}">
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Navigation -->
+    <div class="navigation-footer">
+        <div class="nav-left">
+            {% if vorheriger_zsk %}
+            <a href="{{ url_for('gwh.zsk_parameter', projekt_id=projekt.id, zsk_nummer=vorheriger_zsk) }}" class="btn-secondary">
+                ◄ Vorheriger ZSK ({{ vorheriger_zsk }})
+            </a>
+            {% else %}
+            <button class="btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;">◄ Vorheriger ZSK</button>
+            {% endif %}
+        </div>
+
+        <div class="nav-center">
+            <a href="{{ url_for('konfiguration.gwh_konfiguration', projekt_id=projekt.id) }}" class="btn-secondary">
+                Zur Konfiguration
+            </a>
+        </div>
+
+        <div class="nav-right">
+            {% if naechster_zsk %}
+            <a href="{{ url_for('gwh.zsk_parameter', projekt_id=projekt.id, zsk_nummer=naechster_zsk) }}" class="btn-secondary">
+                Nächster ZSK ({{ naechster_zsk }}) ►
+            </a>
+            {% else %}
+            <button class="btn-secondary" disabled style="opacity: 0.5; cursor: not-allowed;">Nächster ZSK ►</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Progress Bar */
+    .progress-info {
+        margin: 2rem 0;
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        height: 20px;
+        background-color: #e5e7eb;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e, #10b981);
+        transition: width 0.3s ease;
+        border-radius: 10px;
+    }
+
+    .progress-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+        color: var(--text-color);
+    }
+
+    .auto-save-status {
+        font-size: 0.9rem;
+        color: var(--success-color, #28a745);
+    }
+
+    /* Parameter-Tabelle */
+    .parameter-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2rem 0;
+        background: var(--card-bg, white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .parameter-table thead {
+        background: #2c3e50;
+        color: white;
+    }
+
+    .parameter-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border-bottom: 1px solid #1a252f;
+    }
+
+    .parameter-table tbody tr {
+        border-bottom: 1px solid var(--border-color, #ddd);
+        transition: background-color 0.2s ease;
+    }
+
+    .parameter-table tbody tr:nth-child(even) {
+        background-color: var(--row-even-bg, #f8f9fa);
+    }
+
+    .parameter-table tbody tr:hover {
+        background-color: var(--row-hover-bg, #e9ecef);
+    }
+
+    .parameter-table tbody tr.row-geprueft {
+        background-color: #d1fae5 !important;
+    }
+
+    .parameter-table tbody tr.row-geprueft:hover {
+        background-color: #a7f3d0 !important;
+    }
+
+    .parameter-table tbody tr.row-nicht-testbar {
+        background-color: #f3f4f6 !important;
+    }
+
+    .parameter-table tbody tr.row-nicht-testbar:hover {
+        background-color: #e5e7eb !important;
+    }
+
+    .parameter-table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .param-label {
+        font-weight: 500;
+    }
+
+    .param-meta {
+        margin-top: 0.25rem;
+    }
+
+    .param-meta small {
+        color: var(--text-muted, #6c757d);
+        font-size: 0.8rem;
+    }
+
+    .param-einheit {
+        font-weight: 600;
+        color: var(--primary-color, #007bff);
+    }
+
+    .param-input input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 4px;
+        font-size: 0.95rem;
+        background: var(--input-bg, white);
+        color: var(--text-color);
+    }
+
+    .param-input input:focus {
+        outline: none;
+        border-color: var(--primary-color, #007bff);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .param-checkbox {
+        text-align: center;
+    }
+
+    .param-checkbox input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    /* Navigation Footer */
+    .navigation-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2rem 0;
+        gap: 1rem;
+    }
+
+    .navigation-footer .nav-left,
+    .navigation-footer .nav-center,
+    .navigation-footer .nav-right {
+        flex: 1;
+    }
+
+    .navigation-footer .nav-left {
+        text-align: left;
+    }
+
+    .navigation-footer .nav-center {
+        text-align: center;
+    }
+
+    .navigation-footer .nav-right {
+        text-align: right;
+    }
+
+    /* Dark Theme */
+    [data-theme="dark"] .parameter-table {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    [data-theme="dark"] .parameter-table thead {
+        background: #2c3e50;
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr {
+        border-color: #374151;
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr.row-geprueft {
+        background-color: rgba(34, 197, 94, 0.2) !important;
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr.row-geprueft:hover {
+        background-color: rgba(34, 197, 94, 0.3) !important;
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr.row-nicht-testbar {
+        background-color: rgba(107, 114, 128, 0.3) !important;
+    }
+
+    [data-theme="dark"] .parameter-table tbody tr.row-nicht-testbar:hover {
+        background-color: rgba(107, 114, 128, 0.4) !important;
+    }
+
+    [data-theme="dark"] .param-input input {
+        background: #374151;
+        border-color: #4b5563;
+        color: #e5e7eb;
+    }
+
+    [data-theme="dark"] .param-input input:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+    }
+
+    [data-theme="dark"] .param-einheit {
+        color: #60a5fa;
+    }
+
+    [data-theme="dark"] .page-header .btn-secondary {
+        background: #374151;
+        color: #e5e7eb;
+        border-color: #4b5563;
+    }
+
+    [data-theme="dark"] .page-header .btn-secondary:hover {
+        background: #4b5563;
+    }
+
+    [data-theme="dark"] .progress-bar-container {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+</style>
+
+<script>
+// ==================== GLOBALE VARIABLEN ====================
+const projektId = {{ projekt.id }};
+const zskNummer = "{{ zsk_nummer }}";
+let saveTimeout = null;
+let isSaving = false;
+
+// ==================== AUTO-SAVE ====================
+function collectParameterData() {
+    const data = {};
+    const rows = document.querySelectorAll('.parameter-row');
+
+    rows.forEach(row => {
+        const paramName = row.dataset.param;
+        const istWertInput = row.querySelector('.param-ist-wert');
+        const geprueftCheckbox = row.querySelector('.param-geprueft');
+        const nichtTestbarCheckbox = row.querySelector('.param-nicht-testbar');
+
+        data[paramName] = {
+            ist_wert: istWertInput.value.trim(),
+            geprueft: geprueftCheckbox.checked,
+            nicht_testbar: nichtTestbarCheckbox.checked
+        };
+    });
+
+    return data;
+}
+
+function saveParameters() {
+    if (isSaving) return;
+
+    isSaving = true;
+    const statusEl = document.getElementById('auto-save-status');
+
+    if (statusEl) {
+        statusEl.textContent = 'Speichern...';
+        statusEl.style.color = 'var(--warning-color, #ffc107)';
+    }
+
+    const data = collectParameterData();
+    const url = `/projekt/${projektId}/zsk-parameter/${zskNummer}`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            if (statusEl) {
+                statusEl.textContent = '✓ Gespeichert';
+                statusEl.style.color = 'var(--success-color, #28a745)';
+            }
+
+            // Update Fortschritt
+            updateProgress(result.geprueft_count, result.total_count);
+
+            // Status nach 2 Sekunden ausblenden
+            setTimeout(() => {
+                if (statusEl) statusEl.textContent = '';
+            }, 2000);
+        } else {
+            if (statusEl) {
+                statusEl.textContent = '✗ Fehler beim Speichern';
+                statusEl.style.color = 'var(--error-color, #dc3545)';
+            }
+            console.error('[ZSK-Parameter] Speicherfehler:', result.error);
+        }
+    })
+    .catch(error => {
+        console.error('[ZSK-Parameter] Netzwerkfehler:', error);
+        if (statusEl) {
+            statusEl.textContent = '✗ Netzwerkfehler';
+            statusEl.style.color = 'var(--error-color, #dc3545)';
+        }
+    })
+    .finally(() => {
+        isSaving = false;
+    });
+}
+
+function debouncedSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveParameters, 500);
+}
+
+// ==================== FORTSCHRITT ====================
+function updateProgress(geprueftCount, totalCount) {
+    const percentage = Math.round((geprueftCount / totalCount) * 100);
+
+    document.getElementById('progress-bar').style.width = percentage + '%';
+    document.getElementById('progress-text').textContent = `${geprueftCount} von ${totalCount} erledigt`;
+}
+
+// ==================== ZEILEN-HIGHLIGHTING ====================
+// Umbenannt um Kollision mit shared.js updateRowHighlight zu vermeiden
+function updateParamRowHighlight(paramName) {
+    const row = document.querySelector(`.parameter-row[data-param="${paramName}"]`);
+    if (!row) {
+        console.warn('[ZSK-Parameter] Zeile nicht gefunden für:', paramName);
+        return;
+    }
+    const geprueftCheckbox = row.querySelector('.param-geprueft');
+    const nichtTestbarCheckbox = row.querySelector('.param-nicht-testbar');
+
+    // Entferne alle Status-Klassen
+    row.classList.remove('row-geprueft', 'row-nicht-testbar');
+
+    // Setze entsprechende Klasse basierend auf Status
+    if (geprueftCheckbox && geprueftCheckbox.checked) {
+        row.classList.add('row-geprueft');
+    } else if (nichtTestbarCheckbox && nichtTestbarCheckbox.checked) {
+        row.classList.add('row-nicht-testbar');
+    }
+}
+
+// ==================== RADIO-VERHALTEN ====================
+function handleCheckboxRadio(changedCheckbox, paramName) {
+    const row = document.querySelector(`.parameter-row[data-param="${paramName}"]`);
+    const geprueftCheckbox = row.querySelector('.param-geprueft');
+    const nichtTestbarCheckbox = row.querySelector('.param-nicht-testbar');
+
+    // Wenn "Geprüft" gesetzt wird → deaktiviere "Nicht testbar"
+    if (changedCheckbox === geprueftCheckbox && geprueftCheckbox.checked) {
+        nichtTestbarCheckbox.checked = false;
+    }
+
+    // Wenn "Nicht testbar" gesetzt wird → deaktiviere "Geprüft"
+    if (changedCheckbox === nichtTestbarCheckbox && nichtTestbarCheckbox.checked) {
+        geprueftCheckbox.checked = false;
+    }
+}
+
+// ==================== EVENT LISTENERS ====================
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Input-Felder
+    const textInputs = document.querySelectorAll('.param-ist-wert');
+    textInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            debouncedSave();
+        });
+    });
+
+    // Geprüft-Checkboxen
+    const geprueftCheckboxes = document.querySelectorAll('.param-geprueft');
+    geprueftCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const paramName = this.dataset.param;
+            handleCheckboxRadio(this, paramName);
+            updateParamRowHighlight(paramName);
+            debouncedSave();
+        });
+    });
+
+    // Nicht-testbar-Checkboxen
+    const nichtTestbarCheckboxes = document.querySelectorAll('.param-nicht-testbar');
+    nichtTestbarCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const paramName = this.dataset.param;
+            handleCheckboxRadio(this, paramName);
+            updateParamRowHighlight(paramName);
+            debouncedSave();
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

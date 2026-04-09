@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Projektverwaltung - Abnahmetest{% endblock %}
+{# Macro fuer Fortschrittsfarbe basierend auf Prozent #}
+{% macro progress_color(percent) -%}
+    {%- if percent == 100 -%}inherit
+    {%- elif percent >= 70 -%}#7cbf3f
+    {%- elif percent >= 50 -%}#f5a623
+    {%- elif percent >= 30 -%}#e9621f
+    {%- else -%}#dc3545{%- endif -%}
+{%- endmacro %}
+
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Projektverwaltung</h2>
+        <a href="{{ url_for('projekte.neues_projekt') }}" class="btn-primary btn-new-project">Neues Projekt anlegen</a>
+    </div>
+
+    <!-- Suchbereich mit Live-Suche -->
+    <div class="search-container">
+        <div class="search-form">
+            <input type="text"
+                   id="searchInput"
+                   placeholder="Suche nach Projektname, DIDOK oder IBN-Jahr"
+                   class="search-input">
+            <button type="button" id="resetBtn" class="btn-cancel" style="display: none;">Zurücksetzen</button>
+        </div>
+        <p id="searchInfo" class="search-info" style="display: none;"></p>
+    </div>
+
+    {% if projekte %}
+
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>Energie</th>
+                    <th>Projektname</th>
+                    <th>DIDOK</th>
+                    <th>IBN</th>
+                    <th>Projektinformationen</th>
+                    <th>WH-Anlage</th>
+                    <th>Abnahmetest</th>
+                    <th>Löschen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for projekt in projekte %}
+                <tr data-ibn="{{ projekt.ibn_inbetriebnahme_jahre|lower if projekt.ibn_inbetriebnahme_jahre else '' }}">
+                    <td>
+                        <span class="energie-badge energie-{{ projekt.energie.lower() if projekt.energie else 'unbekannt' }}">
+                            {%- if projekt.energie and projekt.energie.lower() == 'gas' -%}
+                            GWH
+                            {%- elif projekt.energie and projekt.energie.lower() == 'strom' -%}
+                            EWH
+                            {%- elif projekt.energie and projekt.energie.upper() == 'GWH' -%}
+                            GWH
+                            {%- elif projekt.energie and projekt.energie.upper() == 'EWH' -%}
+                            EWH
+                            {%- else -%}
+                            {{ projekt.energie or '?' }}
+                            {%- endif -%}
+                        </span>
+                    </td>
+                    <td><strong>{{ projekt.projektname }}</strong></td>
+                    <td>{{ projekt.didok_betriebspunkt or '-' }}</td>
+                    <td class="ibn-jahr-cell">{{ projekt.ibn_inbetriebnahme_jahre or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('projekte.projekt_bearbeiten', projekt_id=projekt.id) }}" class="action-link">Bearbeiten</a>
+                    </td>
+                    <td>
+                        {% if projekt.energie == 'GWH' %}
+                            <a href="{{ url_for('konfiguration.gwh_konfiguration', projekt_id=projekt.id) }}" class="config-link">Konfiguration</a>
+                        {% else %}
+                            <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}" class="config-link">Konfiguration</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set progress = progress_dict.get(projekt.id, 0) %}
+                        {% if projekt.energie == 'GWH' %}
+                            <a href="{{ url_for('gwh.gwh_abnahmetest', projekt_id=projekt.id) }}" class="test-link{% if progress == 100 %} test-complete{% endif %}">
+                                Abnahmetest (<span style="color: {{ progress_color(progress) }}; font-weight: bold;">{{ progress }}%</span>)
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('ewh.projekt_abnahmetest', projekt_id=projekt.id) }}" class="test-link{% if progress == 100 %} test-complete{% endif %}">
+                                Abnahmetest (<span style="color: {{ progress_color(progress) }}; font-weight: bold;">{{ progress }}%</span>)
+                            </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('projekte.projekt_loeschen', projekt_id=projekt.id) }}" class="delete-link" title="Projekt löschen" onclick="return confirm('Möchten Sie dieses Projekt wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')">✕</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div id="noResults" class="no-data" style="display: none;">
+            <p>Keine Projekte gefunden.</p>
+        </div>
+    {% else %}
+        <div class="no-data">
+            <p>Noch keine Projekte vorhanden.</p>
+            <p>Klicken Sie auf <a href="{{ url_for('projekte.neues_projekt') }}">Neues Projekt anlegen</a>, um zu beginnen!</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Live-Suche für Projektübersicht
+(function() {
+    const searchInput = document.getElementById('searchInput');
+    const resetBtn = document.getElementById('resetBtn');
+    const searchInfo = document.getElementById('searchInfo');
+    const projectRows = document.querySelectorAll('.project-table tbody tr');
+    const projectTable = document.querySelector('.project-table');
+    const noResults = document.getElementById('noResults');
+    const totalProjects = projectRows.length;
+
+    // Suchfunktion
+    function filterProjects() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        projectRows.forEach(row => {
+            // Extrahiere Text aus Spalten: Projektname (Index 1), DIDOK (Index 2), IBN Jahr (Index 3)
+            const cells = row.querySelectorAll('td');
+            const projektname = cells[1]?.textContent.toLowerCase() || '';
+            const didok = cells[2]?.textContent.toLowerCase() || '';
+            const ibnJahre = cells[3]?.textContent.toLowerCase() || '';
+
+            // Prüfe ob Suchbegriff vorkommt
+            const matches = projektname.includes(searchTerm) ||
+                          didok.includes(searchTerm) ||
+                          ibnJahre.includes(searchTerm);
+
+            // Zeige oder verstecke Zeile
+            if (matches || searchTerm === '') {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // UI-Updates basierend auf Suchergebnissen
+        if (searchTerm) {
+            resetBtn.style.display = 'inline-block';
+            searchInfo.style.display = 'block';
+            searchInfo.textContent = `Suchergebnisse für "${searchInput.value}" (${visibleCount} Projekt${visibleCount !== 1 ? 'e' : ''} gefunden)`;
+        } else {
+            resetBtn.style.display = 'none';
+            searchInfo.style.display = 'none';
+        }
+
+        // Keine Ergebnisse Meldung anzeigen/verstecken
+        if (visibleCount === 0 && searchTerm) {
+            noResults.style.display = 'block';
+            if (projectTable) {
+                projectTable.style.display = 'none';
+            }
+        } else {
+            noResults.style.display = 'none';
+            if (projectTable) {
+                projectTable.style.display = 'table';
+            }
+        }
+    }
+
+    // Reset-Funktion
+    function resetSearch() {
+        searchInput.value = '';
+        filterProjects();
+        searchInput.focus();
+    }
+
+    // Event Listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', filterProjects);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Escape') {
+                resetSearch();
+            }
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetSearch);
+    }
+
+    // Initial Focus auf Suchfeld
+    if (totalProjects > 0 && searchInput) {
+        searchInput.focus();
+    }
+})();
+</script>
+{% endblock %}

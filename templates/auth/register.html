@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrieren - Abnahmetest</title>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>{% if is_first_user %}Administrator erstellen{% else %}Registrieren{% endif %}</h1>
+                <p>{% if is_first_user %}Erstellen Sie den ersten Admin-Account{% else %}Neuen Account erstellen{% endif %}</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" class="auth-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">Vorname</label>
+                        <input type="text" id="first_name" name="first_name"
+                               placeholder="Max" value="{{ request.form.get('first_name', '') }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Nachname</label>
+                        <input type="text" id="last_name" name="last_name"
+                               placeholder="Mustermann" value="{{ request.form.get('last_name', '') }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Benutzername *</label>
+                    <input type="text" id="username" name="username" required
+                           placeholder="maxmuster" minlength="3"
+                           value="{{ request.form.get('username', '') }}">
+                    <small>Mindestens 3 Zeichen</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-Mail-Adresse *</label>
+                    <input type="email" id="email" name="email" required
+                           placeholder="max.muster@beispiel.ch"
+                           value="{{ request.form.get('email', '') }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Passwort *</label>
+                    <input type="password" id="password" name="password" required
+                           placeholder="Mindestens 8 Zeichen" minlength="8">
+                    <small>Mindestens 8 Zeichen</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password_confirm">Passwort bestätigen *</label>
+                    <input type="password" id="password_confirm" name="password_confirm" required
+                           placeholder="Passwort wiederholen" minlength="8">
+                </div>
+
+                <button type="submit" class="btn-primary btn-full">
+                    {% if is_first_user %}Administrator erstellen{% else %}Registrieren{% endif %}
+                </button>
+            </form>
+
+            {% if not is_first_user %}
+            <div class="auth-links">
+                <span>Bereits registriert?</span>
+                <a href="{{ url_for('auth.login') }}">Zur Anmeldung</a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="auth-footer">
+            <p>&copy; 2025 Abnahmetest. Alle Rechte vorbehalten.</p>
+        </div>
+    </div>
+</body>
+</html>

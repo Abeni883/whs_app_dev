@@ -1,0 +1,2250 @@
+{
+  "anzahl_whk": 2,
+  "felder": [
+    {
+      "name": "WHK 01",
+      "abgang": "4",
+      "temp": "1",
+      "ah": false,
+      "meteo": ""
+    },
+    {
+      "name": "WHK 02",
+      "abgang": "4",
+      "temp": "1",
+      "ah": false,
+      "meteo": "MS 01"
+    }
+  ],
+  "projektinfo": {
+    "projektname": "Riddes",
+    "didok": "RID",
+    "projektleiter": "Norbert Küng",
+    "baumappe": "22.04.2025",
+    "pruefer": "Nicolas Abé/Patrick Schläppi",
+    "pruefdatum": "08.10.2025",
+    "bemerkungen": ""
+  },
+  "export": {
+    "filename": "WH_331 Riddes RID",
+    "selected_path": "O:/Projekte/2025/Riddes (RID)/4. Fotos, Prüfprotokolle, Seriennummern/Prüfprotokolle"
+  },
+  "abgaenge": {
+    "ABG": {
+      "0": {
+        "0": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "1": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "2": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "3": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "4": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "5": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "6": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "7": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "8": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "9": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "10": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "11": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "12": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "13": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "14": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "15": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "16": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch",
+              "1": "Falsch",
+              "2": "Falsch",
+              "3": "Falsch"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "17": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "18": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "19": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "20": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "21": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "22": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "23": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "24": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "25": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "26": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "27": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "28": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        }
+      },
+      "1": {
+        "0": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "1": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "2": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "3": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "4": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "5": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "6": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "7": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "8": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "9": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "10": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "11": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "12": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "13": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "14": {
+          "auswahl": {
+            "C": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "B": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "15": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "16": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch",
+              "1": "Falsch",
+              "2": "Falsch",
+              "3": "Falsch"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "17": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar",
+              "1": "Nicht Testbar",
+              "2": "Nicht Testbar",
+              "3": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "18": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "19": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "20": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "21": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "22": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "23": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "24": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "25": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "26": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "27": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "28": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "B": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            },
+            "A": {
+              "0": "Richtig",
+              "1": "Richtig",
+              "2": "Richtig",
+              "3": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        }
+      }
+    },
+    "TS": {
+      "0": {
+        "0": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "1": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "2": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "3": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        }
+      },
+      "1": {
+        "0": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "1": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "2": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "3": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        }
+      }
+    },
+    "AH": {},
+    "MS": {
+      "1": {
+        "0": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "1": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "2": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "3": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "4": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "5": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "6": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "7": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Richtig"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "8": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "9": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "10": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "11": {
+          "auswahl": {
+            "C": {
+              "0": "Richtig"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        },
+        "12": {
+          "auswahl": {
+            "C": {
+              "0": "Falsch"
+            },
+            "B": {
+              "0": "Richtig"
+            },
+            "A": {
+              "0": "Nicht Testbar"
+            }
+          },
+          "bemerkungen": {}
+        }
+      }
+    },
+    "WHK": {
+      "0": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "1": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "2": {
+        "auswahl": {
+          "C": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "3": {
+        "auswahl": {
+          "C": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "B": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "A": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "4": {
+        "auswahl": {
+          "C": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "B": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "A": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "5": {
+        "auswahl": {
+          "C": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "B": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "A": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "6": {
+        "auswahl": {
+          "C": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "B": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          },
+          "A": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "7": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "8": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "9": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "10": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "11": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Nicht Testbar",
+            "1": "Nicht Testbar"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "12": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "13": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "14": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "15": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "16": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "17": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "18": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "19": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "20": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "21": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "22": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "B": {
+            "0": "Richtig",
+            "1": "Richtig"
+          },
+          "A": {
+            "0": "Richtig",
+            "1": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      }
+    },
+    "ANLAGE": {
+      "0": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "1": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "2": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "3": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "4": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "5": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "6": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "7": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "8": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "9": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "10": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "11": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "12": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "13": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "14": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      },
+      "15": {
+        "auswahl": {
+          "C": {
+            "0": "Richtig"
+          },
+          "B": {
+            "0": "Richtig"
+          }
+        },
+        "bemerkungen": {}
+      }
+    }
+  }
+}

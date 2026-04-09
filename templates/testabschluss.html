@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Testabschluss - Abnahmetest{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h2>Testabschluss</h2>
+        </div>
+    </div>
+
+    <div class="testabschluss-content">
+        <!-- Kategorie 1: EWH (Elektroweichenheizung) -->
+        <div class="category-section ewh-section">
+            <div class="category-header ewh">
+                <span class="category-badge">EWH</span>
+                <h2>Elektroweichenheizung</h2>
+            </div>
+
+            <div class="category-content">
+                <h3><span class="settings-icon">⚙️</span> Einstellungen am WH-Leitstand nach dem Abnahmetest</h3>
+
+                {% if ewh_items %}
+                <div class="checklist">
+                    {% for item in ewh_items %}
+                    <div class="checklist-item">
+                        <div class="checklist-number">{{ loop.index }}</div>
+                        <div class="checklist-text">
+                            <strong>{{ item.titel }}:</strong>
+                            {% if item.highlight_text %}
+                                {% set highlight_html = '<span class="highlight">"' ~ item.highlight_text ~ '"</span>' %}
+                                {% if '{highlight}' in item.beschreibung %}
+                                <p>{{ item.beschreibung|replace('{highlight}', highlight_html)|safe }}</p>
+                                {% else %}
+                                <p>{{ item.beschreibung }} {{ highlight_html|safe }}</p>
+                                {% endif %}
+                            {% else %}
+                            <p>{{ item.beschreibung }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="no-items-message">
+                    <p>Keine EWH-Einträge konfiguriert.</p>
+                    <a href="{{ url_for('testabschluss_settings') }}" class="btn-settings">Einträge verwalten</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Kategorie 2: GWH (Gasweichenheizung) -->
+        <div class="category-section">
+            <div class="category-header gwh">
+                <span class="category-badge">GWH</span>
+                <h2>Gasweichenheizung</h2>
+            </div>
+
+            {% if gwh_items %}
+            <div class="category-content">
+                <h3><span class="settings-icon">⚙️</span> Einstellungen am WH-Leitstand nach dem Abnahmetest</h3>
+
+                <div class="checklist">
+                    {% for item in gwh_items %}
+                    <div class="checklist-item">
+                        <div class="checklist-number">{{ loop.index }}</div>
+                        <div class="checklist-text">
+                            <strong>{{ item.titel }}:</strong>
+                            {% if item.highlight_text %}
+                                {% set highlight_html = '<span class="highlight">"' ~ item.highlight_text ~ '"</span>' %}
+                                {% if '{highlight}' in item.beschreibung %}
+                                <p>{{ item.beschreibung|replace('{highlight}', highlight_html)|safe }}</p>
+                                {% else %}
+                                <p>{{ item.beschreibung }} {{ highlight_html|safe }}</p>
+                                {% endif %}
+                            {% else %}
+                            <p>{{ item.beschreibung }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="category-content placeholder">
+                <div class="placeholder-icon">🚧</div>
+                <h3>Inhalte folgen in Kürze</h3>
+                <p>Die spezifischen Einstellungen für Gasweichenheizungen werden hier in Kürze ergänzt.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Zurück-Button -->
+        <div class="action-buttons">
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück zu Projekten</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

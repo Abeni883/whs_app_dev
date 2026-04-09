@@ -1,0 +1,970 @@
+{% extends "base.html" %}
+
+{% block title %}{{ komponente_label }} - {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 1. Header -->
+    <div class="page-header">
+        <div>
+            <h2>{{ komponente_label }} Test</h2>
+            <p class="project-info">Projekt: <strong>{{ projekt.projektname }}</strong></p>
+        </div>
+        <a href="{{ zurueck_url }}" class="btn-secondary">← Zurück zur Übersicht</a>
+    </div>
+
+    <!-- Test-Section -->
+    <section class="test-section">
+        <!-- 2. Fragen-Info-Tabelle (4 Spalten) -->
+        <div class="fragen-info-section">
+            <table class="compact-test-table fragen-info-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%; text-align: left;">Abnahmetest</th>
+                        <th style="width: 25%; text-align: left;">Testbeschreibung</th>
+                        <th style="width: 30%; text-align: left;">Erwartetes Ergebnis</th>
+                        <th style="width: 15%; text-align: center;">Screenshot</th>
+                    </tr>
+                </thead>
+                <tbody id="fragen-info-body">
+                    <!-- Wird von JavaScript gefüllt -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 3. Navigation (dezent) -->
+        <div class="navigation-row">
+            <button type="button" id="btn-prev-frage" class="btn-nav-question btn-outline" disabled>◀ Vorherige Frage</button>
+            <span class="question-indicator">
+                Frage <span id="current-question-number">1</span> von <span id="total-questions">{{ fragen|length }}</span>
+            </span>
+            <button type="button" id="btn-next-frage" class="btn-nav-question btn-outline-primary">Nächste Frage ▶</button>
+        </div>
+
+        <!-- 4. Fortschritts-Balken (dünn) -->
+        <div class="progress-section-slim">
+            <div class="progress-bar-slim">
+                <div class="progress-fill-slim" id="progress-fill" style="width: 0%;"></div>
+            </div>
+            <span class="progress-text-slim" id="progress-text">0 von {{ fragen|length }} beantwortet</span>
+        </div>
+
+        <!-- Auto-Save Status Anzeige -->
+        <div id="save-status" class="save-status" style="display: none;">
+            <!-- Wird per JavaScript befüllt -->
+        </div>
+
+        <!-- 5. LSS-CH Tabelle -->
+        <div class="system-group">
+            <div class="table-wrapper">
+                <table class="compact-test-table" id="lss-ch-table">
+                    <thead>
+                        <tr id="lss-ch-header">
+                            <th class="result-column">LSS-CH</th>
+                            {% for spalte in spalten %}
+                            <th class="whk-column">{{ spalte }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody id="lss-ch-tbody">
+                        <tr class="result-row-richtig">
+                            <td class="result-label">Richtig</td>
+                        </tr>
+                        <tr class="result-row-falsch">
+                            <td class="result-label">Falsch</td>
+                        </tr>
+                        <tr class="result-row-nicht-testbar">
+                            <td class="result-label">Nicht Testbar</td>
+                        </tr>
+                        <tr class="result-row-bemerkung">
+                            <td class="result-label">Bemerkung</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 6. WH-LTS Tabelle -->
+        <div class="system-group">
+            <div class="table-wrapper">
+                <table class="compact-test-table" id="wh-lts-table">
+                    <thead>
+                        <tr id="wh-lts-header">
+                            <th class="result-column">WH-LTS</th>
+                            {% for spalte in spalten %}
+                            <th class="whk-column">{{ spalte }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody id="wh-lts-tbody">
+                        <tr class="result-row-richtig">
+                            <td class="result-label">Richtig</td>
+                        </tr>
+                        <tr class="result-row-falsch">
+                            <td class="result-label">Falsch</td>
+                        </tr>
+                        <tr class="result-row-nicht-testbar">
+                            <td class="result-label">Nicht Testbar</td>
+                        </tr>
+                        <tr class="result-row-bemerkung">
+                            <td class="result-label">Bemerkung</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Bemerkung Modal (wie EWH) -->
+<dialog id="bemerkung-modal" class="bemerkung-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Bemerkung hinzufügen</h3>
+            <button type="button" class="modal-close-btn" onclick="closeBemerkungModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="modal-context" class="modal-context"></p>
+            <textarea id="modal-bemerkung-input" class="modal-textarea" rows="5" placeholder="Bemerkung eingeben..."></textarea>
+            <div class="char-counter">
+                <span id="char-count">0</span> Zeichen
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeBemerkungModal()">Abbrechen</button>
+            <button type="button" class="btn-danger" id="btn-delete-bemerkung" onclick="deleteBemerkung()" style="display: none;">Löschen</button>
+            <button type="button" class="btn-primary" onclick="saveBemerkung()">Speichern</button>
+        </div>
+    </div>
+</dialog>
+
+<style>
+/* GWH Test-Seite - Layout wie Screenshot 1, Styling wie Screenshot 2 */
+
+/* Fragen-Info-Bereich */
+.fragen-info-section {
+    margin-bottom: 1.5rem;
+}
+
+.fragen-info-table {
+    width: 100%;
+    border-bottom: 2px solid var(--border-color, #dee2e6);
+    margin-bottom: 0;
+}
+
+.fragen-info-table td {
+    padding: 1rem;
+    vertical-align: top;
+    min-height: 100px;
+    text-align: left;
+}
+
+.fragen-info-table tbody tr {
+    min-height: 100px;
+}
+
+.fragen-info-table tbody td {
+    height: 100px;
+}
+
+/* Screenshot-Spalte zentriert */
+.fragen-info-table td:last-child {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Testbeschreibung rot und kursiv (wie EWH) */
+.fragen-info-table td.test-beschreibung {
+    color: #dc2626 !important;
+    font-style: italic;
+}
+
+/* Navigation Row (dezent) */
+.navigation-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.75rem 0;
+    gap: 0.5rem;
+}
+
+/* Navigation Buttons (gleiche Höhe) */
+.btn-nav-question {
+    min-height: 36px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #d1d5db);
+}
+
+.btn-outline:hover:not(:disabled) {
+    background: var(--bg-tertiary, #f3f4f6);
+    border-color: var(--text-secondary, #9ca3af);
+}
+
+.btn-outline:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    color: var(--accent-primary, #10b981);
+    border: 1px solid var(--accent-primary, #10b981);
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+    background: var(--accent-primary, #10b981);
+    color: white;
+}
+
+/* Frage-Indikator (einfacher Text) */
+.question-indicator {
+    font-size: 0.85rem;
+    color: var(--text-tertiary, #9ca3af);
+    font-weight: 400;
+}
+
+/* Fortschritts-Section (schlank) */
+.progress-section-slim {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.progress-bar-slim {
+    flex: 1;
+    height: 4px;
+    background: var(--border-color, #e5e7eb);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill-slim {
+    height: 100%;
+    background: var(--accent-primary, #10b981);
+    transition: width 0.3s ease;
+}
+
+.progress-text-slim {
+    font-size: 0.8rem;
+    color: var(--text-tertiary, #9ca3af);
+    white-space: nowrap;
+}
+
+/* Screenshot Button (dezent, passend zum Theme) */
+.screenshot-btn {
+    padding: 0.35rem 0.75rem;
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.screenshot-btn:hover {
+    background: var(--bg-tertiary, #f3f4f6);
+    border-color: var(--text-secondary, #9ca3af);
+}
+
+/* Dark Theme */
+[data-theme="dark"] .screenshot-btn {
+    color: #9ca3af;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .screenshot-btn:hover {
+    background: #374151;
+    border-color: #6b7280;
+    color: #e5e7eb;
+}
+
+.no-screenshot {
+    color: var(--text-tertiary, #718096);
+    font-style: italic;
+}
+
+/* System Group (für LSS-CH und WH-LTS Tabellen) */
+.system-group {
+    margin: 1rem 0;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+/* Save Status */
+.save-status {
+    text-align: center;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.status-saving {
+    color: var(--accent-yellow, #f59e0b);
+}
+
+.status-saved {
+    color: var(--accent-green, #10b981);
+}
+
+.status-error {
+    color: var(--accent-red, #ef4444);
+}
+
+/* Bemerkung Button (wie EWH) */
+.btn-bemerkung {
+    background: var(--bemerkung-btn-bg, #f3f4f6);
+    color: var(--bemerkung-btn-text, #6b7280);
+    border: 1px solid var(--bemerkung-btn-border, #d1d5db);
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-bemerkung:hover {
+    background: var(--bemerkung-btn-hover, #e5e7eb);
+}
+
+.btn-bemerkung.has-bemerkung {
+    background: var(--bemerkung-btn-active-bg, #10b981);
+    color: var(--bemerkung-btn-active-text, #ffffff);
+    border-color: var(--bemerkung-btn-active-border, #059669);
+}
+
+/* Checkbox-Cell (wie EWH) */
+.checkbox-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.bemerkung-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Zurück-Button für Dark Theme optimieren */
+[data-theme="dark"] .page-header .btn-secondary {
+    background-color: #4b5563;
+    color: #e5e7eb;
+    border: 1px solid #6b7280;
+}
+
+[data-theme="dark"] .page-header .btn-secondary:hover {
+    background-color: #374151;
+    color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navigation-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .question-counter {
+        text-align: center;
+        width: 100%;
+        order: -1;
+    }
+
+    .btn-nav {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Globale Variablen
+const projektId = {{ projekt.id }};
+const fragenData = {{ fragen_json|safe }};
+const spalten = {{ spalten|tojson }};
+let ergebnisse = {{ ergebnisse_json|safe }};
+let currentQuestionIndex = 0;
+let saveTimeout = null;
+let currentBemerkungKey = null;
+const firstUnansweredIndex = {{ first_unanswered_index | default(0) }};
+
+// Multi-Spalten-Modus Erkennung
+// Backend-Flag hat Priorität, sonst automatisch wenn mehr als 1 Spalte
+const isMultiSpaltenMode = {{ multi_spalten|default(false)|tojson }} || spalten.length > 1;
+
+// WICHTIG: Schutz gegen Auto-Save während des Ladens
+// Browser-Autofill oder andere Events können Change-Events triggern
+let initialLoadComplete = false;
+
+// Initialisierung
+document.addEventListener('DOMContentLoaded', function() {
+    if (fragenData.length === 0) {
+        document.getElementById('fragen-info-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">Keine Testfragen vorhanden</td></tr>';
+        return;
+    }
+
+    // Zur ersten unbeantworteten Frage springen
+    const startIndex = firstUnansweredIndex > 0 ? firstUnansweredIndex : 0;
+    showQuestion(startIndex);
+    updateProgress();
+
+    // Benachrichtigung anzeigen wenn fortgesetzt wird
+    if (firstUnansweredIndex > 0) {
+        showResumeNotification(firstUnansweredIndex + 1, fragenData.length);
+    }
+
+    // Event Listeners
+    document.getElementById('btn-prev-frage').addEventListener('click', previousQuestion);
+    document.getElementById('btn-next-frage').addEventListener('click', nextQuestion);
+    document.getElementById('modal-bemerkung-input').addEventListener('input', updateCharCounter);
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' && currentQuestionIndex > 0) {
+            previousQuestion();
+        } else if (e.key === 'ArrowRight' && currentQuestionIndex < fragenData.length - 1) {
+            nextQuestion();
+        }
+    });
+
+    // Auto-Save erst nach vollständigem Laden aktivieren
+    // Verhindert ungewolltes Speichern durch Browser-Autofill etc.
+    setTimeout(() => {
+        initialLoadComplete = true;
+    }, 1000);
+
+    // Speichern beim Verlassen der Seite (Link-Klicks)
+    let pendingNavigation = null;
+    
+    document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Prüfe ob es ungespeicherte Änderungen gibt
+            if (initialLoadComplete && Object.keys(ergebnisse).length > 0) {
+                e.preventDefault();
+                pendingNavigation = this.href;
+                
+                // Speichere und navigiere nach Erfolg
+                fetch(window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ergebnisse)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    window.location.href = pendingNavigation;
+                })
+                .catch(error => {
+                    console.error('[GWH-Test] Speicherfehler, navigiere trotzdem:', error);
+                    window.location.href = pendingNavigation;
+                });
+            }
+        });
+    });
+});
+
+// Fragennavigation
+function showQuestion(index) {
+    if (index < 0 || index >= fragenData.length) return;
+
+    currentQuestionIndex = index;
+    const frage = fragenData[index];
+
+    // Update Fragen-Info-Tabelle
+    const frageInfoBody = document.getElementById('fragen-info-body');
+    const screenshotCell = frage.screenshot_pfad ?
+        `<button class="screenshot-btn" onclick="openScreenshot('${frage.screenshot_pfad}')">📷 Anzeigen</button>` :
+        `<span class="no-screenshot">-</span>`;
+
+    frageInfoBody.innerHTML = `
+        <tr>
+            <td style="text-align: left;">${frage.frage_text || '-'}</td>
+            <td class="test-beschreibung" style="text-align: left;">${frage.test_information || '-'}</td>
+            <td style="text-align: left;">${frage.erwartetes_ergebnis || '-'}</td>
+            <td style="text-align: center;">${screenshotCell}</td>
+        </tr>
+    `;
+
+    // Update Counter
+    document.getElementById('current-question-number').textContent = index + 1;
+    document.getElementById('total-questions').textContent = fragenData.length;
+
+    // Update Navigation Buttons
+    document.getElementById('btn-prev-frage').disabled = (index === 0);
+
+    const nextButton = document.getElementById('btn-next-frage');
+    if (index === fragenData.length - 1) {
+        nextButton.textContent = 'Abschluss ▶';
+    } else {
+        nextButton.textContent = 'Nächste Frage ▶';
+    }
+
+    // Update Test-Tabellen
+    updateTable('lss-ch', frage);
+    updateTable('wh-lts', frage);
+
+    // Update Fortschrittsbalken
+    updateProgressBar();
+}
+
+function previousQuestion() {
+    if (currentQuestionIndex > 0) {
+        showQuestion(currentQuestionIndex - 1);
+    }
+}
+
+function nextQuestion() {
+    if (currentQuestionIndex < fragenData.length - 1) {
+        showQuestion(currentQuestionIndex + 1);
+    }
+}
+
+function openScreenshot(filename) {
+    window.open(`/uploads/screenshots/${filename}`, '_blank');
+}
+
+// Fortschrittsbalken aktualisieren
+function updateProgressBar() {
+    const progress = ((currentQuestionIndex + 1) / fragenData.length) * 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+
+    // Berechne beantwortete Fragen für Text (Multi-Spalten-kompatibel)
+    let answeredCount = 0;
+    fragenData.forEach(frage => {
+        const frageId = frage.id;
+        if (ergebnisse[frageId]) {
+            let hasAnswer = false;
+            if (isMultiSpaltenMode) {
+                // Multi-Spalten: Prüfe ob mindestens eine Spalte beantwortet ist
+                for (const spalte of spalten) {
+                    if (ergebnisse[frageId][spalte]) {
+                        const lss = ergebnisse[frageId][spalte].lss_ch;
+                        const wh = ergebnisse[frageId][spalte].wh_lts;
+                        if ((lss && lss.result) || (wh && wh.result)) {
+                            hasAnswer = true;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Single-Spalte
+                const lssAnswered = ergebnisse[frageId].lss_ch && ergebnisse[frageId].lss_ch.result;
+                const whAnswered = ergebnisse[frageId].wh_lts && ergebnisse[frageId].wh_lts.result;
+                hasAnswer = lssAnswered || whAnswered;
+            }
+            if (hasAnswer) {
+                answeredCount++;
+            }
+        }
+    });
+
+    document.getElementById('progress-text').textContent = `${answeredCount} von ${fragenData.length} Fragen beantwortet`;
+}
+
+// Test-Tabelle aktualisieren (wie EWH)
+function updateTable(system, frage) {
+    const header = document.getElementById(system + '-header');
+    const body = document.getElementById(system + '-tbody');
+    const frageId = frage.id;
+
+    // Ergebnisse für diese Frage laden
+    // Unterstützt beide Strukturen:
+    // - Single-Spalte: ergebnisse[frageId] = {lss_ch: {...}, wh_lts: {...}}
+    // - Multi-Spalte: ergebnisse[frageId][spalte] = {lss_ch: {...}, wh_lts: {...}}
+    const frageErgebnisse = ergebnisse[frageId] || {};
+
+    // System-Key für Ergebnisse (lss-ch -> lss_ch)
+    const systemKey = system.replace('-', '_');
+
+    // Hilfsfunktion um Ergebnis für eine Spalte zu holen (nutzt globale isMultiSpaltenMode)
+    function getSpalteErgebnis(spalte, key) {
+        if (isMultiSpaltenMode) {
+            // Multi-Spalten: ergebnisse[frageId][spalte][key]
+            return frageErgebnisse[spalte] ? frageErgebnisse[spalte][key] : null;
+        } else {
+            // Single-Spalte: ergebnisse[frageId][key]
+            return frageErgebnisse[key] || null;
+        }
+    }
+
+    // Header aktualisieren
+    const systemName = system.toUpperCase();
+    header.innerHTML = '<th class="result-column">' + systemName + '</th>';
+    spalten.forEach(spalte => {
+        const th = document.createElement('th');
+        th.className = 'whk-column';
+        th.textContent = spalte;
+        header.appendChild(th);
+    });
+
+    // Body aktualisieren (4 Zeilen: Richtig, Falsch, Nicht Testbar, Bemerkung)
+    const ergebnisTypen = ['richtig', 'falsch', 'nicht_testbar'];
+    const rowClasses = ['result-row-richtig', 'result-row-falsch', 'result-row-nicht-testbar'];
+    const labels = ['Richtig', 'Falsch', 'Nicht Testbar'];
+
+    ergebnisTypen.forEach((ergebnis, rowIndex) => {
+        const row = body.rows[rowIndex];
+
+        // Lösche alle Zellen außer der ersten (Label)
+        while (row.cells.length > 1) {
+            row.deleteCell(1);
+        }
+
+        // Füge Checkboxen für jede Spalte hinzu
+        spalten.forEach(spalte => {
+            const td = document.createElement('td');
+            td.className = 'checkbox-cell';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.questionId = frage.id;
+            checkbox.dataset.system = system;
+            checkbox.dataset.spalte = spalte;
+            checkbox.dataset.ergebnis = ergebnis;
+
+            // Prüfe, ob gespeicherte Antwort vorhanden (Multi-Spalten-kompatibel)
+            const spalteErgebnis = getSpalteErgebnis(spalte, systemKey);
+            const currentResult = spalteErgebnis ? spalteErgebnis.result : null;
+            if (currentResult === ergebnis) {
+                checkbox.checked = true;
+            }
+
+            // Event-Listener
+            checkbox.addEventListener('change', handleCheckboxChange);
+
+            td.appendChild(checkbox);
+            row.appendChild(td);
+        });
+    });
+
+    // Bemerkung-Zeile aktualisieren (4. Zeile)
+    const bemerkungRow = body.rows[3];
+    if (bemerkungRow) {
+        while (bemerkungRow.cells.length > 1) {
+            bemerkungRow.deleteCell(1);
+        }
+
+        spalten.forEach(spalte => {
+            const td = document.createElement('td');
+            td.className = 'bemerkung-cell';
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn-bemerkung';
+            button.dataset.questionId = frage.id;
+            button.dataset.system = system;
+            button.dataset.spalte = spalte;
+
+            // Prüfe ob Bemerkung vorhanden (Multi-Spalten-kompatibel)
+            const spalteErgebnis = getSpalteErgebnis(spalte, systemKey);
+            const currentBemerkung = spalteErgebnis ? spalteErgebnis.bemerkung : null;
+            if (currentBemerkung) {
+                button.classList.add('has-bemerkung');
+                button.title = 'Bemerkung bearbeiten: ' + currentBemerkung.substring(0, 50) + (currentBemerkung.length > 50 ? '...' : '');
+            } else {
+                button.title = 'Bemerkung hinzufügen';
+            }
+            button.textContent = '💬';
+
+            button.addEventListener('click', function() {
+                openBemerkungModal(systemKey, spalte);
+            });
+
+            td.appendChild(button);
+            bemerkungRow.appendChild(td);
+        });
+    }
+}
+
+function handleCheckboxChange(event) {
+    const checkbox = event.target;
+    const system = checkbox.dataset.system;
+    const spalte = checkbox.dataset.spalte;
+    const ergebnis = checkbox.dataset.ergebnis;
+    const frageId = fragenData[currentQuestionIndex].id;
+
+    // Debug: Zeige was sich ändert
+
+    // System-Key für Speicherung (lss-ch -> lss_ch)
+    const systemKey = system.replace('-', '_');
+
+    if (checkbox.checked) {
+        // Radio-Verhalten: Deaktiviere andere Checkboxen in derselben Spalte/System
+        const parentRow = checkbox.closest('tr');
+        const columnIndex = Array.from(parentRow.cells).indexOf(checkbox.closest('td'));
+        const tbody = parentRow.parentElement;
+
+        tbody.querySelectorAll('tr').forEach(row => {
+            const cell = row.cells[columnIndex];
+            if (cell) {
+                const otherCheckbox = cell.querySelector('input[type="checkbox"]');
+                if (otherCheckbox && otherCheckbox !== checkbox) {
+                    otherCheckbox.checked = false;
+                }
+            }
+        });
+
+        // Speichere Ergebnis (Multi-Spalten-kompatibel)
+        if (isMultiSpaltenMode) {
+            // Multi-Spalten: ergebnisse[frageId][spalte][systemKey]
+            if (!ergebnisse[frageId]) {
+                ergebnisse[frageId] = {};
+            }
+            if (!ergebnisse[frageId][spalte]) {
+                ergebnisse[frageId][spalte] = {lss_ch: {}, wh_lts: {}};
+            }
+            if (!ergebnisse[frageId][spalte][systemKey]) {
+                ergebnisse[frageId][spalte][systemKey] = {};
+            }
+            ergebnisse[frageId][spalte][systemKey].result = ergebnis;
+        } else {
+            // Single-Spalte: ergebnisse[frageId][systemKey]
+            if (!ergebnisse[frageId]) {
+                ergebnisse[frageId] = {lss_ch: {}, wh_lts: {}};
+            }
+            if (!ergebnisse[frageId][systemKey]) {
+                ergebnisse[frageId][systemKey] = {};
+            }
+            ergebnisse[frageId][systemKey].result = ergebnis;
+        }
+    } else {
+        // Checkbox wurde deaktiviert
+        if (isMultiSpaltenMode) {
+            if (ergebnisse[frageId] && ergebnisse[frageId][spalte] && ergebnisse[frageId][spalte][systemKey]) {
+                ergebnisse[frageId][spalte][systemKey].result = null;
+            }
+        } else {
+            if (ergebnisse[frageId] && ergebnisse[frageId][systemKey]) {
+                ergebnisse[frageId][systemKey].result = null;
+            }
+        }
+    }
+
+    updateProgress();
+    debouncedSave();
+}
+
+// Bemerkung Modal
+function openBemerkungModal(system, spalte) {
+    const frageId = fragenData[currentQuestionIndex].id;
+    currentBemerkungKey = { frageId, system, spalte };
+
+    // System-Name für Anzeige formatieren (lss_ch -> LSS-CH)
+    const systemDisplay = system.replace('_', '-').toUpperCase();
+
+    // Kontext setzen
+    document.getElementById('modal-context').textContent = `System: ${systemDisplay} | Spalte: ${spalte}`;
+
+    // Prüfe ob Bemerkung existiert (Multi-Spalten-kompatibel)
+    let bemerkung = '';
+    if (isMultiSpaltenMode) {
+        bemerkung = (ergebnisse[frageId] && ergebnisse[frageId][spalte] && ergebnisse[frageId][spalte][system] && ergebnisse[frageId][spalte][system].bemerkung) || '';
+    } else {
+        bemerkung = (ergebnisse[frageId] && ergebnisse[frageId][system] && ergebnisse[frageId][system].bemerkung) || '';
+    }
+    const hasBemerkung = bemerkung && bemerkung.trim().length > 0;
+
+    // Titel anpassen je nachdem ob Bemerkung existiert
+    document.getElementById('modal-title').textContent = hasBemerkung ? 'Bemerkung bearbeiten' : 'Bemerkung hinzufügen';
+
+    // Löschen-Button nur anzeigen wenn Bemerkung vorhanden
+    const deleteBtn = document.getElementById('btn-delete-bemerkung');
+    deleteBtn.style.display = hasBemerkung ? 'inline-block' : 'none';
+
+    document.getElementById('modal-bemerkung-input').value = bemerkung;
+    updateCharCounter();
+    document.getElementById('bemerkung-modal').showModal();
+}
+
+function closeBemerkungModal() {
+    document.getElementById('bemerkung-modal').close();
+    currentBemerkungKey = null;
+}
+
+function deleteBemerkung() {
+    if (!currentBemerkungKey) return;
+
+    if (confirm('Bemerkung wirklich löschen?')) {
+        const { frageId, system, spalte } = currentBemerkungKey;
+
+        // Bemerkung aus Ergebnissen entfernen (Multi-Spalten-kompatibel)
+        if (isMultiSpaltenMode) {
+            if (ergebnisse[frageId] && ergebnisse[frageId][spalte] && ergebnisse[frageId][spalte][system]) {
+                ergebnisse[frageId][spalte][system].bemerkung = null;
+            }
+        } else {
+            if (ergebnisse[frageId] && ergebnisse[frageId][system]) {
+                ergebnisse[frageId][system].bemerkung = null;
+            }
+        }
+
+        // Textfeld leeren
+        document.getElementById('modal-bemerkung-input').value = '';
+
+        // Tabellen aktualisieren (Bemerkung-Buttons)
+        const frage = fragenData[currentQuestionIndex];
+        updateTable('lss-ch', frage);
+        updateTable('wh-lts', frage);
+
+        // Modal schließen
+        closeBemerkungModal();
+
+        // Auto-Save triggern
+        debouncedSave();
+    }
+}
+
+function saveBemerkung() {
+    if (!currentBemerkungKey) return;
+
+    const { frageId, system, spalte } = currentBemerkungKey;
+    const bemerkung = document.getElementById('modal-bemerkung-input').value.trim();
+
+    // Speichere Bemerkung (Multi-Spalten-kompatibel)
+    if (isMultiSpaltenMode) {
+        if (!ergebnisse[frageId]) {
+            ergebnisse[frageId] = {};
+        }
+        if (!ergebnisse[frageId][spalte]) {
+            ergebnisse[frageId][spalte] = {lss_ch: {}, wh_lts: {}};
+        }
+        if (!ergebnisse[frageId][spalte][system]) {
+            ergebnisse[frageId][spalte][system] = {};
+        }
+    } else {
+        if (!ergebnisse[frageId]) {
+            ergebnisse[frageId] = {lss_ch: {}, wh_lts: {}};
+        }
+        if (!ergebnisse[frageId][system]) {
+            ergebnisse[frageId][system] = {};
+        }
+    }
+
+    // Speichere Bemerkung (Multi-Spalten-kompatibel)
+    if (isMultiSpaltenMode) {
+        ergebnisse[frageId][spalte][system].bemerkung = bemerkung || null;
+    } else {
+        ergebnisse[frageId][system].bemerkung = bemerkung || null;
+    }
+
+    // Update Bemerkung-Buttons neu laden
+    const frage = fragenData[currentQuestionIndex];
+    updateTable('lss-ch', frage);
+    updateTable('wh-lts', frage);
+
+    closeBemerkungModal();
+    debouncedSave();
+}
+
+function updateCharCounter() {
+    const input = document.getElementById('modal-bemerkung-input');
+    const count = input.value.length;
+    document.getElementById('char-count').textContent = count;
+}
+
+// Fortschritt berechnen und anzeigen
+function updateProgress() {
+    // Aktualisiere Fortschrittsbalken und Text
+    updateProgressBar();
+}
+
+// Auto-Save
+let saveStatusTimeout = null;
+
+function debouncedSave() {
+    // Schutz: Keine Saves während des initialen Ladens
+    if (!initialLoadComplete) {
+        return;
+    }
+
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveErgebnisse, 500);
+}
+
+// showSaveStatus wird aus shared.js verwendet
+
+function saveErgebnisse() {
+    // Debug: Zeige was gespeichert wird
+
+    showSaveStatus('saving');
+
+    // Verwende die aktuelle URL für POST (jede Route akzeptiert GET und POST)
+    fetch(window.location.pathname, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ergebnisse)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showSaveStatus('saved');
+        } else {
+            showSaveStatus('error', result.error || 'Unbekannter Fehler');
+            console.error('Speicherfehler:', result.error);
+        }
+    })
+    .catch(error => {
+        showSaveStatus('error', 'Netzwerkfehler');
+        console.error('Netzwerkfehler:', error);
+    });
+}
+
+// Benachrichtigung beim Fortsetzen anzeigen
+function showResumeNotification(questionNumber, totalQuestions) {
+    const notification = document.createElement('div');
+    notification.className = 'resume-notification';
+    notification.innerHTML = `Fortgesetzt bei Frage ${questionNumber} von ${totalQuestions}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent-primary, #10b981);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideDown 0.3s ease-out;
+    `;
+
+    // Animation hinzufügen
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    // Nach 3 Sekunden ausblenden
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+</script>
+
+{% endblock %}

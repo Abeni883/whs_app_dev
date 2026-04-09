@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}WH-Anlage Konfiguration - {{ projekt.projektname }} - Abnahmetest{% endblock %}
+
+{% block content %}
+<script>
+// Dark Mode Fix - Sofort beim Laden anwenden
+(function() {
+    const theme = document.documentElement.getAttribute('data-theme') ||
+                  localStorage.getItem('theme');
+
+    if (theme === 'dark') {
+        // Füge Style-Tag hinzu der alles überschreibt
+        const style = document.createElement('style');
+        style.id = 'dark-mode-force';
+        style.textContent = `
+            .container, .config-container, .content-container,
+            .ewh-config-area, .gwh-config-area {
+                background-color: #262626 !important;
+                color: #f5f5f5 !important;
+            }
+            h2, h3, h4 {
+                color: #ffffff !important;
+            }
+            .whk-counter, small, .info-text {
+                color: #9ca3af !important;
+            }
+            .auto-save-hint {
+                color: #60a5fa !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+})();
+</script>
+<div class="container">
+    <h2>WH-Anlage Konfiguration für Projekt: {{ projekt.projektname }}</h2>
+
+    <!-- Energie-Typ-spezifische Konfiguration -->
+    {% if projekt.energie == 'EWH' %}
+    <!-- EWH-Konfiguration -->
+    <div class="ewh-config-area" style="margin-top: 2rem;">
+        <div class="config-title-container">
+            <h3>EWH-Konfiguration</h3>
+            <div class="whk-button-container">
+                <button type="button" id="btn-add-whk" class="btn-add-whk" onclick="addWHKRow()">+ WHK hinzufügen</button>
+                <span id="whk-counter" class="whk-counter">({% if whk_configs %}{{ whk_configs|length }}{% else %}1{% endif %} von 32 WHK)</span>
+            </div>
+        </div>
+
+        <form id="ewh-config-form" method="POST" action="{{ url_for('projekt_konfiguration', projekt_id=projekt.id) }}" style="margin-top: 1.5rem;">
+            <div class="config-table-section">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>WHK Nr.</th>
+                            <th>Abgänge</th>
+                            <th>Temperatursonden</th>
+                            <th>Antriebsheizung</th>
+                            <th>Meteostation</th>
+                            <th>Löschen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ewh-config-tbody">
+                        {% if whk_configs and whk_configs|length > 0 %}
+                            {% for config in whk_configs %}
+                            <tr>
+                                <td>
+                                    <input type="text" name="whk_nr_{{ loop.index }}" class="whk-input" value="{{ config.whk_nummer }}" required>
+                                </td>
+                                <td>
+                                    <select name="abgaenge_{{ loop.index }}" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == config.anzahl_abgaenge %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="temperatursonden_{{ loop.index }}" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == config.anzahl_temperatursonden %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="antriebsheizung_{{ loop.index }}" class="whk-checkbox" {% if config.hat_antriebsheizung %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    <input type="text" name="meteostation_{{ loop.index }}" class="whk-input" placeholder="Optional" value="{{ config.meteostation or '' }}">
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-delete-whk" onclick="deleteWHKRow(this)">×</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td>
+                                    <input type="text" name="whk_nr_1" class="whk-input" value="WHK 01" required>
+                                </td>
+                                <td>
+                                    <select name="abgaenge_1" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == 1 %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="temperatursonden_1" class="whk-select" required>
+                                        {% for i in range(1, 13) %}
+                                        <option value="{{ i }}" {% if i == 1 %}selected{% endif %}>{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="antriebsheizung_1" class="whk-checkbox">
+                                </td>
+                                <td>
+                                    <input type="text" name="meteostation_1" class="whk-input" placeholder="Optional">
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-delete-whk" onclick="deleteWHKRow(this)">×</button>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Auto-Save Status Anzeige -->
+            <div id="save-status" class="save-status" style="display: none;">
+                <!-- Wird per JavaScript befüllt -->
+            </div>
+
+            <div class="auto-save-info" style="margin-top: 1.5rem;">
+                <p class="auto-save-hint">💾 Alle Änderungen werden automatisch gespeichert</p>
+            </div>
+
+            <div class="form-actions" style="margin-top: 1rem;">
+                <a href="{{ url_for('projekte') }}" class="btn-primary">Zurück zur Projektübersicht</a>
+            </div>
+        </form>
+    </div>
+
+    {% elif projekt.energie == 'GWH' %}
+    <!-- GWH-Konfiguration -->
+    <div class="gwh-config-area" style="margin-top: 2rem;">
+        <h3>GWH-Konfiguration</h3>
+
+        <div class="config-section" style="margin-top: 1.5rem;">
+            <p class="placeholder-text">Die GWH-Konfiguration wird später implementiert.</p>
+        </div>
+
+        <div class="form-actions" style="margin-top: 1.5rem;">
+            <a href="{{ url_for('projekte') }}" class="btn-secondary">Zurück zur Projektübersicht</a>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Unbekannter Energie-Typ -->
+    <div class="alert alert-error" style="margin-top: 2rem;">
+        <strong>Fehler:</strong> Unbekannter Energie-Typ "{{ projekt.energie }}". Bitte prüfen Sie die Projektkonfiguration.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const MAX_WHK_ROWS = 32;
+const projektId = {{ projekt.id }};
+
+// Initiale Prüfung beim Laden der Seite
+document.addEventListener('DOMContentLoaded', function() {
+    checkAddButtonStatus();
+    updateWHKCounter();
+    setupAutoSave();
+});
+
+function addWHKRow() {
+    // Tabelle finden
+    const tbody = document.getElementById('ewh-config-tbody');
+    if (!tbody) return;
+
+    // Aktuelle Anzahl der Zeilen ermitteln
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    // Maximal-Prüfung
+    if (currentRows >= MAX_WHK_ROWS) {
+        alert(`Maximal ${MAX_WHK_ROWS} WHK können konfiguriert werden.`);
+        return;
+    }
+
+    const nextNumber = currentRows + 1;
+
+    // WHK-Nummer mit führender Null formatieren
+    const whkNumber = nextNumber.toString().padStart(2, '0');
+    const whkLabel = 'WHK ' + whkNumber;
+
+    // Neue Zeile erstellen
+    const newRow = document.createElement('tr');
+
+    // Optionen für Dropdowns erstellen (1-12)
+    let selectOptions = '';
+    for (let i = 1; i <= 12; i++) {
+        selectOptions += `<option value="${i}"${i === 1 ? ' selected' : ''}>${i}</option>`;
+    }
+
+    // HTML für die neue Zeile
+    newRow.innerHTML = `
+        <td>
+            <input type="text" name="whk_nr_${nextNumber}" class="whk-input" value="${whkLabel}" required>
+        </td>
+        <td>
+            <select name="abgaenge_${nextNumber}" class="whk-select" required>
+                ${selectOptions}
+            </select>
+        </td>
+        <td>
+            <select name="temperatursonden_${nextNumber}" class="whk-select" required>
+                ${selectOptions}
+            </select>
+        </td>
+        <td>
+            <input type="checkbox" name="antriebsheizung_${nextNumber}" class="whk-checkbox">
+        </td>
+        <td>
+            <input type="text" name="meteostation_${nextNumber}" class="whk-input" placeholder="Optional">
+        </td>
+        <td>
+            <button type="button" class="btn-delete-whk" onclick="deleteWHKRow(this)">×</button>
+        </td>
+    `;
+
+    // Neue Zeile zur Tabelle hinzufügen
+    tbody.appendChild(newRow);
+
+    // Button-Status und Zähler aktualisieren
+    checkAddButtonStatus();
+    updateWHKCounter();
+
+    // Auto-Save nach Hinzufügen triggern
+    triggerAutoSave();
+}
+
+function deleteWHKRow(button) {
+    // Tabelle finden
+    const tbody = document.getElementById('ewh-config-tbody');
+    if (!tbody) return;
+
+    // Aktuelle Anzahl der Zeilen zählen
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    // Mindestens eine Zeile muss bleiben
+    if (currentRows <= 1) {
+        alert('Mindestens eine WHK-Zeile muss vorhanden bleiben.');
+        return;
+    }
+
+    // Bestätigungsdialog anzeigen
+    const confirmed = confirm('Möchten Sie diese WHK-Zeile wirklich löschen?');
+
+    if (confirmed) {
+        // Zeile finden und entfernen
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+
+            // Button-Status und Zähler aktualisieren
+            checkAddButtonStatus();
+            updateWHKCounter();
+
+            // Auto-Save nach Löschen triggern
+            triggerAutoSave();
+        }
+    }
+}
+
+function checkAddButtonStatus() {
+    const tbody = document.getElementById('ewh-config-tbody');
+    const addButton = document.getElementById('btn-add-whk');
+
+    if (!tbody || !addButton) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+
+    // Button deaktivieren, wenn Maximum erreicht
+    if (currentRows >= MAX_WHK_ROWS) {
+        addButton.disabled = true;
+    } else {
+        addButton.disabled = false;
+    }
+}
+
+function updateWHKCounter() {
+    const tbody = document.getElementById('ewh-config-tbody');
+    const counter = document.getElementById('whk-counter');
+
+    if (!tbody || !counter) return;
+
+    const currentRows = tbody.getElementsByTagName('tr').length;
+    counter.textContent = `(${currentRows} von ${MAX_WHK_ROWS} WHK)`;
+
+    // Rote Farbe, wenn Maximum erreicht
+    if (currentRows >= MAX_WHK_ROWS) {
+        counter.classList.add('whk-counter-max');
+    } else {
+        counter.classList.remove('whk-counter-max');
+    }
+}
+
+// ==================== AUTO-SAVE FUNKTIONEN ====================
+let autoSaveTimeout = null;
+let saveStatusTimeout = null;
+const AUTO_SAVE_DELAY = 1000; // 1 Sekunde Verzögerung
+
+function setupAutoSave() {
+    const configTable = document.getElementById('ewh-config-tbody');
+    if (!configTable) return;
+
+    // Event Delegation für alle Input-Felder
+    configTable.addEventListener('input', function(e) {
+        if (e.target.matches('input, select')) {
+            triggerAutoSave();
+        }
+    });
+
+    // Event für Checkboxen (change statt input)
+    configTable.addEventListener('change', function(e) {
+        if (e.target.matches('input[type="checkbox"]')) {
+            triggerAutoSave();
+        }
+    });
+
+    // Verhindere Standard-Formular-Submit
+    const form = document.getElementById('ewh-config-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Optional: Manuelles Speichern triggern
+            performAutoSave();
+        });
+    }
+}
+
+function triggerAutoSave() {
+    // Clear existing timeout
+    if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+    }
+
+    // Zeige "Speichert..." Status
+    showSaveStatus('saving');
+
+    // Set new timeout - speichert nach 1 Sekunde Inaktivität
+    autoSaveTimeout = setTimeout(() => {
+        performAutoSave();
+    }, AUTO_SAVE_DELAY);
+}
+
+function performAutoSave() {
+    // Sammle alle WHK-Daten aus der Tabelle
+    const rows = document.querySelectorAll('#ewh-config-tbody tr');
+    const whkData = [];
+
+    rows.forEach((row, index) => {
+        const whkNr = row.querySelector('input[name^="whk_nr"]')?.value;
+        const abgaenge = row.querySelector('select[name^="abgaenge"]')?.value;
+        const temperatursonden = row.querySelector('select[name^="temperatursonden"]')?.value;
+        const antriebsheizung = row.querySelector('input[name^="antriebsheizung"]')?.checked;
+        const meteostation = row.querySelector('input[name^="meteostation"]')?.value;
+
+        // Nur vollständige Zeilen speichern (mindestens WHK-Nummer muss vorhanden sein)
+        if (whkNr && whkNr.trim() !== '') {
+            whkData.push({
+                whk_nummer: whkNr.trim(),
+                anzahl_abgaenge: parseInt(abgaenge) || 1,
+                anzahl_temperatursonden: parseInt(temperatursonden) || 1,
+                hat_antriebsheizung: antriebsheizung || false,
+                meteostation: meteostation || ''
+            });
+        }
+    });
+
+    // Prüfe ob Daten vorhanden
+    if (whkData.length === 0) {
+        console.log('Keine vollständigen WHK-Zeilen zum Speichern');
+        showSaveStatus('error', 'Keine Daten zum Speichern');
+        return;
+    }
+
+    // Sende Daten an Server
+    fetch(`/projekt/konfiguration/auto-save/${projektId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            whk_rows: whkData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSaveStatus('saved', `${data.count} WHK gespeichert`);
+        } else {
+            showSaveStatus('error', data.error || 'Unbekannter Fehler');
+            console.error('Fehler beim Speichern:', data.error);
+        }
+    })
+    .catch(error => {
+        showSaveStatus('error', 'Netzwerkfehler');
+        console.error('Fehler beim Speichern:', error);
+    });
+}
+
+function showSaveStatus(status, message = '') {
+    const statusElement = document.getElementById('save-status');
+
+    // Clear previous timeout
+    if (saveStatusTimeout) {
+        clearTimeout(saveStatusTimeout);
+    }
+
+    if (status === 'saving') {
+        statusElement.innerHTML = '<span class="status-saving">💾 Speichert...</span>';
+        statusElement.style.display = 'block';
+    } else if (status === 'saved') {
+        const displayMessage = message || 'Gespeichert';
+        statusElement.innerHTML = `<span class="status-saved">✓ ${displayMessage}</span>`;
+        statusElement.style.display = 'block';
+
+        // Verstecke nach 2 Sekunden
+        saveStatusTimeout = setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 2000);
+    } else if (status === 'error') {
+        statusElement.innerHTML = `<span class="status-error">⚠ Fehler: ${message}</span>`;
+        statusElement.style.display = 'block';
+
+        // Verstecke nach 5 Sekunden
+        saveStatusTimeout = setTimeout(() => {
+            statusElement.style.display = 'none';
+        }, 5000);
+    }
+}
+</script>
+
+{% endblock %}

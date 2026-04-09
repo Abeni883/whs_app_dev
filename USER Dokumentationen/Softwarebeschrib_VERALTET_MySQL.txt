@@ -1,0 +1,542 @@
+Softwarebeschrib
+
+# Software-Dokumentation: Abnahmetest-Anwendung
+
+## 1. Projektuebersicht
+
+### 1.1 Beschreibung
+Die Abnahmetest-Anwendung ist eine webbasierte Anwendung zur Verwaltung und Dokumentation von Hardware- und Software-Tests. Sie ermoeglicht es Testern, Testergebnisse systematisch zu erfassen, zu speichern und zu ueberpruefen.
+
+### 1.2 Hauptfunktionen
+- Erfassung neuer Testergebnisse mit vollstaendigen Metadaten
+- Uebersicht aller durchgefuehrten Tests
+- Farbliche Kennzeichnung der Testergebnisse (PASS/FAIL/PENDING)
+- Zeitstempel fuer jeden Test
+- Notizfunktion fuer zusaetzliche Informationen
+
+### 1.3 Technologie-Stack
+- **Backend-Framework**: Flask 3.1.2 (Python Web Framework)
+- **ORM**: SQLAlchemy 2.0.44 (Object-Relational Mapping)
+- **Datenbank**: MySQL 8.0 mit PyMySQL-Connector
+- **Template-Engine**: Jinja2 3.1.6
+- **Frontend**: HTML5, CSS3
+- **Python-Version**: 3.12
+
+---
+
+## 2. Projektstruktur
+
+```
+Abnahmetest/
+│
+├── app.py                      # Hauptanwendung (Flask-Server)
+├── config.py                   # Konfigurationsdatei
+├── models.py                   # Datenbankmodelle
+│
+├── templates/                  # HTML-Templates (Jinja2)
+│   ├── base.html              # Basis-Layout
+│   ├── index.html             # Test-Uebersicht
+│   └── test_form.html         # Formular fuer neue Tests
+│
+├── static/                     # Statische Dateien
+│   └── style.css              # CSS-Styling
+│
+├── venv/                       # Virtuelle Python-Umgebung
+│
+└── SOFTWARE_DOKUMENTATION.md   # Diese Dokumentation
+```
+
+---
+
+## 3. Datenbankmodell
+
+### 3.1 Datenbank: `abnahmetest`
+MySQL-Datenbank mit UTF-8-Zeichenkodierung.
+
+### 3.2 Tabelle: `test_results`
+
+| Spalte            | Datentyp        | Beschreibung                           | Constraints       |
+|-------------------|-----------------|----------------------------------------|-------------------|
+| id                | INTEGER         | Primaerschluessel                      | PRIMARY KEY, AUTO |
+| test_name         | VARCHAR(100)    | Name des Tests                         | NOT NULL          |
+| hardware_id       | VARCHAR(50)     | Hardware-Identifikationsnummer         | NULL              |
+| software_version  | VARCHAR(50)     | Software-Version                       | NULL              |
+| result            | VARCHAR(20)     | Testergebnis (PASS/FAIL/PENDING)       | NULL              |
+| tester_name       | VARCHAR(100)    | Name des Testers                       | NULL              |
+| test_date         | DATETIME        | Zeitstempel des Tests                  | DEFAULT: utcnow() |
+| notes             | TEXT            | Zusaetzliche Notizen                   | NULL              |
+
+### 3.3 ER-Diagramm (Konzeptionell)
+
+```
+┌─────────────────────┐
+│   TestResult        │
+├─────────────────────┤
+│ id (PK)             │
+│ test_name           │
+│ hardware_id         │
+│ software_version    │
+│ result              │
+│ tester_name         │
+│ test_date           │
+│ notes               │
+└─────────────────────┘
+```
+
+---
+
+## 4. Konfiguration (config.py)
+
+### 4.1 Klassenstruktur
+
+```python
+from urllib.parse import quote_plus
+
+class Config:
+    SECRET_KEY = 'a&Dvi8q4W4!&HiP*'
+    password = quote_plus('a&Dvi8q4W4!&HiP*')
+    SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://root:{password}@localhost:3306/abnahmetest'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+```
+
+### 4.2 Konfigurationsparameter
+
+| Parameter                      | Beschreibung                                    | Wert                          |
+|--------------------------------|------------------------------------------------|-------------------------------|
+| SECRET_KEY                     | Geheimer Schluessel fuer Session-Management   | 'a&Dvi8q4W4!&HiP*'           |
+| SQLALCHEMY_DATABASE_URI        | Datenbank-Verbindungsstring                   | mysql+pymysql://root:...     |
+| SQLALCHEMY_TRACK_MODIFICATIONS | SQLAlchemy Aenderungs-Tracking                | False (Performance)          |
+
+### 4.3 Sicherheitshinweise
+- **Produktionsumgebung**: SECRET_KEY sollte durch Umgebungsvariable gesetzt werden
+- **Passwort**: URL-Encoding mit `quote_plus()` fuer Sonderzeichen
+- **Datenbankuser**: Verwendet aktuell 'root' - in Produktion separaten User erstellen
+
+---
+
+## 5. Backend-Komponenten
+
+### 5.1 app.py - Hauptanwendung
+
+#### 5.1.1 Initialisierung
+
+```python
+app = Flask(__name__)
+app.config.from_object(Config)
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()  # Erstellt Tabellen bei Start
+```
+
+#### 5.1.2 Route: Index (/)
+
+**Funktion**: `index()`
+**HTTP-Methode**: GET
+**Zweck**: Zeigt alle Testergebnisse an
+
+**Ablauf**:
+1. Abfrage aller TestResult-Objekte aus der Datenbank
+2. Sortierung nach test_date (neueste zuerst)
+3. Uebergabe an Template 'index.html'
+
+```python
+@app.route('/')
+def index():
+    tests = TestResult.query.order_by(TestResult.test_date.desc()).all()
+    return render_template('index.html', tests=tests)
+```
+
+#### 5.1.3 Route: Neuer Test (/new_test)
+
+**Funktion**: `new_test()`
+**HTTP-Methoden**: GET, POST
+**Zweck**: Formular anzeigen und neue Tests speichern
+
+**GET-Ablauf**:
+1. Template 'test_form.html' rendern
+
+**POST-Ablauf**:
+1. Formulardaten aus request.form extrahieren
+2. Neues TestResult-Objekt erstellen
+3. In Datenbank speichern (db.session.add, commit)
+4. Flash-Nachricht setzen
+5. Redirect zur Index-Seite
+
+```python
+@app.route('/new_test', methods=['GET', 'POST'])
+def new_test():
+    if request.method == 'POST':
+        test = TestResult(
+            test_name=request.form['test_name'],
+            hardware_id=request.form['hardware_id'],
+            software_version=request.form['software_version'],
+            result=request.form['result'],
+            tester_name=request.form['tester_name'],
+            notes=request.form.get('notes', '')
+        )
+        db.session.add(test)
+        db.session.commit()
+        flash('Test erfolgreich gespeichert!', 'success')
+        return redirect(url_for('index'))
+    return render_template('test_form.html')
+```
+
+### 5.2 models.py - Datenbankmodell
+
+#### 5.2.1 SQLAlchemy-Initialisierung
+
+```python
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+db = SQLAlchemy()
+```
+
+#### 5.2.2 TestResult-Modell
+
+**Klassenname**: `TestResult`
+**Tabellenname**: `test_results`
+**Basisklasse**: `db.Model`
+
+**Attribute**:
+- Alle Spalten als db.Column definiert
+- Automatischer Zeitstempel durch `default=datetime.utcnow`
+- `__repr__` Methode fuer Debug-Ausgabe
+
+```python
+class TestResult(db.Model):
+    __tablename__ = 'test_results'
+
+    id = db.Column(db.Integer, primary_key=True)
+    test_name = db.Column(db.String(100), nullable=False)
+    # ... weitere Felder ...
+
+    def __repr__(self):
+        return f'<TestResult {self.test_name} - {self.result}>'
+```
+
+---
+
+## 6. Frontend-Komponenten
+
+### 6.1 Template-Hierarchie
+
+```
+base.html (Basis-Layout)
+    ├── index.html (Test-Uebersicht)
+    └── test_form.html (Neuer Test)
+```
+
+### 6.2 base.html - Basis-Template
+
+**Zweck**: Gemeinsames Layout fuer alle Seiten
+
+**Komponenten**:
+1. **Header**: Navigation mit Links zu Index und Neuer Test
+2. **Main**: Flash-Messages und Content-Block
+3. **Footer**: Copyright-Information
+
+**Jinja2-Blocks**:
+- `{% block title %}`: Seitentitel
+- `{% block content %}`: Hauptinhalt
+
+**Features**:
+- UTF-8 Meta-Tag
+- Responsive Viewport
+- CSS-Verlinkung mit `url_for('static', filename='style.css')`
+- Flash-Message-System mit Kategorien
+
+### 6.3 index.html - Test-Uebersicht
+
+**Zweck**: Tabellarische Darstellung aller Tests
+
+**Struktur**:
+- HTML-Tabelle mit 6 Spalten
+- Jinja2-Loop durch `tests` Variable
+- Dynamische CSS-Klassen: `result-{{ test.result.lower() }}`
+- Datumsformatierung: `test.test_date.strftime('%d.%m.%Y %H:%M')`
+
+**Spezielle Features**:
+- `{% else %}` Klausel fuer leere Testliste
+- Farbcodierung durch CSS-Klassen (result-pass, result-fail, result-pending)
+
+### 6.4 test_form.html - Test-Formular
+
+**Zweck**: Eingabeformular fuer neue Tests
+
+**Formularfelder**:
+1. test_name (Text, required)
+2. hardware_id (Text, required)
+3. software_version (Text, required)
+4. result (Select, required) - Optionen: PASS, FAIL, PENDING
+5. tester_name (Text, required)
+6. notes (Textarea, optional)
+
+**HTML-Struktur**:
+- Formular mit POST-Methode
+- Jedes Feld in `<div class="form-group">`
+- Label und Input-Element pro Feld
+- Submit-Button
+
+---
+
+## 7. Styling (style.css)
+
+### 7.1 Design-Prinzipien
+- **Farbschema**: Dunkle Header (#2c3e50), Akzentfarbe (#1abc9c)
+- **Layout**: Zentriertes Content-Area (max-width: 1200px)
+- **Responsivitaet**: Viewport-basiertes Design
+- **Accessibility**: Klare Kontraste, grosse Buttons
+
+### 7.2 Komponenten-Styling
+
+#### 7.2.1 Navigation
+- Dunkler Hintergrund (#2c3e50)
+- Hover-Effekt mit Akzentfarbe (#1abc9c)
+- Flexbox-Layout mit Gap
+
+#### 7.2.2 Tabellen
+- Border-collapse fuer saubere Linien
+- Zebra-Streifen durch :hover
+- Dunkler Header (#34495e)
+
+#### 7.2.3 Test-Ergebnis-Farben
+| Ergebnis | CSS-Klasse    | Hintergrundfarbe |
+|----------|---------------|------------------|
+| PASS     | .result-pass  | #d4edda (gruen)  |
+| FAIL     | .result-fail  | #f8d7da (rot)    |
+| PENDING  | .result-pending | #fff3cd (gelb) |
+
+#### 7.2.4 Formulare
+- Einheitliche Input-Hoehe (padding: 0.75rem)
+- Focus-Zustand mit Box-Shadow
+- 100% Breite fuer Responsivitaet
+
+---
+
+## 8. Datenfluss
+
+### 8.1 Neuen Test erstellen
+
+```
+Benutzer
+    │
+    ├─> GET /new_test
+    │       │
+    │       └─> Flask rendert test_form.html
+    │               │
+    │               └─> Benutzer fuellt Formular aus
+    │
+    ├─> POST /new_test (Formulardaten)
+            │
+            ├─> Flask extrahiert Daten
+            │
+            ├─> SQLAlchemy erstellt TestResult-Objekt
+            │
+            ├─> Datenbank-INSERT
+            │
+            ├─> Flash-Message setzen
+            │
+            └─> Redirect zu / (index)
+                    │
+                    └─> Neue Test-Uebersicht mit neuem Eintrag
+```
+
+### 8.2 Tests anzeigen
+
+```
+Benutzer
+    │
+    └─> GET /
+            │
+            ├─> Flask fuehrt SQL-Query aus
+            │       (SELECT * FROM test_results ORDER BY test_date DESC)
+            │
+            ├─> SQLAlchemy konvertiert zu Python-Objekten
+            │
+            └─> Jinja2 rendert index.html mit Testdaten
+                    │
+                    └─> Browser zeigt HTML-Tabelle
+```
+
+---
+
+## 9. Installation und Deployment
+
+### 9.1 Voraussetzungen
+- Python 3.12 oder hoeher
+- MySQL 8.0 Server
+- pip (Python Package Manager)
+
+### 9.2 Installation
+
+#### Schritt 1: Repository klonen / Dateien kopieren
+```bash
+cd "C:\Users\Nicolas Abé\source\repos\Webprojects\Abnahmetest"
+```
+
+#### Schritt 2: Virtuelle Umgebung erstellen
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+#### Schritt 3: Abhaengigkeiten installieren
+```bash
+pip install flask flask-sqlalchemy pymysql cryptography
+```
+
+#### Schritt 4: MySQL-Datenbank einrichten
+```sql
+CREATE DATABASE abnahmetest;
+CREATE USER 'root'@'localhost' IDENTIFIED BY 'a&Dvi8q4W4!&HiP*';
+GRANT ALL PRIVILEGES ON abnahmetest.* TO 'root'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+#### Schritt 5: Anwendung starten
+```bash
+python app.py
+```
+
+Server laeuft auf: http://localhost:5000
+
+### 9.3 Produktions-Deployment
+
+**Wichtige Aenderungen fuer Produktion**:
+
+1. **Debug-Modus deaktivieren**:
+```python
+app.run(debug=False, host='0.0.0.0', port=5000)
+```
+
+2. **WSGI-Server verwenden** (z.B. Gunicorn):
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+```
+
+3. **Umgebungsvariablen nutzen**:
+```python
+import os
+SECRET_KEY = os.environ.get('SECRET_KEY')
+DATABASE_URL = os.environ.get('DATABASE_URL')
+```
+
+4. **HTTPS erzwingen**
+
+5. **Separaten Datenbankuser** mit eingeschraenkten Rechten erstellen
+
+---
+
+## 10. Erweiterungsmoeglichkeiten
+
+### 10.1 Geplante Features
+- [ ] Benutzer-Authentifizierung (Login/Logout)
+- [ ] Testdetail-Ansicht mit Bearbeitungsfunktion
+- [ ] Suchfunktion und Filter
+- [ ] Export als PDF oder Excel
+- [ ] Statistiken und Diagramme
+- [ ] API-Endpunkte (REST API)
+- [ ] Testprotokoll-Historie
+- [ ] Multi-User-Support mit Rollen
+
+### 10.2 Technische Verbesserungen
+- [ ] Unit-Tests (pytest)
+- [ ] API-Dokumentation (Swagger)
+- [ ] Logging-System
+- [ ] Datenbankmigrationen (Alembic)
+- [ ] Caching (Redis)
+- [ ] Internationalisierung (i18n)
+
+### 10.3 Architektur-Erweiterungen
+
+**API-Layer hinzufuegen**:
+```python
+@app.route('/api/tests', methods=['GET'])
+def api_get_tests():
+    tests = TestResult.query.all()
+    return jsonify([{
+        'id': t.id,
+        'test_name': t.test_name,
+        'result': t.result,
+        # ...
+    } for t in tests])
+```
+
+**Authentifizierung**:
+```python
+from flask_login import LoginManager, login_required
+
+@app.route('/new_test')
+@login_required
+def new_test():
+    # ...
+```
+
+---
+
+## 11. Fehlerbehebung
+
+### 11.1 Haeufige Probleme
+
+#### Problem: "Access denied for user"
+**Loesung**: MySQL-Zugangsdaten in config.py pruefen
+
+#### Problem: "UnicodeDecodeError"
+**Loesung**: Alle Dateien als UTF-8 speichern, Encoding-Deklaration hinzufuegen
+
+#### Problem: "ERR_CONNECTION_REFUSED"
+**Loesung**: Flask-Server pruefen, Port 5000 verfuegbar?
+
+### 11.2 Logging
+
+Debug-Ausgabe aktivieren:
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+---
+
+## 12. Lizenz und Kontakt
+
+**Projekt**: Abnahmetest-Anwendung
+**Version**: 1.0.0
+**Erstellt**: Oktober 2025
+**Python-Version**: 3.12
+**Framework**: Flask 3.1.2
+
+---
+
+## 13. Anhang
+
+### 13.1 Abhaengigkeiten (requirements.txt)
+
+```
+flask==3.1.2
+flask-sqlalchemy==3.1.1
+pymysql==1.1.2
+cryptography==46.0.3
+sqlalchemy==2.0.44
+```
+
+### 13.2 Datenbankschema (SQL)
+
+```sql
+CREATE TABLE test_results (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    test_name VARCHAR(100) NOT NULL,
+    hardware_id VARCHAR(50),
+    software_version VARCHAR(50),
+    result VARCHAR(20),
+    tester_name VARCHAR(100),
+    test_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT
+);
+```
+
+---
+
+**Ende der Dokumentation**

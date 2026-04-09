@@ -1,0 +1,74 @@
+================================================================================
+BOWIL-PROJEKT IMPORT - VOLLSTÄNDIGE ZUSAMMENFASSUNG
+================================================================================
+
+Datum: 20.11.2025
+Quelle: Alte Projekte\Bowil BOW.json
+
+### PROJEKTINFORMATIONEN ###
+- Name: Bowil
+- DIDOK: BOW
+- Energie: EWH
+- Projektleiter SBB: Norbert Küng
+- Prüfer Achermann: Nicolas Abé/Christian Duss
+- Prüfdatum: 01.10.2025
+- Baumappenversion: 09.04.2025
+
+### WHK-KONFIGURATION ###
+WHK 01:
+  - Anzahl Abgänge: 2
+  - Anzahl Temperatursonden: 1
+  - Antriebsheizung: Nein
+  - Meteostation: MS 01
+
+### TESTERGEBNISSE - VOLLSTÄNDIG IMPORTIERT ###
+Total: 114 Testergebnisse
+
+Nach Komponententyp:
+  1. WH-Anlage (Anlage)      : 16 Ergebnisse ✓
+  2. WHK (Weichenheizkabinen): 23 Ergebnisse ✓
+  3. Abgänge                 : 58 Ergebnisse (29 Fragen × 2 Abgänge) ✓
+  4. Temperatursonden        :  4 Ergebnisse (4 Fragen × 1 TS) ✓
+  5. Meteostationen          : 13 Ergebnisse ✓
+
+### MAPPING ALT -> NEU ###
+JSON-Komponente  -> DB-Komponente    -> Anzahl
+-----------------+-------------------+---------
+ANLAGE           -> Anlage           -> 16
+WHK              -> WHK              -> 23
+ABG              -> Abgang           -> 58
+TS               -> Temperatursonde  -> 4
+MS               -> Meteostation     -> 13
+AH               -> Antriebsheizung  -> 0 (keine Daten im JSON)
+
+### SYSTEM-MAPPING ###
+Alt              -> Neu
+-----------------+----------
+Spalte A         -> LSS-CH
+Spalte B         -> WH-LTS
+Spalte C         -> Ignoriert (wie angefordert)
+
+### ERGEBNISSTATISTIK ###
+
+LSS-CH:
+  - Richtig        : 45
+  - Nicht testbar  : 53
+  - Keine Daten    : 16
+
+WH-LTS:
+  - Richtig        : 81
+  - Nicht testbar  : 33
+
+### BESONDERHEITEN ###
+1. WHK-Komponente wurde erfolgreich importiert (initial vergessen)
+2. Alle Komponenten ohne WHK-Ebene: ANLAGE, WHK
+3. Alle Komponenten mit WHK-Ebene: ABG, TS, MS, AH
+4. Spalte C aus JSON wurde ignoriert (nur A und B importiert)
+5. Komponente_index für WHK und Anlage: "WHK 01" bzw. "Anlage"
+
+### STATUS ###
+✓ VOLLSTÄNDIG IMPORTIERT
+✓ ALLE KOMPONENTEN VORHANDEN
+✓ VERIFIZIERT
+
+================================================================================

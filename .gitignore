@@ -1,0 +1,84 @@
+# WHS Testprotokoll - Git Ignore File
+# Aktualisiert: 2025-11-25
+
+# ==================== PYTHON ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ==================== VIRTUAL ENVIRONMENT ====================
+venv/
+venv_old_backup/
+env/
+ENV/
+.venv
+
+# ==================== DATENBANKEN ====================
+*.db
+*.sqlite
+*.sqlite3
+database/*.db
+database/*.sqlite
+database_backups/
+
+# ==================== LOGS ====================
+logs/
+*.log
+
+# ==================== UPLOADS & EXPORTS ====================
+uploads/
+*.pdf
+*.xlsx
+*.docx
+
+# ==================== IDE / EDITOR ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ==================== CLAUDE CODE ====================
+# Lokale Claude Code Einstellungen (unterscheiden sich pro Arbeitsplatz)
+.claude/settings.local.json
+.claude/
+
+# ==================== FLASK ====================
+instance/
+.webassets-cache
+.env
+
+# ==================== KONFIGURATION (SENSITIVE DATEN) ====================
+config_local.py
+*.backup
+
+# ==================== WINDOWS ARTEFAKTE ====================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+nul
+
+# ==================== TESTING ====================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==================== BUILD / DISTRIBUTION ====================
+build/
+dist/
+*.egg-info/
+
+# ==================== PROJEKTE (GROSSE DATEIEN) ====================
+Projekte/*.json
+Projekte/*.pdf
+"Alte Projekte"/
+
+# ==================== TEMP & DEBUG ====================
+temp/
+tmp/
+*.tmp
+debug_*.txt
+debug_*.log
