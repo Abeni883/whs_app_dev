@@ -87,6 +87,7 @@ from blueprints.konfiguration import konfiguration_bp
 from blueprints.export import export_bp
 from blueprints.ewh import ewh_bp
 from blueprints.gwh import gwh_bp
+from blueprints.stuecknachweis import stuecknachweis_bp
 
 # ==================== FLASK-APP INITIALISIERUNG ====================
 
@@ -126,6 +127,7 @@ app.register_blueprint(konfiguration_bp)
 app.register_blueprint(export_bp)
 app.register_blueprint(ewh_bp)
 app.register_blueprint(gwh_bp)
+app.register_blueprint(stuecknachweis_bp)
 
 
 def allowed_file(filename):

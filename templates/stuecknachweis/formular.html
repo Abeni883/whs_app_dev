@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}Stücknachweis {{ whk.whk_nummer }} - {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h2>Stücknachweis: {{ whk.whk_nummer }}</h2>
+        <div class="header-buttons">
+            <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}" class="btn-secondary">← WHK-Konfiguration</a>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="sn-breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Projekte</a>
+        <span class="sn-breadcrumb-sep">›</span>
+        <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}">{{ projekt.projektname }}</a>
+        <span class="sn-breadcrumb-sep">›</span>
+        <span>Stücknachweis {{ whk.whk_nummer }}</span>
+    </div>
+
+    <form method="POST" id="stuecknachweis-form">
+
+        <!-- HEADER-BEREICH -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Allgemeine Angaben</h3>
+            <div class="sn-header-grid">
+                <div class="sn-field">
+                    <label>Typbezeichnung / Kennnummer</label>
+                    <input type="text" class="sn-input" value="{{ whk.whk_nummer }}" readonly>
+                </div>
+                <div class="sn-field">
+                    <label for="herstellungsdatum">Herstellungsdatum</label>
+                    <input type="date" id="herstellungsdatum" name="herstellungsdatum" class="sn-input"
+                           value="{{ sn.herstellungsdatum.strftime('%Y-%m-%d') if sn.herstellungsdatum else '' }}">
+                </div>
+                <div class="sn-field">
+                    <label for="herstellungsjahr">Herstellungsjahr</label>
+                    <input type="number" id="herstellungsjahr" name="herstellungsjahr" class="sn-input"
+                           value="{{ sn.herstellungsjahr or '' }}" min="2000" max="2099">
+                </div>
+                <div class="sn-field">
+                    <label>Schutzgrad</label>
+                    <input type="text" class="sn-input" value="{{ schutzgrad }}" readonly>
+                </div>
+                <div class="sn-field">
+                    <label>Auftraggeber</label>
+                    <input type="text" class="sn-input" value="SBB AG" readonly>
+                </div>
+                <div class="sn-field">
+                    <label>Preset / Typ</label>
+                    <input type="text" class="sn-input" value="{{ whk.preset_typ | replace('_', ' ') | title }}" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- NORMEN-CHECKLISTE -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Stücknachweis gemäss EN 61439-1</h3>
+            <div class="sn-table-wrapper">
+                <table class="sn-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">Abschnitt</th>
+                            <th style="width: 52%;">Nachzuweisendes Merkmal</th>
+                            <th style="width: 25%;">Nachweisverfahren</th>
+                            <th style="width: 15%; text-align: center;">Geprüft</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set normen = [
+                            ('11.2', 'Schutzart von Umhüllungen', 'Sichtprüfung', 'check_11_2'),
+                            ('11.3', 'Kriechstrecke', 'Sichtprüfung', 'check_11_3_kriech'),
+                            ('11.3', 'Luftstrecken: Kleiner als Tabelle 1 (EN 61439-1)', 'Prüfung', 'check_11_3_luft_1'),
+                            ('11.3', 'Luftstrecken: Nicht offensichtlich grösser als Tab. 1', 'Messung/Prüfung', 'check_11_3_luft_2'),
+                            ('11.3', 'Luftstrecken: Grösser als Tabelle 1 (EN 61439-1)', 'Sichtprüfung', 'check_11_3_luft_3'),
+                            ('11.4', 'Schutz gegen elektrischen Schlag', '—', 'check_11_4_schutz'),
+                            ('11.4', 'Durchgängigkeit von Schutzleiterkreisen', 'Sichtprüfung', 'check_11_4_durch'),
+                            ('11.4', 'Geschraubte Verbindungen von Schutzleiterkreisen', 'Stichproben', 'check_11_4_geschr'),
+                            ('11.5', 'Einbau von Betriebsmitteln', 'Sichtprüfung', 'check_11_5'),
+                            ('11.6', 'Verbindungen elektr. Stromkreise korrekt angezogen', 'Stichproben', 'check_11_6_verb'),
+                            ('11.6', 'Verdrahtung Übereinstimmung mit Fertigungsunterlagen', 'Sichtprüfung', 'check_11_6_verd'),
+                            ('11.7', 'Übereinstimmung der Anschlüsse für externe Leiter', 'Sichtprüfung', 'check_11_7'),
+                            ('11.8', 'Mechanische Funktionen', 'Prüfung', 'check_11_8'),
+                            ('11.1', 'Kennzeichnung der Schaltgerätekombination', 'Sichtprüfung', 'check_11_1_kenn'),
+                            ('11.1', 'Vollständigkeit der Technischen Dokumentation', 'Sichtprüfung', 'check_11_1_doku'),
+                            ('11.1', 'Elektrische Funktionsprüfungen bei komplexen Anlagen', 'Prüfung', 'check_11_1_funk'),
+                        ] %}
+                        {% for abschnitt, merkmal, verfahren, feld in normen %}
+                        <tr>
+                            <td>{{ abschnitt }}</td>
+                            <td>{{ merkmal }}</td>
+                            <td>{{ verfahren }}</td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="{{ feld }}" class="sn-checkbox"
+                                       {{ 'checked' if sn[feld] else '' }}>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MESSUNGEN -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Messungen</h3>
+            <div class="sn-table-wrapper">
+                <table class="sn-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Funktion</th>
+                            <th style="width: 20%;">Grenzwert</th>
+                            <th style="width: 25%;">Ergebnis</th>
+                            <th style="width: 25%; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Niederohmmessung</td>
+                            <td>&lt; 0.100 &#8486;</td>
+                            <td>
+                                <input type="text" name="niederohm_ergebnis" class="sn-input sn-input-sm"
+                                       value="{{ sn.niederohm_ergebnis or '' }}" placeholder="z.B. 0.050">
+                            </td>
+                            <td style="text-align: center;">
+                                <label class="sn-toggle {{ 'sn-toggle-ok' if sn.niederohm_status else 'sn-toggle-fail' }}">
+                                    <input type="checkbox" name="niederohm_status"
+                                           {{ 'checked' if sn.niederohm_status else '' }}>
+                                    <span class="sn-toggle-label">{{ 'Richtig' if sn.niederohm_status else 'Falsch' }}</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Spannungsfestigkeit</td>
+                            <td>&lt; 2.0 mA</td>
+                            <td>
+                                <input type="text" name="spannung_ergebnis" class="sn-input sn-input-sm"
+                                       value="{{ sn.spannung_ergebnis or '' }}" placeholder="z.B. 0.5">
+                            </td>
+                            <td style="text-align: center;">
+                                <label class="sn-toggle {{ 'sn-toggle-ok' if sn.spannung_status else 'sn-toggle-fail' }}">
+                                    <input type="checkbox" name="spannung_status"
+                                           {{ 'checked' if sn.spannung_status else '' }}>
+                                    <span class="sn-toggle-label">{{ 'Richtig' if sn.spannung_status else 'Falsch' }}</span>
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Isolationswiderstand</td>
+                            <td>&gt; 1.0 M&#8486;</td>
+                            <td>
+                                <input type="text" name="isolation_ergebnis" class="sn-input sn-input-sm"
+                                       value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. 150">
+                            </td>
+                            <td style="text-align: center;">
+                                <label class="sn-toggle {{ 'sn-toggle-ok' if sn.isolation_status else 'sn-toggle-fail' }}">
+                                    <input type="checkbox" name="isolation_status"
+                                           {{ 'checked' if sn.isolation_status else '' }}>
+                                    <span class="sn-toggle-label">{{ 'Richtig' if sn.isolation_status else 'Falsch' }}</span>
+                                </label>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FI-MESSUNGEN -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">FI-Messungen (Fehlerstrom-Schutzschalter)</h3>
+            <div class="sn-table-wrapper">
+                <table class="sn-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Sicherung</th>
+                            <th style="width: 25%;">&#916;I FI [mA]</th>
+                            <th style="width: 25%;">&#916;t FI [ms]</th>
+                            <th style="width: 25%; text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fi in sn.fi_messungen %}
+                        <tr>
+                            <td>
+                                <input type="text" name="fi_{{ fi.id }}_sicherung" class="sn-input sn-input-sm"
+                                       value="{{ fi.sicherung }}">
+                            </td>
+                            <td>
+                                <input type="number" name="fi_{{ fi.id }}_delta_i" class="sn-input sn-input-sm"
+                                       value="{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}" placeholder="mA">
+                            </td>
+                            <td>
+                                <input type="number" name="fi_{{ fi.id }}_delta_t" class="sn-input sn-input-sm"
+                                       value="{{ fi.delta_t_ms if fi.delta_t_ms is not none else '' }}" placeholder="ms">
+                            </td>
+                            <td style="text-align: center;">
+                                <label class="sn-toggle {{ 'sn-toggle-ok' if fi.status else 'sn-toggle-fail' }}">
+                                    <input type="checkbox" name="fi_{{ fi.id }}_status"
+                                           {{ 'checked' if fi.status else '' }}>
+                                    <span class="sn-toggle-label">{{ 'Richtig' if fi.status else 'Falsch' }}</span>
+                                </label>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not sn.fi_messungen %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 1.5rem; color: var(--text-secondary);">
+                                Keine FI-Messungen vorhanden (0 Abgänge konfiguriert)
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BEMERKUNG -->
+        <div class="sn-section">
+            <h3 class="sn-section-title">Bemerkung</h3>
+            <textarea name="bemerkung" class="sn-textarea" rows="4"
+                      placeholder="Optionale Bemerkungen zum Stücknachweis...">{{ sn.bemerkung or '' }}</textarea>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="sn-actions">
+            <button type="submit" class="btn-primary">Speichern</button>
+            <a href="{{ url_for('stuecknachweis.stuecknachweis_pdf', project_id=projekt.id, whk_id=whk.id) }}"
+               class="btn-secondary">PDF Stücknachweis</a>
+            <a href="{{ url_for('stuecknachweis.konformitaet_pdf', project_id=projekt.id, whk_id=whk.id) }}"
+               class="btn-secondary">PDF Konformitätserklärung</a>
+        </div>
+
+    </form>
+</div>
+
+<style>
+/* ==================== STÜCKNACHWEIS STYLES ==================== */
+
+/* Breadcrumb */
+.sn-breadcrumb {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.sn-breadcrumb a {
+    color: var(--accent-primary, #10b981);
+    text-decoration: none;
+}
+
+.sn-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.sn-breadcrumb-sep {
+    margin: 0 0.5rem;
+    color: var(--text-secondary);
+}
+
+/* Sections */
+.sn-section {
+    background: var(--bg-secondary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.sn-section-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--accent-primary, #10b981);
+    padding-bottom: 0.5rem;
+}
+
+/* Header Grid */
+.sn-header-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .sn-header-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sn-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+/* Inputs */
+.sn-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--input-border, #d1d5db);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background-color: var(--input-bg, #ffffff);
+    color: var(--text-primary);
+    box-sizing: border-box;
+}
+
+.sn-input:focus {
+    outline: none;
+    border-color: var(--input-focus-border, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.sn-input[readonly] {
+    background-color: var(--bg-tertiary, #f8fafc);
+    color: var(--text-secondary);
+    cursor: default;
+}
+
+.sn-input-sm {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+/* Textarea */
+.sn-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--input-border, #d1d5db);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background-color: var(--input-bg, #ffffff);
+    color: var(--text-primary);
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.sn-textarea:focus {
+    outline: none;
+    border-color: var(--input-focus-border, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Table */
+.sn-table-wrapper {
+    overflow-x: auto;
+}
+
+.sn-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sn-table thead {
+    background-color: var(--table-header-bg, #2c3e50);
+    color: var(--table-header-text, #ffffff);
+}
+
+.sn-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.sn-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.sn-table tbody tr:hover {
+    background-color: var(--bg-tertiary, #f8fafc);
+}
+
+/* Checkbox */
+.sn-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-primary, #10b981);
+    cursor: pointer;
+}
+
+/* Toggle Button (Richtig/Falsch) */
+.sn-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 2px solid;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.sn-toggle input[type="checkbox"] {
+    display: none;
+}
+
+.sn-toggle-ok {
+    border-color: #10b981;
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.sn-toggle-fail {
+    border-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Actions */
+.sn-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Page header (reuse existing pattern) */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.page-header h2 {
+    margin: 0;
+}
+
+/* Badge in config table */
+.sn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.sn-badge-exists {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.sn-badge-empty {
+    background-color: transparent;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #d1d5db);
+}
+
+.sn-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] .sn-toggle-ok {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border-color: #34d399;
+}
+
+[data-theme="dark"] .sn-toggle-fail {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: #f87171;
+}
+
+[data-theme="dark"] .sn-badge-exists {
+    background-color: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+    border-color: #34d399;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle-Buttons: Klick wechselt Richtig/Falsch Darstellung
+    document.querySelectorAll('.sn-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            const label = this.querySelector('.sn-toggle-label');
+
+            checkbox.checked = !checkbox.checked;
+
+            if (checkbox.checked) {
+                this.classList.remove('sn-toggle-fail');
+                this.classList.add('sn-toggle-ok');
+                label.textContent = 'Richtig';
+            } else {
+                this.classList.remove('sn-toggle-ok');
+                this.classList.add('sn-toggle-fail');
+                label.textContent = 'Falsch';
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
