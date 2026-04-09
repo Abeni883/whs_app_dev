@@ -127,6 +127,13 @@ def stuecknachweis_formular(project_id, whk_id):
 
             # Normen-Checkboxen
             checkbox_felder = [
+                # Grund der Prüfung / Schutzmassnahme / Berührungsschutz
+                'grund_erstpruefung', 'grund_wiederholung',
+                'grund_aenderung', 'grund_instandsetzung',
+                'schutz_tn_s', 'schutz_tn_c', 'schutz_tn_c_s',
+                'schutz_tt', 'schutz_it',
+                'beruehr_nicht_instruiert', 'beruehr_instruiert',
+                # Normen EN 61439-1
                 'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
                 'check_11_3_luft_2', 'check_11_3_luft_3', 'check_11_4_schutz',
                 'check_11_4_durch', 'check_11_4_geschr', 'check_11_5',

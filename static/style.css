@@ -1463,6 +1463,38 @@ footer {
     padding-bottom: 0.5rem;
 }
 
+/* Checkbox-Reihe (Stücknachweis Kopfdaten) */
+.checkbox-row {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 0.6rem 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-green);
+    cursor: pointer;
+}
+
+.schutzgrad-info {
+    color: var(--accent-blue, #3b82f6);
+    font-size: 0.95rem;
+    margin-left: auto;
+}
+
 .sn-input-readonly {
     background: var(--bg-tertiary, #f1f5f9) !important;
     color: var(--text-secondary) !important;

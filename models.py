@@ -798,6 +798,23 @@ class Stuecknachweis(db.Model):
     herstellungsdatum = db.Column(db.Date, nullable=True)
     herstellungsjahr = db.Column(db.Integer, nullable=True)
 
+    # Grund der Prüfung
+    grund_erstpruefung = db.Column(db.Boolean, default=True)
+    grund_wiederholung = db.Column(db.Boolean, default=False)
+    grund_aenderung = db.Column(db.Boolean, default=False)
+    grund_instandsetzung = db.Column(db.Boolean, default=False)
+
+    # Schutzmassnahme
+    schutz_tn_s = db.Column(db.Boolean, default=True)
+    schutz_tn_c = db.Column(db.Boolean, default=False)
+    schutz_tn_c_s = db.Column(db.Boolean, default=False)
+    schutz_tt = db.Column(db.Boolean, default=True)
+    schutz_it = db.Column(db.Boolean, default=False)
+
+    # Berührungsschutz
+    beruehr_nicht_instruiert = db.Column(db.Boolean, default=False)
+    beruehr_instruiert = db.Column(db.Boolean, default=True)
+
     # Normen-Checkboxen (EN 61439-1) - alle default True
     check_11_2 = db.Column(db.Boolean, default=True)
     check_11_3_kriech = db.Column(db.Boolean, default=True)
