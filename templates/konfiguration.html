@@ -24,16 +24,18 @@
             <div class="config-table-section" style="margin-top: 1.5rem;">
                 <table class="config-table whk-table" style="table-layout: fixed; width: 100%;">
                     <colgroup>
+                        <col style="width: 12%;">
                         <col style="width: 18%;">
-                        <col style="width: 22%;">
-                        <col style="width: 15%;">
-                        <col style="width: 15%;">
-                        <col style="width: 15%;">
-                        <col style="width: 15%;">
+                        <col style="width: 20%;">
+                        <col style="width: 13%;">
+                        <col style="width: 13%;">
+                        <col style="width: 12%;">
+                        <col style="width: 12%;">
                     </colgroup>
                     <thead>
                         <tr>
                             <th>WHK Nr.</th>
+                            <th>Typ</th>
                             <th>Preset / Typ</th>
                             <th>Abgänge</th>
                             <th>Temperatursonden</th>
@@ -47,6 +49,9 @@
                             <tr>
                                 <td>
                                     <input type="text" name="whk_nr_{{ loop.index }}" class="whk-input whk-nummer" value="{{ config.whk_nummer }}" required>
+                                </td>
+                                <td>
+                                    <input type="text" name="whk_typ_{{ loop.index }}" class="whk-input whk-typ" value="{{ config.whk_typ or '' }}" placeholder="WHK_20_LU_01_16" maxlength="50">
                                 </td>
                                 <td>
                                     <select name="preset_typ_{{ loop.index }}" class="whk-select preset-typ" required>
@@ -82,6 +87,9 @@
                             <tr>
                                 <td>
                                     <input type="text" name="whk_nr_1" class="whk-input whk-nummer" value="WHK 01" required>
+                                </td>
+                                <td>
+                                    <input type="text" name="whk_typ_1" class="whk-input whk-typ" value="" placeholder="WHK_20_LU_01_16" maxlength="50">
                                 </td>
                                 <td>
                                     <select name="preset_typ_1" class="whk-select preset-typ" required>
@@ -279,6 +287,9 @@ function addWHKRow() {
     newRow.innerHTML = `
         <td>
             <input type="text" name="whk_nr_${nextNumber}" class="whk-input whk-nummer" value="${whkLabel}" required>
+        </td>
+        <td>
+            <input type="text" name="whk_typ_${nextNumber}" class="whk-input whk-typ" value="" placeholder="WHK_20_LU_01_16" maxlength="50">
         </td>
         <td>
             <select name="preset_typ_${nextNumber}" class="whk-select preset-typ" required>
@@ -535,7 +546,7 @@ const AUTO_SAVE_DELAY = 500;
 function setupAutoSave() {
     // Event Delegation für WHK-Tabelle
     document.addEventListener('input', function(e) {
-        if (e.target.matches('.whk-input, .whk-nummer, .ms-nummer')) {
+        if (e.target.matches('.whk-input, .whk-nummer, .whk-typ, .ms-nummer')) {
             triggerAutoSave();
         }
         // Aktualisiere MS-Dropdowns wenn WHK-Nummern geändert werden
@@ -580,6 +591,7 @@ function performAutoSave() {
 
     whkRows.forEach((row) => {
         const whkNr = row.querySelector('.whk-nummer')?.value;
+        const whkTyp = row.querySelector('.whk-typ')?.value;
         const presetTyp = row.querySelector('.preset-typ')?.value;
         const abgaenge = row.querySelector('select[name^="abgaenge"]')?.value;
         const temperatursonden = row.querySelector('select[name^="temperatursonden"]')?.value;
@@ -588,6 +600,7 @@ function performAutoSave() {
         if (whkNr && whkNr.trim() !== '') {
             whkData.push({
                 whk_nummer: whkNr.trim(),
+                whk_typ: (whkTyp || '').trim(),
                 preset_typ: presetTyp || 'kabine_16hz',
                 anzahl_abgaenge: parseInt(abgaenge) || 1,
                 anzahl_temperatursonden: parseInt(temperatursonden) || 1,

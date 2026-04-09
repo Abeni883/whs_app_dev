@@ -49,6 +49,7 @@ def projekt_konfiguration(projekt_id):
                 index = key.split('_')[-1]
 
                 whk_nummer = request.form.get(f'whk_nr_{index}')
+                whk_typ = request.form.get(f'whk_typ_{index}', '').strip() or None
                 preset_typ = request.form.get(f'preset_typ_{index}', 'kabine_16hz')
                 anzahl_abgaenge = int(request.form.get(f'abgaenge_{index}', 1))
                 anzahl_temperatursonden = int(request.form.get(f'temperatursonden_{index}', 1))
@@ -58,6 +59,7 @@ def projekt_konfiguration(projekt_id):
                 whk_config = WHKConfig(
                     projekt_id=projekt_id,
                     whk_nummer=whk_nummer,
+                    whk_typ=whk_typ,
                     preset_typ=preset_typ,
                     anzahl_abgaenge=anzahl_abgaenge,
                     anzahl_temperatursonden=anzahl_temperatursonden,
@@ -145,9 +147,12 @@ def konfiguration_auto_save(projekt_id):
             if not whk_nummer:
                 continue  # Überspringe unvollständige Zeilen
 
+            whk_typ = row_data.get('whk_typ', '').strip() or None
+
             new_config = WHKConfig(
                 projekt_id=projekt_id,
                 whk_nummer=whk_nummer,
+                whk_typ=whk_typ,
                 preset_typ=row_data.get('preset_typ', 'kabine_16hz'),
                 anzahl_abgaenge=int(row_data.get('anzahl_abgaenge', 1)),
                 anzahl_temperatursonden=int(row_data.get('anzahl_temperatursonden', 1)),

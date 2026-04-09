@@ -38,7 +38,10 @@
             <tbody>
                 {% for item in whk_data %}
                 <tr>
-                    <td><strong>{{ item.whk.whk_nummer }}</strong></td>
+                    <td>
+                        <strong>{{ item.whk.whk_nummer }}</strong>
+                        {% if item.whk.whk_typ %}<span style="color: var(--text-secondary);"> — {{ item.whk.whk_typ }}</span>{% endif %}
+                    </td>
                     <td>
                         <span class="preset-badge">{{ item.preset_label }}</span>
                     </td>

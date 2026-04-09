@@ -152,11 +152,15 @@ def stuecknachweis_formular(project_id, whk_id):
     # Schutzgrad aus preset_typ ableiten
     schutzgrad = 'IP55' if 'kabine' in whk.preset_typ else 'IP2X'
 
+    # Typbezeichnung: whk_typ falls vorhanden, sonst whk_nummer
+    typbezeichnung = whk.whk_typ or whk.whk_nummer
+
     return render_template('stuecknachweis/formular.html',
                            projekt=projekt,
                            whk=whk,
                            sn=sn,
-                           schutzgrad=schutzgrad)
+                           schutzgrad=schutzgrad,
+                           typbezeichnung=typbezeichnung)
 
 
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/pdf')
