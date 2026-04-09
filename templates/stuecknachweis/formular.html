@@ -15,59 +15,60 @@
         <span>Stücknachweis {{ whk.whk_nummer }}</span>
     </nav>
 
-    <div class="page-header">
-        <h2>Stücknachweis — {{ typbezeichnung }}</h2>
-        <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="btn-cancel">Zurück</a>
-    </div>
+    <h2>Stücknachweis — {{ typbezeichnung }}</h2>
 
     <form method="POST" id="stuecknachweis-form">
 
         <!-- ==================== KOPFDATEN ==================== -->
-        <div class="sn-section">
-            <h3 class="sn-section-title">Kopfdaten</h3>
-            <div class="sn-kopfdaten-grid">
-                <div class="sn-field">
-                    <label>Typbezeichnung / Kennnummer</label>
-                    <input type="text" value="{{ typbezeichnung }}" readonly class="sn-input-readonly">
-                </div>
-                <div class="sn-field">
-                    <label>Auftraggeber</label>
-                    <input type="text" value="SBB AG" readonly class="sn-input-readonly">
-                </div>
-                <div class="sn-field">
-                    <label>Hersteller</label>
-                    <input type="text" value="Achermann + Co. AG" readonly class="sn-input-readonly">
-                </div>
-                <div class="sn-field">
-                    <label for="herstellungsdatum">Herstellungsdatum</label>
-                    <input type="date" id="herstellungsdatum" name="herstellungsdatum"
-                           value="{{ sn.herstellungsdatum.strftime('%Y-%m-%d') if sn.herstellungsdatum else '' }}">
-                </div>
-                <div class="sn-field">
-                    <label for="herstellungsjahr">Herstellungsjahr</label>
-                    <input type="number" id="herstellungsjahr" name="herstellungsjahr"
-                           value="{{ sn.herstellungsjahr or '' }}" min="2000" max="2099">
-                </div>
-                <div class="sn-field">
-                    <label for="preset_typ">WHK Preset</label>
-                    <select id="preset_typ" name="preset_typ">
-                        <option value="kabine_16hz" {% if whk.preset_typ == 'kabine_16hz' %}selected{% endif %}>WHK Kabine 16.7Hz (IP55)</option>
-                        <option value="kabine_50hz" {% if whk.preset_typ == 'kabine_50hz' %}selected{% endif %}>WHK Kabine 50Hz (IP55)</option>
-                        <option value="rahmen_16hz" {% if whk.preset_typ == 'rahmen_16hz' %}selected{% endif %}>WHK Rahmen 16.7Hz (IP2X)</option>
-                        <option value="rahmen_50hz" {% if whk.preset_typ == 'rahmen_50hz' %}selected{% endif %}>WHK Rahmen 50Hz (IP2X)</option>
-                    </select>
-                </div>
-                <div class="sn-field">
-                    <label>Schutzgrad</label>
-                    <input type="text" id="schutzgrad" value="{{ schutzgrad }}" readonly class="sn-input-readonly">
-                </div>
-            </div>
+        <h3 class="sn-section-title">Kopfdaten</h3>
+
+        <div class="form-group">
+            <label>Typbezeichnung / Kennnummer</label>
+            <input type="text" value="{{ typbezeichnung }}" readonly class="sn-input-readonly">
+        </div>
+
+        <div class="form-group">
+            <label>Auftraggeber</label>
+            <input type="text" value="SBB AG" readonly class="sn-input-readonly">
+        </div>
+
+        <div class="form-group">
+            <label>Hersteller</label>
+            <input type="text" value="Achermann + Co. AG" readonly class="sn-input-readonly">
+        </div>
+
+        <div class="form-group">
+            <label for="herstellungsdatum">Herstellungsdatum</label>
+            <input type="date" id="herstellungsdatum" name="herstellungsdatum"
+                   value="{{ sn.herstellungsdatum.strftime('%Y-%m-%d') if sn.herstellungsdatum else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="herstellungsjahr">Herstellungsjahr</label>
+            <input type="number" id="herstellungsjahr" name="herstellungsjahr"
+                   value="{{ sn.herstellungsjahr or '' }}" min="2000" max="2099">
+        </div>
+
+        <div class="form-group">
+            <label for="preset_typ">WHK Preset</label>
+            <select id="preset_typ" name="preset_typ">
+                <option value="kabine_16hz" {% if whk.preset_typ == 'kabine_16hz' %}selected{% endif %}>WHK Kabine 16.7Hz (IP55)</option>
+                <option value="kabine_50hz" {% if whk.preset_typ == 'kabine_50hz' %}selected{% endif %}>WHK Kabine 50Hz (IP55)</option>
+                <option value="rahmen_16hz" {% if whk.preset_typ == 'rahmen_16hz' %}selected{% endif %}>WHK Rahmen 16.7Hz (IP2X)</option>
+                <option value="rahmen_50hz" {% if whk.preset_typ == 'rahmen_50hz' %}selected{% endif %}>WHK Rahmen 50Hz (IP2X)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Schutzgrad</label>
+            <input type="text" id="schutzgrad" value="{{ schutzgrad }}" readonly class="sn-input-readonly">
         </div>
 
         <!-- ==================== NORMEN EN 61439-1 ==================== -->
-        <div class="sn-section">
-            <h3 class="sn-section-title">Normen EN 61439-1</h3>
-            <table class="sn-table">
+        <h3 class="sn-section-title">Normen EN 61439-1</h3>
+
+        <div class="form-group">
+            <table class="project-table sn-table">
                 <thead>
                     <tr>
                         <th style="width: 8%;">Abschnitt</th>
@@ -178,9 +179,10 @@
         </div>
 
         <!-- ==================== MESSUNGEN ==================== -->
-        <div class="sn-section">
-            <h3 class="sn-section-title">Messungen (HT FullTest 3)</h3>
-            <table class="sn-table">
+        <h3 class="sn-section-title">Messungen (HT FullTest 3)</h3>
+
+        <div class="form-group">
+            <table class="project-table sn-table">
                 <thead>
                     <tr>
                         <th>Funktion</th>
@@ -231,9 +233,10 @@
         </div>
 
         <!-- ==================== FI-MESSUNGEN ==================== -->
-        <div class="sn-section">
-            <h3 class="sn-section-title">FI Messungen (HT FullTest 3)</h3>
-            <table class="sn-table">
+        <h3 class="sn-section-title">FI Messungen (HT FullTest 3)</h3>
+
+        <div class="form-group">
+            <table class="project-table sn-table">
                 <thead>
                     <tr>
                         <th style="width: 20%;">Sicherung</th>
@@ -268,16 +271,18 @@
         </div>
 
         <!-- ==================== BEMERKUNG ==================== -->
-        <div class="sn-section">
-            <h3 class="sn-section-title">Bemerkung</h3>
-            <textarea name="bemerkung" rows="4" placeholder="Optionale Bemerkungen...">{{ sn.bemerkung or '' }}</textarea>
+        <h3 class="sn-section-title">Bemerkung</h3>
+
+        <div class="form-group">
+            <textarea name="bemerkung" rows="6" placeholder="Optionale Bemerkungen...">{{ sn.bemerkung or '' }}</textarea>
         </div>
 
         <!-- ==================== AKTIONEN ==================== -->
-        <div class="sn-actions">
+        <div class="form-group form-actions">
             <button type="submit" class="btn-primary">Speichern</button>
             <a href="{{ url_for('stuecknachweis.stuecknachweis_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Stücknachweis</a>
             <a href="{{ url_for('stuecknachweis.konformitaet_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Konformitätserklärung</a>
+            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="btn-cancel">Abbrechen</a>
         </div>
 
     </form>
