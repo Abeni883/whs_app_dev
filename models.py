@@ -767,3 +767,125 @@ class HGLSParameterPruefung(db.Model):
     def __repr__(self):
         return (f'<HGLSParameterPruefung id={self.id} projekt_id={self.projekt_id} '
                 f'param="{self.parameter_name}" geprueft={self.geprueft}>')
+
+
+class Stuecknachweis(db.Model):
+    """
+    Stücknachweis für WHK-Konfigurationen (EWH).
+
+    Speichert Normen-Prüfungen (EN 61439-1), Messungen und FI-Messungen
+    pro WHK innerhalb eines Projekts.
+
+    Constraints:
+        - Jeder WHK hat maximal einen Stücknachweis (uselist=False auf backref)
+    """
+    __tablename__ = 'stuecknachweis'
+
+    # Primary Key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign Keys
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id'), nullable=False)
+
+    # Herstellung
+    herstellungsdatum = db.Column(db.Date, nullable=True)
+    herstellungsjahr = db.Column(db.Integer, nullable=True)
+
+    # Normen-Checkboxen (EN 61439-1) - alle default True
+    check_11_2 = db.Column(db.Boolean, default=True)
+    check_11_3_kriech = db.Column(db.Boolean, default=True)
+    check_11_3_luft_1 = db.Column(db.Boolean, default=True)
+    check_11_3_luft_2 = db.Column(db.Boolean, default=True)
+    check_11_3_luft_3 = db.Column(db.Boolean, default=True)
+    check_11_4_schutz = db.Column(db.Boolean, default=True)
+    check_11_4_durch = db.Column(db.Boolean, default=True)
+    check_11_4_geschr = db.Column(db.Boolean, default=True)
+    check_11_5 = db.Column(db.Boolean, default=True)
+    check_11_6_verb = db.Column(db.Boolean, default=True)
+    check_11_6_verd = db.Column(db.Boolean, default=True)
+    check_11_7 = db.Column(db.Boolean, default=True)
+    check_11_8 = db.Column(db.Boolean, default=True)
+    check_11_1_kenn = db.Column(db.Boolean, default=True)
+    check_11_1_doku = db.Column(db.Boolean, default=True)
+    check_11_1_funk = db.Column(db.Boolean, default=True)
+
+    # Messungen
+    niederohm_ergebnis = db.Column(db.String(50), nullable=True)
+    niederohm_status = db.Column(db.Boolean, default=True)
+    spannung_ergebnis = db.Column(db.String(50), nullable=True)
+    spannung_status = db.Column(db.Boolean, default=True)
+    isolation_ergebnis = db.Column(db.String(50), nullable=True)
+    isolation_status = db.Column(db.Boolean, default=True)
+
+    # Bemerkung
+    bemerkung = db.Column(db.Text, nullable=True)
+
+    # Timestamps
+    erstellt_am = db.Column(db.DateTime, default=datetime.utcnow)
+    geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    project = db.relationship('Project', backref='stuecknachweise')
+    whk_config = db.relationship('WHKConfig', backref=db.backref('stuecknachweis', uselist=False))
+    fi_messungen = db.relationship('FiMessung', backref='stuecknachweis',
+                                    cascade='all, delete-orphan', order_by='FiMessung.reihenfolge')
+
+    def __repr__(self):
+        return (f'<Stuecknachweis id={self.id} project_id={self.project_id} '
+                f'whk_config_id={self.whk_config_id}>')
+
+
+class FiMessung(db.Model):
+    """
+    FI-Schutzschalter Messung für Stücknachweise.
+
+    Speichert Auslösestrom (∆I) und Auslösezeit (∆t) pro Sicherung
+    innerhalb eines Stücknachweises.
+    """
+    __tablename__ = 'fi_messungen'
+
+    # Primary Key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign Key
+    stuecknachweis_id = db.Column(db.Integer, db.ForeignKey('stuecknachweis.id'), nullable=False)
+
+    # Messdaten
+    sicherung = db.Column(db.String(20), nullable=False)    # z.B. 'F302.2'
+    delta_i_ma = db.Column(db.Integer, nullable=True)        # ∆I FI [mA]
+    delta_t_ms = db.Column(db.Integer, nullable=True)        # ∆t FI [ms]
+    status = db.Column(db.Boolean, default=True)
+    reihenfolge = db.Column(db.Integer, default=0)
+
+    def __repr__(self):
+        return (f'<FiMessung id={self.id} stuecknachweis_id={self.stuecknachweis_id} '
+                f'sicherung="{self.sicherung}">')
+
+
+def generiere_fi_sicherungen(preset_typ, anzahl_abgaenge):
+    """
+    Generiert FI-Sicherungsbezeichnungen basierend auf Preset und Abgang-Anzahl.
+
+    16.7Hz Schema: Pro Abgang 2 Sicherungen
+      Abgang 1 → F302.2, F302.6
+      Abgang 2 → F312.2, F312.6
+      Abgang 3 → F322.2, F322.6
+
+    50Hz Schema: Pro Abgang 2 Sicherungen
+      Abgang 1 → F302.2, F306.2
+      Abgang 2 → F312.2, F316.2
+      Abgang 3 → F322.2, F326.2
+
+    Gibt Liste von Strings zurück.
+    """
+    sicherungen = []
+    for i in range(anzahl_abgaenge):
+        basis = 302 + (i * 10)
+        if '16hz' in preset_typ:
+            sicherungen.append(f'F{basis}.2')
+            sicherungen.append(f'F{basis}.6')
+        else:  # 50hz
+            sicherungen.append(f'F{basis}.2')
+            sicherungen.append(f'F{basis + 4}.2')
+    return sicherungen
