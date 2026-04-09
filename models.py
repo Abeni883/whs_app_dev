@@ -216,6 +216,7 @@ class WHKConfig(db.Model):
 
     # WHK-Daten
     whk_nummer = db.Column(db.String(20), nullable=False)  # z.B. "WHK 01"
+    preset_typ = db.Column(db.String(20), nullable=False, default='kabine_16hz')  # kabine_16hz, kabine_50hz, rahmen_16hz, rahmen_50hz
     anzahl_abgaenge = db.Column(db.Integer, nullable=False, default=1)  # 1-12
     anzahl_temperatursonden = db.Column(db.Integer, nullable=False, default=1)  # 1-12
     hat_antriebsheizung = db.Column(db.Boolean, default=False)

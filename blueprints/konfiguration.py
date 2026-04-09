@@ -49,6 +49,7 @@ def projekt_konfiguration(projekt_id):
                 index = key.split('_')[-1]
 
                 whk_nummer = request.form.get(f'whk_nr_{index}')
+                preset_typ = request.form.get(f'preset_typ_{index}', 'kabine_16hz')
                 anzahl_abgaenge = int(request.form.get(f'abgaenge_{index}', 1))
                 anzahl_temperatursonden = int(request.form.get(f'temperatursonden_{index}', 1))
                 hat_antriebsheizung = f'antriebsheizung_{index}' in request.form
@@ -57,6 +58,7 @@ def projekt_konfiguration(projekt_id):
                 whk_config = WHKConfig(
                     projekt_id=projekt_id,
                     whk_nummer=whk_nummer,
+                    preset_typ=preset_typ,
                     anzahl_abgaenge=anzahl_abgaenge,
                     anzahl_temperatursonden=anzahl_temperatursonden,
                     hat_antriebsheizung=hat_antriebsheizung
@@ -146,6 +148,7 @@ def konfiguration_auto_save(projekt_id):
             new_config = WHKConfig(
                 projekt_id=projekt_id,
                 whk_nummer=whk_nummer,
+                preset_typ=row_data.get('preset_typ', 'kabine_16hz'),
                 anzahl_abgaenge=int(row_data.get('anzahl_abgaenge', 1)),
                 anzahl_temperatursonden=int(row_data.get('anzahl_temperatursonden', 1)),
                 hat_antriebsheizung=row_data.get('hat_antriebsheizung', False)
