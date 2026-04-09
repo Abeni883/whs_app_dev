@@ -863,29 +863,21 @@ class FiMessung(db.Model):
                 f'sicherung="{self.sicherung}">')
 
 
-def generiere_fi_sicherungen(preset_typ, anzahl_abgaenge):
+SICHERUNGEN_PRESET = [
+    'F302.2', 'F306.2', 'F312.2', 'F316.2',
+    'F322.2', 'F326.2', 'F332.2', 'F336.2',
+    'F342.2', 'F346.2', 'F352.2', 'F356.2'
+]
+
+
+def generiere_fi_sicherungen(anzahl_abgaenge):
     """
-    Generiert FI-Sicherungsbezeichnungen basierend auf Preset und Abgang-Anzahl.
+    Generiert FI-Sicherungsbezeichnungen basierend auf Abgang-Anzahl.
 
-    16.7Hz Schema: Pro Abgang 2 Sicherungen
-      Abgang 1 → F302.2, F302.6
-      Abgang 2 → F312.2, F312.6
-      Abgang 3 → F322.2, F322.6
-
-    50Hz Schema: Pro Abgang 2 Sicherungen
-      Abgang 1 → F302.2, F306.2
-      Abgang 2 → F312.2, F316.2
-      Abgang 3 → F322.2, F326.2
+    1 Sicherung pro Abgang, max. 12 Abgänge.
+    Schema ist für alle Presets identisch (kabine/rahmen, 16hz/50hz).
 
     Gibt Liste von Strings zurück.
     """
-    sicherungen = []
-    for i in range(anzahl_abgaenge):
-        basis = 302 + (i * 10)
-        if '16hz' in preset_typ:
-            sicherungen.append(f'F{basis}.2')
-            sicherungen.append(f'F{basis}.6')
-        else:  # 50hz
-            sicherungen.append(f'F{basis}.2')
-            sicherungen.append(f'F{basis + 4}.2')
-    return sicherungen
+    anzahl = min(anzahl_abgaenge, 12)
+    return SICHERUNGEN_PRESET[:anzahl]
