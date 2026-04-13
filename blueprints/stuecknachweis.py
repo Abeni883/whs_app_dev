@@ -145,6 +145,7 @@ def stuecknachweis_formular(project_id, whk_id):
                 setattr(sn, feld, feld in request.form)
 
             # Messungen
+            sn.messgeraet = request.form.get('messgeraet', '').strip() or 'HT FullTest 3'
             sn.niederohm_ergebnis = request.form.get('niederohm_ergebnis', '')
             sn.niederohm_status = 'niederohm_status' in request.form
             sn.spannung_ergebnis = request.form.get('spannung_ergebnis', '')

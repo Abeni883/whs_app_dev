@@ -1502,6 +1502,23 @@ footer {
     font-size: 0.95rem;
 }
 
+/* Inline-Input in Section-Titeln (z.B. Messgerät) */
+.sn-inline-input {
+    font-size: inherit;
+    font-weight: inherit;
+    border: none;
+    border-bottom: 1px dashed var(--border-color, #ccc);
+    background: transparent;
+    padding: 0 0.25rem;
+    width: auto;
+    min-width: 150px;
+}
+
+.sn-inline-input:focus {
+    outline: none;
+    border-bottom: 2px solid var(--accent-green, #10b981);
+}
+
 /* Fehlerstrom Checkboxen in FI-Messungen */
 .fi-fehlerstrom-cell {
     display: flex;
