@@ -1502,6 +1502,18 @@ footer {
     font-size: 0.95rem;
 }
 
+/* Normen-Tabelle Abschnitt-Zellen */
+.sn-abschnitt-cell {
+    text-align: center;
+    font-weight: bold;
+    background: var(--bg-secondary, #f0f4f8);
+    vertical-align: middle;
+}
+
+[data-theme="dark"] .sn-abschnitt-cell {
+    background: var(--bg-tertiary, #2d3748);
+}
+
 /* Info-Block in Messungen-Tabelle */
 .sn-info-block {
     background: var(--bg-secondary, #f0f4f8);

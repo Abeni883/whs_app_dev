@@ -135,7 +135,7 @@ def stuecknachweis_formular(project_id, whk_id):
                 'beruehr_nicht_instruiert', 'beruehr_instruiert',
                 # Normen EN 61439-1
                 'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
-                'check_11_3_luft_2', 'check_11_3_luft_3', 'check_11_4_schutz',
+                'check_11_3_luft_2', 'check_11_3_luft_3',
                 'check_11_4_durch', 'check_11_4_geschr', 'check_11_5',
                 'check_11_6_verb', 'check_11_6_verd', 'check_11_7',
                 'check_11_8', 'check_11_1_kenn', 'check_11_1_doku',
