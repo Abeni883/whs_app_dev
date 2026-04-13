@@ -1518,11 +1518,12 @@ footer {
     background: #2a3f55;
 }
 
-.normen-gruppe-header td {
+td.normen-gruppe-header {
     background: #f0f4f8;
+    font-weight: bold;
 }
 
-[data-theme="dark"] .normen-gruppe-header td {
+[data-theme="dark"] td.normen-gruppe-header {
     background: #1e2a35;
 }
 
