@@ -104,12 +104,53 @@ git push origin main
 
 ## Wichtige Entwicklungsregeln
 
-### PDF-Export (xhtml2pdf)
+### PDF-Export (xhtml2pdf) — Wichtige Regeln
+
+**Grundregeln:**
 - **Kein WeasyPrint** — läuft nicht ohne GTK auf Windows
-- xhtml2pdf benötigt **Inline-Styles** statt CSS-Klassen für Tabellen
-- Kein `@page` margin-box, kein `position: running()`
-- Logos als **PNG** einbinden (kein SVG)
-- Immer mit `--break-system-packages` bei pip wenn nötig
+- Nur **Inline-Styles** (kein externes CSS, kein `<link>`)
+- Nur **PNG** für Bilder (kein SVG)
+- Logos als **Base64 Data-URLs** einbetten (siehe `get_image_as_base64()` in `export.py`)
+- Schrift: Arial oder Helvetica
+
+**Header/Footer:**
+- `@page` margin-box (`@bottom-left/right`) funktioniert **NICHT**
+- `position: fixed/absolute` funktioniert **NICHT**
+- Lösung: `@frame` mit `-pdf-frame-content` verwenden:
+```css
+@frame footer_frame {
+    -pdf-frame-content: footerContent;
+    bottom: 0.3cm; left: 1.5cm; right: 1.5cm; height: 2cm;
+}
+```
+```html
+<div id="footerContent">...</div>
+```
+
+**Vertikale Zentrierung:**
+- `vertical-align: middle` wird **komplett ignoriert**
+- `padding-top/bottom` wirkt asymmetrisch (nur unten)
+- Lösung: Unsichtbare Spacer-Zeilen mit `&nbsp;` + `<br>`:
+```html
+<span style="font-size:12pt;">&nbsp;</span><br>
+Text hier
+<span style="font-size:6pt;">&nbsp;</span>
+```
+
+**Logo-Grösse:**
+- `max-height` wird ignoriert
+- Lösung: `height="20"` als HTML-Attribut setzen
+
+**Testen ohne Server-Neustart:**
+- Test-PDFs direkt via Python-Script generieren (`pisa.CreatePDF`)
+- `taskkill //F //IM python.exe` falls Server-Prozesse hängen
+
+**Bekannte nicht-unterstützte CSS:**
+- `position: fixed / absolute`
+- `@page` margin-box
+- `vertical-align: middle`
+- `max-height` bei Bildern
+- `@bottom-left / @bottom-right`
 
 ### Datenbank
 - Dev-DB: `whs_dev.db` (nie die Produktions-DB verwenden!)
