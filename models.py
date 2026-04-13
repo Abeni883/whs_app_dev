@@ -816,6 +816,7 @@ class Stuecknachweis(db.Model):
     beruehr_instruiert = db.Column(db.Boolean, default=True)
     schutzgrad = db.Column(db.String(20), nullable=True)
 
+
     # Normen-Checkboxen (EN 61439-1) - alle default True
     check_11_2 = db.Column(db.Boolean, default=True)
     check_11_3_kriech = db.Column(db.Boolean, default=True)
@@ -877,6 +878,8 @@ class FiMessung(db.Model):
 
     # Messdaten
     sicherung = db.Column(db.String(20), nullable=False)    # z.B. 'F302.2'
+    fehlerstrom_30 = db.Column(db.Boolean, default=False)    # 30mA
+    fehlerstrom_300 = db.Column(db.Boolean, default=True)    # 300mA
     delta_i_ma = db.Column(db.Integer, nullable=True)        # ∆I FI [mA]
     delta_t_ms = db.Column(db.Integer, nullable=True)        # ∆t FI [ms]
     status = db.Column(db.Boolean, default=True)

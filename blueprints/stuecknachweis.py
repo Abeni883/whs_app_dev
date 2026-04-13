@@ -156,6 +156,8 @@ def stuecknachweis_formular(project_id, whk_id):
             for fi in sn.fi_messungen:
                 prefix = f'fi_{fi.id}'
                 fi.sicherung = request.form.get(f'{prefix}_sicherung', fi.sicherung)
+                fi.fehlerstrom_30 = f'fi_fehlerstrom_30_{fi.id}' in request.form
+                fi.fehlerstrom_300 = f'fi_fehlerstrom_300_{fi.id}' in request.form
                 delta_i = request.form.get(f'{prefix}_delta_i', '')
                 fi.delta_i_ma = int(delta_i) if delta_i else None
                 delta_t = request.form.get(f'{prefix}_delta_t', '')

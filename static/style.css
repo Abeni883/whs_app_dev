@@ -1502,6 +1502,18 @@ footer {
     font-size: 0.95rem;
 }
 
+/* Fehlerstrom Checkboxen in FI-Messungen */
+.fi-fehlerstrom-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.fi-fehlerstrom-cell .checkbox-label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
 .sn-input-readonly {
     background: var(--bg-tertiary, #f1f5f9) !important;
     color: var(--text-secondary) !important;

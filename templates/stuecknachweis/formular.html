@@ -267,9 +267,10 @@
             <table class="project-table sn-table">
                 <thead>
                     <tr>
-                        <th style="width: 20%;">Sicherung</th>
-                        <th style="width: 20%;">&#8710;I FI [mA]</th>
-                        <th style="width: 20%;">&#8710;t FI [ms]</th>
+                        <th style="width: 16%;">Sicherung</th>
+                        <th style="width: 16%;">Fehlerstrom</th>
+                        <th style="width: 18%;">&#8710;I FI [mA]</th>
+                        <th style="width: 18%;">&#8710;t FI [ms]</th>
                         <th style="width: 12%; text-align: center;">Status</th>
                     </tr>
                 </thead>
@@ -278,6 +279,10 @@
                     <tr>
                         <td>
                             <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}" readonly class="sn-input-readonly">
+                        </td>
+                        <td class="fi-fehlerstrom-cell">
+                            <label class="checkbox-label"><input type="checkbox" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
+                            <label class="checkbox-label"><input type="checkbox" name="fi_fehlerstrom_300_{{ fi.id }}" {% if fi.fehlerstrom_300 %}checked{% endif %}> 300mA</label>
                         </td>
                         <td>
                             <input type="number" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}" placeholder="mA">
