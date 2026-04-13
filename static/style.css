@@ -1320,6 +1320,15 @@ table tbody tr:hover {
     background-color: var(--text-secondary);
 }
 
+[data-theme="dark"] .btn-secondary {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background-color: #374151;
+    color: #ffffff;
+}
+
 /* Keine Daten Nachricht */
 .no-data {
     text-align: center;
