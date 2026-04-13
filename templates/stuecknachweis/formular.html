@@ -301,7 +301,7 @@
                     {% for fi in sn.fi_messungen %}
                     <tr>
                         <td>
-                            <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}" readonly class="sn-input-readonly">
+                            <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}">
                         </td>
                         <td class="fi-fehlerstrom-cell">
                             <label class="checkbox-label"><input type="checkbox" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
