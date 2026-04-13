@@ -207,12 +207,13 @@
         </div>
 
         <!-- ==================== MESSUNGEN ==================== -->
-        <h3 class="sn-section-title">Messungen (<input type="text" name="messgeraet_messung" id="messgeraet_messung" class="sn-inline-input" value="{{ sn.messgeraet_messung or 'HT FullTest 3' }}" placeholder="HT FullTest 3">)</h3>
+        <h3 class="sn-section-title">Messungen</h3>
 
         <div class="form-group">
             <table class="project-table sn-table">
                 <thead>
                     <tr>
+                        <th style="width: 8%;">Abschnitt</th>
                         <th>Funktion</th>
                         <th style="width: 15%;">Grenzwert</th>
                         <th style="width: 20%;">Ergebnis</th>
@@ -221,6 +222,19 @@
                 </thead>
                 <tbody>
                     <tr>
+                        <td class="sn-info-block" colspan="5">
+                            <strong>Messungen</strong><br>
+                            <ul class="sn-info-list">
+                                <li>Messwerte von Isolationsmessung (500VDC)</li>
+                                <li>Hochspannungsmessung (2'500VAC)</li>
+                                <li>Niederohmmessung 25A, 10 Sekunden</li>
+                            </ul>
+                            Verwendetes Messgerät: <input type="text" name="messgeraet_messung" id="messgeraet_messung" class="sn-inline-input" value="{{ sn.messgeraet_messung or 'HT FullTest 3' }}" placeholder="HT FullTest 3"><br>
+                            <em>Es werden jeweils die schlechtesten Werte protokolliert!</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>8.4</td>
                         <td>Niederohmmessung 25A</td>
                         <td>&lt; 0.100 &#8486;</td>
                         <td><input type="text" name="niederohm_ergebnis" value="{{ sn.niederohm_ergebnis or '' }}" placeholder="z.B. 0.045"></td>
@@ -233,6 +247,7 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>11.9</td>
                         <td>Isolationswiderstand 500V</td>
                         <td>&gt; 1.0 M&#8486;</td>
                         <td><input type="text" name="isolation_ergebnis" value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. 150"></td>
@@ -245,6 +260,7 @@
                         </td>
                     </tr>
                     <tr>
+                        <td>10.9</td>
                         <td>Spannungsfestigkeit 2500V</td>
                         <td>&lt; 2.0 mA</td>
                         <td><input type="text" name="spannung_ergebnis" value="{{ sn.spannung_ergebnis or '' }}" placeholder="z.B. 0.8"></td>
