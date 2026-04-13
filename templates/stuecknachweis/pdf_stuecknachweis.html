@@ -361,21 +361,21 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">8.4</td>
         <td style="padding: 4px; border: 1px solid #999;">Niederohmmessung 25A</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&lt; 0.100 &#8486;</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{{ stuecknachweis.niederohm_ergebnis or '' }}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.niederohm_ergebnis %}{{ stuecknachweis.niederohm_ergebnis }}{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.niederohm_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
     <tr>
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.9</td>
         <td style="padding: 4px; border: 1px solid #999;">Isolationswiderstand 500V</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&gt; 1.0 M&#8486;</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{{ stuecknachweis.isolation_ergebnis or '' }}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_ergebnis %}{{ stuecknachweis.isolation_ergebnis }}{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
     <tr>
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">10.9</td>
         <td style="padding: 4px; border: 1px solid #999;">Spannungsfestigkeit 2500V</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&lt; 2.0 mA</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{{ stuecknachweis.spannung_ergebnis or '' }}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.spannung_ergebnis %}{{ stuecknachweis.spannung_ergebnis }}{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.spannung_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
 </table>
@@ -403,10 +403,10 @@
             <span style="border: 1px solid #ccc; padding: 0 2px;">{% if fi.fehlerstrom_30 %}&#10003;{% else %}&nbsp;{% endif %}</span> 30mA
             <span style="border: 1px solid #ccc; padding: 0 2px; margin-left: 3px;">{% if fi.fehlerstrom_300 %}&#10003;{% else %}&nbsp;{% endif %}</span> 300mA
         </td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{{ fi.delta_t_ms if fi.delta_t_ms is not none else '' }}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_i_ma is not none %}{{ fi.delta_i_ma }}{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_t_ms is not none %}{{ fi.delta_t_ms }}{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;">
-            {% if fi.delta_i_ma is not none %}{% if fi.status %}Richtig{% else %}Falsch{% endif %}{% endif %}
+            {% if fi.delta_i_ma is not none %}{% if fi.status %}Richtig{% else %}Falsch{% endif %}{% else %}&nbsp;{% endif %}
         </td>
     </tr>
     {% endfor %}
@@ -432,11 +432,7 @@
 </table>
 
 <!-- K) UNTERSCHRIFT -->
-<div style="margin-top: 15px; page-break-inside: avoid;">
-    <h3 style="margin-bottom: 3px; font-size: 11pt; font-weight: bold;">Unterschrift des Pr&uuml;fers:</h3>
-    <p style="margin: 0 0 5px 0; font-size: 10pt;">Achermann &amp; Co. AG</p>
-    <div style="min-height: 50px; margin: 10px 0;">
-    </div>
+<div style="margin-top: 10px; border: 1px solid #999; height: 70px; width: 100%;">
 </div>
 
 </body>
