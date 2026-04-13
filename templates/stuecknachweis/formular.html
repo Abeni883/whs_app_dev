@@ -233,18 +233,6 @@
                         </td>
                     </tr>
                     <tr>
-                        <td>Spannungsfestigkeit 2500V</td>
-                        <td>&lt; 2.0 mA</td>
-                        <td><input type="text" name="spannung_ergebnis" value="{{ sn.spannung_ergebnis or '' }}" placeholder="z.B. 0.8"></td>
-                        <td class="sn-toggle-cell">
-                            <input type="hidden" name="spannung_status" value="">
-                            <button type="button" class="sn-toggle {% if sn.spannung_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
-                                    onclick="toggleStatus(this, 'spannung_status')">
-                                {{ 'Richtig' if sn.spannung_status else 'Falsch' }}
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
                         <td>Isolationswiderstand 500V</td>
                         <td>&gt; 1.0 M&#8486;</td>
                         <td><input type="text" name="isolation_ergebnis" value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. 150"></td>
@@ -253,6 +241,18 @@
                             <button type="button" class="sn-toggle {% if sn.isolation_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
                                     onclick="toggleStatus(this, 'isolation_status')">
                                 {{ 'Richtig' if sn.isolation_status else 'Falsch' }}
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Spannungsfestigkeit 2500V</td>
+                        <td>&lt; 2.0 mA</td>
+                        <td><input type="text" name="spannung_ergebnis" value="{{ sn.spannung_ergebnis or '' }}" placeholder="z.B. 0.8"></td>
+                        <td class="sn-toggle-cell">
+                            <input type="hidden" name="spannung_status" value="">
+                            <button type="button" class="sn-toggle {% if sn.spannung_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
+                                    onclick="toggleStatus(this, 'spannung_status')">
+                                {{ 'Richtig' if sn.spannung_status else 'Falsch' }}
                             </button>
                         </td>
                     </tr>
