@@ -1844,6 +1844,43 @@ td.normen-gruppe-header {
     box-shadow: 0 2px 4px var(--shadow-color);
 }
 
+/* EN 61439 Stücknachweis-Link */
+.en61439-link {
+    color: #1e40af;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    background-color: #dbeafe;
+    border: 1px solid #93c5fd;
+    transition: all 0.2s ease;
+    display: inline-block;
+    width: 90px;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.en61439-link:hover {
+    background-color: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+[data-theme="dark"] .en61439-link {
+    color: #93c5fd;
+    background-color: #1e3a5f;
+    border-color: #2563eb;
+}
+
+[data-theme="dark"] .en61439-link:hover {
+    background-color: #2563eb;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
 /* Test-Übersicht Projekt-Anzeige */
 .project-number {
     color: var(--text-secondary);
