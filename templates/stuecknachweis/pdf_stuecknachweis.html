@@ -406,10 +406,7 @@
     {% for fi in fi_messungen %}
     <tr>
         <td style="text-align: center; font-weight: bold; border: 1px solid #999; padding: 3px;">{{ fi.sicherung }}</td>
-        <td style="border: 1px solid #999; padding: 3px; font-size: 7pt;">
-            <span style="border: 1px solid #ccc; padding: 0 2px;">{% if fi.fehlerstrom_30 %}&#10003;{% else %}&nbsp;{% endif %}</span> 30mA
-            <span style="border: 1px solid #ccc; padding: 0 2px; margin-left: 3px;">{% if fi.fehlerstrom_300 %}&#10003;{% else %}&nbsp;{% endif %}</span> 300mA
-        </td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.fehlerstrom_300 %}300 mA{% elif fi.fehlerstrom_30 %}30 mA{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_i_ma is not none %}{{ fi.delta_i_ma }} mA{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_t_ms is not none %}{{ fi.delta_t_ms }} ms{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;">
