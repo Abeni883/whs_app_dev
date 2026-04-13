@@ -1502,16 +1502,46 @@ footer {
     font-size: 0.95rem;
 }
 
-/* Normen-Tabelle Abschnitt-Zellen */
+/* Normen-Tabelle */
+.sn-normen-table td {
+    padding: 8px 12px;
+}
+
 .sn-abschnitt-cell {
     text-align: center;
     font-weight: bold;
-    background: var(--bg-secondary, #f0f4f8);
     vertical-align: middle;
+    background: #dce8f5;
 }
 
 [data-theme="dark"] .sn-abschnitt-cell {
-    background: var(--bg-tertiary, #2d3748);
+    background: #2a3f55;
+}
+
+.normen-gruppe-header td {
+    background: #f0f4f8;
+}
+
+[data-theme="dark"] .normen-gruppe-header td {
+    background: #1e2a35;
+}
+
+.normen-gruppe-end > td {
+    border-bottom: 2px solid var(--border-color, #999);
+}
+
+.normen-unterzeile {
+    padding-left: 20px !important;
+}
+
+.sn-normen-table .sn-check-cell {
+    width: 40px;
+    text-align: center;
+}
+
+.sn-normen-table .sn-check-cell input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
 }
 
 /* Info-Block in Messungen-Tabelle */
