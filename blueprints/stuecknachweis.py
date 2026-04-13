@@ -199,10 +199,66 @@ def stuecknachweis_formular(project_id, whk_id):
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/pdf')
 @login_required
 def stuecknachweis_pdf(project_id, whk_id):
-    """PDF Stücknachweisprotokoll generieren (Phase 2)."""
-    flash('PDF-Export wird in Phase 2 implementiert.', 'info')
-    return redirect(url_for('stuecknachweis.stuecknachweis_formular',
-                            project_id=project_id, whk_id=whk_id))
+    """PDF Stücknachweisprotokoll generieren."""
+    import os
+    import base64
+    from io import BytesIO
+    from xhtml2pdf import pisa
+
+    projekt = Project.query.get_or_404(project_id)
+    whk = WHKConfig.query.get_or_404(whk_id)
+    sn = Stuecknachweis.query.filter_by(
+        project_id=project_id, whk_config_id=whk_id).first_or_404()
+    fi_messungen = FiMessung.query.filter_by(
+        stuecknachweis_id=sn.id).order_by(FiMessung.reihenfolge).all()
+
+    typbezeichnung = whk.whk_typ or whk.whk_nummer
+
+    schutzgrad_map = {
+        'kabine_16hz': 'IP55', 'kabine_50hz': 'IP55',
+        'rahmen_16hz': 'IP2X', 'rahmen_50hz': 'IP2X'
+    }
+    schutzgrad = schutzgrad_map.get(whk.preset_typ, 'IP55')
+
+    # Achermann Logo als Base64
+    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    logo_path = os.path.join(app_root, 'assets', 'logo.png')
+    achermann_logo_base64 = ''
+    if os.path.exists(logo_path):
+        with open(logo_path, 'rb') as f:
+            b64 = base64.b64encode(f.read()).decode('utf-8')
+            achermann_logo_base64 = f'data:image/png;base64,{b64}'
+
+    html = render_template(
+        'stuecknachweis/pdf_stuecknachweis.html',
+        stuecknachweis=sn,
+        whk=whk,
+        projekt=projekt,
+        typbezeichnung=typbezeichnung,
+        schutzgrad=schutzgrad,
+        fi_messungen=fi_messungen,
+        achermann_logo_base64=achermann_logo_base64
+    )
+
+    pdf_buffer = BytesIO()
+    pisa_status = pisa.CreatePDF(
+        BytesIO(html.encode('utf-8')), dest=pdf_buffer)
+
+    if pisa_status.err:
+        flash('Fehler bei der PDF-Generierung.', 'error')
+        return redirect(url_for('stuecknachweis.stuecknachweis_formular',
+                                project_id=project_id, whk_id=whk_id))
+
+    pdf_buffer.seek(0)
+    filename = f'Stuecknachweis_{typbezeichnung}.pdf'
+
+    from flask import send_file
+    return send_file(
+        pdf_buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=filename
+    )
 
 
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/konformitaet/pdf')

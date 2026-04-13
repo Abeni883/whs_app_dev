@@ -130,6 +130,16 @@ app.register_blueprint(gwh_bp)
 app.register_blueprint(stuecknachweis_bp)
 
 
+@app.template_filter('datefmt')
+def datefmt(value):
+    """Datum im Format DD.MM.YYYY formatieren."""
+    if value is None:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime('%d.%m.%Y')
+    return str(value)
+
+
 def allowed_file(filename):
     """Prüft ob die Dateiendung erlaubt ist."""
     return '.' in filename and \
