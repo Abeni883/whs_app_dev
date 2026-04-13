@@ -85,9 +85,11 @@
             <div class="checkbox-row">
                 <label class="checkbox-label"><input type="checkbox" name="beruehr_nicht_instruiert" {% if sn.beruehr_nicht_instruiert %}checked{% endif %}> Nicht instruierte Personen</label>
                 <label class="checkbox-label"><input type="checkbox" name="beruehr_instruiert" {% if sn.beruehr_instruiert %}checked{% endif %}> Instruierte Personen</label>
-                <span class="schutzgrad-info">Schutzgrad: <strong id="schutzgrad_display">{{ schutzgrad }}</strong></span>
             </div>
-            <input type="hidden" name="schutzgrad" id="schutzgrad" value="{{ schutzgrad }}">
+            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <label for="schutzgrad" style="margin: 0; white-space: nowrap;"><strong>Schutzgrad:</strong></label>
+                <input type="text" id="schutzgrad" name="schutzgrad" value="{{ sn.schutzgrad or schutzgrad }}" maxlength="20" style="max-width: 200px;">
+            </div>
         </div>
 
         <!-- ==================== NORMEN EN 61439-1 ==================== -->
@@ -344,8 +346,7 @@ function applyPreset(presetKey, nurSchutzgrad) {
     const preset = PRESETS[presetKey];
     if (!preset) return;
 
-    // Schutzgrad aktualisieren (Anzeige + hidden input)
-    document.getElementById('schutzgrad_display').textContent = preset.schutzgrad;
+    // Schutzgrad aktualisieren (editierbares Input-Feld)
     document.getElementById('schutzgrad').value = preset.schutzgrad;
 
     if (!nurSchutzgrad) {
@@ -360,9 +361,12 @@ document.getElementById('preset_typ').addEventListener('change', function() {
     applyPreset(this.value, false);
 });
 
-// Beim Laden nur Schutzgrad setzen (Checkboxen kommen aus DB)
+// Beim Laden: Schutzgrad nur setzen wenn kein gespeicherter Wert vorhanden
 document.addEventListener('DOMContentLoaded', function() {
-    applyPreset(document.getElementById('preset_typ').value, true);
+    const schutzgradInput = document.getElementById('schutzgrad');
+    if (!schutzgradInput.value) {
+        applyPreset(document.getElementById('preset_typ').value, true);
+    }
     syncAllToggles();
 });
 

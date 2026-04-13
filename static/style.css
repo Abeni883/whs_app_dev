@@ -1497,6 +1497,11 @@ footer {
     margin-left: auto;
 }
 
+/* Schutzgrad Input im Berührungsschutz-Bereich */
+#schutzgrad {
+    font-size: 0.95rem;
+}
+
 .sn-input-readonly {
     background: var(--bg-tertiary, #f1f5f9) !important;
     color: var(--text-secondary) !important;

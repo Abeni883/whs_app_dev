@@ -814,6 +814,7 @@ class Stuecknachweis(db.Model):
     # Berührungsschutz
     beruehr_nicht_instruiert = db.Column(db.Boolean, default=False)
     beruehr_instruiert = db.Column(db.Boolean, default=True)
+    schutzgrad = db.Column(db.String(20), nullable=True)
 
     # Normen-Checkboxen (EN 61439-1) - alle default True
     check_11_2 = db.Column(db.Boolean, default=True)

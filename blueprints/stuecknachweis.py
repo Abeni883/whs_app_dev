@@ -162,6 +162,9 @@ def stuecknachweis_formular(project_id, whk_id):
                 fi.delta_t_ms = int(delta_t) if delta_t else None
                 fi.status = f'{prefix}_status' in request.form
 
+            # Schutzgrad (editierbares Feld)
+            sn.schutzgrad = request.form.get('schutzgrad', '').strip() or None
+
             # Bemerkung
             sn.bemerkung = request.form.get('bemerkung', '')
 
