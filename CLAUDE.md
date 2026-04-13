@@ -211,7 +211,7 @@ DATABASE_URL=sqlite:///whs_dev.db
 - Messgerät-Felder editierbar (Messungen + FI separat) ✅
 - Normen-Tabelle gruppierte Struktur mit rowspan ✅
 - PDF-Export Konformitätserklärung ✅
-- PDF-Export Stücknachweis → AUSSTEHEND
+- PDF-Export Stücknachweisprotokoll ✅
 
 ---
 
