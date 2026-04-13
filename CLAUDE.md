@@ -164,9 +164,13 @@ DATABASE_URL=sqlite:///whs_dev.db
 - Preset-Logik (4 Typen: kabine_16hz/50hz, rahmen_16hz/50hz) ✅
 - WHK-Auswahlseite (`/projekt/<id>/stuecknachweis/whk-auswahl`) ✅
 - EN 61439 Button in Projektübersicht ✅
-- Grund der Prüfung / Schutzmassnahme / Berührungsschutz → IN ARBEIT
+- Grund der Prüfung / Schutzmassnahme / Berührungsschutz ✅
+- Schutzgrad editierbar unter Berührungsschutz ✅
+- Fehlerstrom-Spalte (30mA/300mA) in FI-Messungen ✅
+- Messgerät-Felder editierbar (Messungen + FI separat) ✅
+- Normen-Tabelle gruppierte Struktur mit rowspan ✅
+- PDF-Export Konformitätserklärung ✅
 - PDF-Export Stücknachweis → AUSSTEHEND
-- PDF-Export Konformitätserklärung → AUSSTEHEND
 
 ---
 
