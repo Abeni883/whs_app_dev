@@ -598,6 +598,16 @@
 
 /* ===== DARK MODE: KONFIGURATIONSSEITE TABELLEN-HOVER ===== */
 
+/* WHK-Konfigurations-Tabelle - Zentrierung */
+.config-table th,
+.config-table td {
+    text-align: center;
+}
+
+.config-table td:nth-child(2) {
+    text-align: left;
+}
+
 /* WHK-Konfigurations-Tabelle - Normal-State */
 [data-theme="dark"] .config-table tbody tr {
     background-color: #2d2d2d;
