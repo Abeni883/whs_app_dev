@@ -349,6 +349,7 @@
 
 /* Dark Mode Input-Felder und Suchfeld */
 [data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"],
 [data-theme="dark"] input[type="search"],
 [data-theme="dark"] input[type="date"],
 [data-theme="dark"] .search-input {
@@ -909,6 +910,7 @@
 }
 
 [data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="number"]:focus,
 [data-theme="dark"] input[type="search"]:focus,
 [data-theme="dark"] .search-input:focus {
     border-color: var(--input-focus-border);
