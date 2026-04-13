@@ -62,10 +62,10 @@
         <div class="form-group">
             <label><strong>Grund der Prüfung:</strong></label>
             <div class="checkbox-row">
-                <label class="checkbox-label"><input type="checkbox" name="grund_erstpruefung" {% if sn.grund_erstpruefung %}checked{% endif %}> Erstprüfung</label>
-                <label class="checkbox-label"><input type="checkbox" name="grund_wiederholung" {% if sn.grund_wiederholung %}checked{% endif %}> Wiederholungsprüfung</label>
-                <label class="checkbox-label"><input type="checkbox" name="grund_aenderung" {% if sn.grund_aenderung %}checked{% endif %}> Änderung</label>
-                <label class="checkbox-label"><input type="checkbox" name="grund_instandsetzung" {% if sn.grund_instandsetzung %}checked{% endif %}> Instandsetzung</label>
+                <label class="checkbox-label"><input type="radio" name="grund_pruefung" value="erstpruefung" {% if sn.grund_erstpruefung %}checked{% endif %}> Erstprüfung</label>
+                <label class="checkbox-label"><input type="radio" name="grund_pruefung" value="wiederholung" {% if sn.grund_wiederholung %}checked{% endif %}> Wiederholungsprüfung</label>
+                <label class="checkbox-label"><input type="radio" name="grund_pruefung" value="aenderung" {% if sn.grund_aenderung %}checked{% endif %}> Änderung</label>
+                <label class="checkbox-label"><input type="radio" name="grund_pruefung" value="instandsetzung" {% if sn.grund_instandsetzung %}checked{% endif %}> Instandsetzung</label>
             </div>
         </div>
 
@@ -83,8 +83,8 @@
         <div class="form-group">
             <label><strong>Berührungsschutz:</strong></label>
             <div class="checkbox-row">
-                <label class="checkbox-label"><input type="checkbox" name="beruehr_nicht_instruiert" {% if sn.beruehr_nicht_instruiert %}checked{% endif %}> Nicht instruierte Personen</label>
-                <label class="checkbox-label"><input type="checkbox" name="beruehr_instruiert" {% if sn.beruehr_instruiert %}checked{% endif %}> Instruierte Personen</label>
+                <label class="checkbox-label"><input type="radio" name="beruehr_schutz" value="nicht_instruiert" {% if sn.beruehr_nicht_instruiert %}checked{% endif %}> Nicht instruierte Personen</label>
+                <label class="checkbox-label"><input type="radio" name="beruehr_schutz" value="instruiert" {% if sn.beruehr_instruiert %}checked{% endif %}> Instruierte Personen</label>
             </div>
             <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                 <label for="schutzgrad" style="margin: 0; white-space: nowrap;"><strong>Schutzgrad:</strong></label>
@@ -353,14 +353,14 @@ const PRESET_CHECKBOXEN = {
     check_11_5: true, check_11_6_verb: true, check_11_6_verd: true,
     check_11_7: true, check_11_8: true,
     check_11_1_kenn: true, check_11_1_doku: true, check_11_1_funk: true,
-    // Grund der Prüfung
-    grund_erstpruefung: true, grund_wiederholung: false,
-    grund_aenderung: false, grund_instandsetzung: false,
     // Schutzmassnahme
     schutz_tn_s: true, schutz_tn_c: false, schutz_tn_c_s: false,
-    schutz_tt: true, schutz_it: false,
-    // Berührungsschutz
-    beruehr_nicht_instruiert: false, beruehr_instruiert: true
+    schutz_tt: true, schutz_it: false
+};
+
+const PRESET_RADIOS = {
+    grund_pruefung: 'erstpruefung',
+    beruehr_schutz: 'instruiert'
 };
 
 const PRESETS = {
@@ -381,6 +381,11 @@ function applyPreset(presetKey, nurSchutzgrad) {
         Object.keys(preset.checkboxen).forEach(function(name) {
             const cb = document.querySelector('input[name="' + name + '"]');
             if (cb) cb.checked = preset.checkboxen[name];
+        });
+        // Radio-Buttons setzen
+        Object.keys(PRESET_RADIOS).forEach(function(name) {
+            const radio = document.querySelector('input[name="' + name + '"][value="' + PRESET_RADIOS[name] + '"]');
+            if (radio) radio.checked = true;
         });
     }
 }

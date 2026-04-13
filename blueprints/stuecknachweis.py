@@ -125,14 +125,22 @@ def stuecknachweis_formular(project_id, whk_id):
             if jahr_str:
                 sn.herstellungsjahr = int(jahr_str)
 
-            # Normen-Checkboxen
+            # Grund der Prüfung (Radio-Button)
+            grund = request.form.get('grund_pruefung', 'erstpruefung')
+            sn.grund_erstpruefung = (grund == 'erstpruefung')
+            sn.grund_wiederholung = (grund == 'wiederholung')
+            sn.grund_aenderung = (grund == 'aenderung')
+            sn.grund_instandsetzung = (grund == 'instandsetzung')
+
+            # Berührungsschutz (Radio-Button)
+            beruehr = request.form.get('beruehr_schutz', 'instruiert')
+            sn.beruehr_nicht_instruiert = (beruehr == 'nicht_instruiert')
+            sn.beruehr_instruiert = (beruehr == 'instruiert')
+
+            # Checkboxen (Schutzmassnahme + Normen)
             checkbox_felder = [
-                # Grund der Prüfung / Schutzmassnahme / Berührungsschutz
-                'grund_erstpruefung', 'grund_wiederholung',
-                'grund_aenderung', 'grund_instandsetzung',
                 'schutz_tn_s', 'schutz_tn_c', 'schutz_tn_c_s',
                 'schutz_tt', 'schutz_it',
-                'beruehr_nicht_instruiert', 'beruehr_instruiert',
                 # Normen EN 61439-1
                 'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
                 'check_11_3_luft_2', 'check_11_3_luft_3',
