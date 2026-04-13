@@ -277,7 +277,7 @@
         </div>
 
         <!-- ==================== FI-MESSUNGEN ==================== -->
-        <h3 class="sn-section-title">FI Messungen (<input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">)</h3>
+        <h3 class="sn-section-title">FI Messungen</h3>
 
         <div class="form-group">
             <table class="project-table sn-table">
@@ -291,6 +291,12 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td class="sn-info-block" colspan="5">
+                            <strong>FI Messungen</strong><br>
+                            Verwendetes Messgerät: <input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">
+                        </td>
+                    </tr>
                     {% for fi in sn.fi_messungen %}
                     <tr>
                         <td>
