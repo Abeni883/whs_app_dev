@@ -836,7 +836,8 @@ class Stuecknachweis(db.Model):
     check_11_1_funk = db.Column(db.Boolean, default=True)
 
     # Messungen
-    messgeraet = db.Column(db.String(100), default='HT FullTest 3')
+    messgeraet_messung = db.Column(db.String(100), default='HT FullTest 3')
+    messgeraet_fi = db.Column(db.String(100), default='HT FullTest 3')
     niederohm_ergebnis = db.Column(db.String(50), nullable=True)
     niederohm_status = db.Column(db.Boolean, default=True)
     spannung_ergebnis = db.Column(db.String(50), nullable=True)

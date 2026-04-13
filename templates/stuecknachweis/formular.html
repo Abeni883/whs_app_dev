@@ -207,7 +207,7 @@
         </div>
 
         <!-- ==================== MESSUNGEN ==================== -->
-        <h3 class="sn-section-title">Messungen (<input type="text" name="messgeraet" id="messgeraet" class="sn-inline-input" value="{{ sn.messgeraet or 'HT FullTest 3' }}" placeholder="HT FullTest 3">)</h3>
+        <h3 class="sn-section-title">Messungen (<input type="text" name="messgeraet_messung" id="messgeraet_messung" class="sn-inline-input" value="{{ sn.messgeraet_messung or 'HT FullTest 3' }}" placeholder="HT FullTest 3">)</h3>
 
         <div class="form-group">
             <table class="project-table sn-table">
@@ -261,7 +261,7 @@
         </div>
 
         <!-- ==================== FI-MESSUNGEN ==================== -->
-        <h3 class="sn-section-title">FI Messungen (<span id="messgeraet_mirror">{{ sn.messgeraet or 'HT FullTest 3' }}</span>)</h3>
+        <h3 class="sn-section-title">FI Messungen (<input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">)</h3>
 
         <div class="form-group">
             <table class="project-table sn-table">
@@ -374,14 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     syncAllToggles();
 
-    // Messgerät-Input spiegelt Wert in FI-Titel
-    const messgeraetInput = document.getElementById('messgeraet');
-    const messgeraetMirror = document.getElementById('messgeraet_mirror');
-    if (messgeraetInput && messgeraetMirror) {
-        messgeraetInput.addEventListener('input', function() {
-            messgeraetMirror.textContent = this.value || 'HT FullTest 3';
-        });
-    }
 });
 
 // ==================== TOGGLE-LOGIK ====================
