@@ -5,9 +5,9 @@
 **Name:** SBB Weichenheizung Abnahmetest-App — Developer-Instanz  
 **Zweck:** Verwaltung und Durchführung von Abnahmetests für Weichenheizungssysteme (EWH/GWH) der SBB  
 **Pfad:** `C:\inetpub\whs_app_dev`  
-**Port:** `5002` (Produktion läuft auf Port 5000)  
+**Port:** `5002` (Produktion läuft auf Port 5001)  
 **GitHub:** `github.com/Abeni883/sbb-weichenheizung-dev`  
-**Produktion:** `C:\inetpub\whs_app` (Port 5000, separates Repo)
+**Produktion:** `C:\inetpub\whs_app_prod_neu` (Port 5001, separates Repo)
 
 ---
 
@@ -185,8 +185,8 @@ DATABASE_URL=sqlite:///whs_dev.db
 
 | | Produktion | Developer |
 |---|---|---|
-| Pfad | `C:\inetpub\whs_app` | `C:\inetpub\whs_app_dev` |
-| Port | 5000 | 5002 |
+| Pfad | `C:\inetpub\whs_app_prod_neu` | `C:\inetpub\whs_app_dev` |
+| Port | 5001 | 5002 |
 | Git Repo | `sbb-weichenheizung` | `sbb-weichenheizung-dev` |
 | Datenbank | `whs.db` | `whs_dev.db` |
 | Debug | False | True |
