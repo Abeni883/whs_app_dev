@@ -368,7 +368,7 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.9</td>
         <td style="padding: 4px; border: 1px solid #999;">Isolationswiderstand 500V</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&gt; 1.0 M&#8486;</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_ergebnis %}{{ stuecknachweis.isolation_ergebnis }} M&#8486;{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_ergebnis %}&gt; {{ stuecknachweis.isolation_ergebnis }} M&#8486;{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
     <tr>
