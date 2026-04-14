@@ -216,6 +216,48 @@ def stuecknachweis_formular(project_id, whk_id):
                            typbezeichnung=typbezeichnung)
 
 
+@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/fi/add', methods=['POST'])
+@login_required
+def fi_hinzufuegen(project_id, whk_id):
+    """Neue leere FI-Messung manuell hinzufügen."""
+    sn = Stuecknachweis.query.filter_by(
+        project_id=project_id, whk_config_id=whk_id).first_or_404()
+
+    max_reihenfolge = db.session.query(
+        db.func.max(FiMessung.reihenfolge)
+    ).filter_by(stuecknachweis_id=sn.id).scalar() or 0
+
+    fi = FiMessung(
+        stuecknachweis_id=sn.id,
+        sicherung='',
+        fehlerstrom_30=False,
+        fehlerstrom_300=False,
+        status=True,
+        reihenfolge=max_reihenfolge + 1,
+        manuell=True
+    )
+    db.session.add(fi)
+    db.session.commit()
+
+    return jsonify({'success': True, 'fi_id': fi.id})
+
+
+@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/fi/<int:fi_id>/delete', methods=['POST'])
+@login_required
+def fi_loeschen(project_id, whk_id, fi_id):
+    """FI-Messung löschen (nur manuell hinzugefügte)."""
+    sn = Stuecknachweis.query.filter_by(
+        project_id=project_id, whk_config_id=whk_id).first_or_404()
+    fi = FiMessung.query.get_or_404(fi_id)
+
+    if fi.stuecknachweis_id != sn.id:
+        return jsonify({'success': False}), 403
+
+    db.session.delete(fi)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/pdf')
 @login_required
 def stuecknachweis_pdf(project_id, whk_id):

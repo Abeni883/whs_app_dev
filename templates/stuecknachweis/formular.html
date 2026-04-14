@@ -285,23 +285,24 @@
             <table class="project-table sn-table">
                 <thead>
                     <tr>
-                        <th style="width: 16%;">Sicherung</th>
-                        <th style="width: 16%;">Fehlerstrom</th>
-                        <th style="width: 18%;">&#8710;I FI [mA]</th>
-                        <th style="width: 18%;">&#8710;t FI [ms]</th>
+                        <th style="width: 14%;">Sicherung</th>
+                        <th style="width: 14%;">Fehlerstrom</th>
+                        <th style="width: 16%;">&#8710;I FI [mA]</th>
+                        <th style="width: 16%;">&#8710;t FI [ms]</th>
                         <th style="width: 12%; text-align: center;">Status</th>
+                        <th style="width: 5%; text-align: center;"></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="sn-info-block" colspan="5">
+                        <td class="sn-info-block" colspan="6">
                             <strong>FI Messungen</strong><br>
                             Verwendetes Messgerät:<br>
                             <input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" style="margin-top: 4px; margin-left: 0;" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">
                         </td>
                     </tr>
                     {% for fi in sn.fi_messungen %}
-                    <tr>
+                    <tr id="fi-row-{{ fi.id }}">
                         <td>
                             <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}">
                         </td>
@@ -322,10 +323,18 @@
                                 {{ 'Richtig' if fi.status else 'Falsch' }}
                             </button>
                         </td>
+                        <td style="text-align: center;">
+                            {% if fi.manuell %}
+                            <button type="button" class="btn-delete-fi" data-fi-id="{{ fi.id }}" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px;" title="FI löschen">✕</button>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <div style="margin-top: 8px;">
+                <button type="button" id="btn-fi-hinzufuegen" class="btn-secondary" style="padding: 6px 14px; font-size: 0.9rem;">+ FI hinzufügen</button>
+            </div>
         </div>
 
         <!-- ==================== BEMERKUNG ==================== -->
@@ -443,6 +452,59 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (cb30) cb30.checked = false;
             }
         });
+    });
+    // FI hinzufügen
+    document.getElementById('btn-fi-hinzufuegen').addEventListener('click', function() {
+        fetch("{{ url_for('stuecknachweis.fi_hinzufuegen', project_id=projekt.id, whk_id=whk.id) }}", {
+            method: 'POST'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var id = data.fi_id;
+                var tbody = document.querySelector('#stuecknachweis-form table:last-of-type tbody');
+                var row = document.createElement('tr');
+                row.id = 'fi-row-' + id;
+                row.innerHTML =
+                    '<td><input type="text" name="fi_' + id + '_sicherung" value="" placeholder="z.B. F302.2"></td>' +
+                    '<td class="fi-fehlerstrom-cell">' +
+                    '<label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_' + id + '"> 30mA</label>' +
+                    '<label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-300" name="fi_fehlerstrom_300_' + id + '"> 300mA</label>' +
+                    '</td>' +
+                    '<td><input type="number" name="fi_' + id + '_delta_i" placeholder="mA"></td>' +
+                    '<td><input type="number" name="fi_' + id + '_delta_t" placeholder="ms"></td>' +
+                    '<td class="sn-toggle-cell">' +
+                    '<input type="hidden" name="fi_' + id + '_status" value="on">' +
+                    '<button type="button" class="sn-toggle sn-toggle-ok" onclick="toggleStatus(this, \'fi_' + id + '_status\')">Richtig</button>' +
+                    '</td>' +
+                    '<td style="text-align:center;"><button type="button" class="btn-delete-fi" data-fi-id="' + id + '" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;" title="FI löschen">✕</button></td>';
+                tbody.appendChild(row);
+
+                // Exklusiv-Listener für neue Zeile
+                var cb30 = row.querySelector('.fi-fehlerstrom-30');
+                var cb300 = row.querySelector('.fi-fehlerstrom-300');
+                if (cb30) cb30.addEventListener('change', function() { if (this.checked && cb300) cb300.checked = false; });
+                if (cb300) cb300.addEventListener('change', function() { if (this.checked && cb30) cb30.checked = false; });
+            }
+        });
+    });
+
+    // FI löschen (Event-Delegation)
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-delete-fi')) {
+            var fiId = e.target.dataset.fiId;
+            if (confirm('FI-Messung löschen?')) {
+                fetch("{{ url_for('stuecknachweis.fi_loeschen', project_id=projekt.id, whk_id=whk.id, fi_id=0) }}".replace('/0/', '/' + fiId + '/'), {
+                    method: 'POST'
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        document.getElementById('fi-row-' + fiId).remove();
+                    }
+                });
+            }
+        }
     });
 });
 

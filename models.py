@@ -886,6 +886,7 @@ class FiMessung(db.Model):
     delta_t_ms = db.Column(db.Integer, nullable=True)        # ∆t FI [ms]
     status = db.Column(db.Boolean, default=True)
     reihenfolge = db.Column(db.Integer, default=0)
+    manuell = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return (f'<FiMessung id={self.id} stuecknachweis_id={self.stuecknachweis_id} '
