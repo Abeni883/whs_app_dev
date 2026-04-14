@@ -200,8 +200,8 @@ def stuecknachweis_formular(project_id, whk_id):
             db.session.rollback()
             flash(f'Fehler beim Speichern: {str(e)}', 'error')
 
-        return redirect(url_for('stuecknachweis.stuecknachweis_formular',
-                                project_id=project_id, whk_id=whk_id))
+        return redirect(url_for('stuecknachweis.whk_auswahl',
+                                project_id=project_id))
 
     # Schutzgrad serverseitig ableiten
     schutzgrad = schutzgrad_map.get(whk.preset_typ, 'IP55')
