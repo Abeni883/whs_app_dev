@@ -601,11 +601,12 @@
 /* WHK-Konfigurations-Tabelle - Zentrierung */
 .config-table th,
 .config-table td {
-    text-align: center;
+    text-align: center !important;
+    vertical-align: middle !important;
 }
 
 .config-table td:nth-child(2) {
-    text-align: left;
+    text-align: left !important;
 }
 
 /* WHK-Konfigurations-Tabelle - Normal-State */
