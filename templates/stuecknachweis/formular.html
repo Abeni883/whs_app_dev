@@ -230,7 +230,8 @@
                                 <li>Hochspannungsmessung (2'500VAC)</li>
                                 <li>Niederohmmessung 25A, 10 Sekunden</li>
                             </ul>
-                            Verwendetes Messgerät: <input type="text" name="messgeraet_messung" id="messgeraet_messung" class="sn-inline-input" value="{{ sn.messgeraet_messung or 'HT FullTest 3' }}" placeholder="HT FullTest 3"><br>
+                            Verwendetes Messgerät:<br>
+                            <input type="text" name="messgeraet_messung" id="messgeraet_messung" class="sn-inline-input" style="margin-top: 4px; margin-left: 0;" value="{{ sn.messgeraet_messung or 'HT FullTest 3' }}" placeholder="HT FullTest 3"><br>
                             <em>Es werden jeweils die schlechtesten Werte protokolliert!</em>
                         </td>
                     </tr>
@@ -295,7 +296,8 @@
                     <tr>
                         <td class="sn-info-block" colspan="5">
                             <strong>FI Messungen</strong><br>
-                            Verwendetes Messgerät: <input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">
+                            Verwendetes Messgerät:<br>
+                            <input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" style="margin-top: 4px; margin-left: 0;" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">
                         </td>
                     </tr>
                     {% for fi in sn.fi_messungen %}
