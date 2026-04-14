@@ -304,8 +304,8 @@
                             <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}">
                         </td>
                         <td class="fi-fehlerstrom-cell">
-                            <label class="checkbox-label"><input type="checkbox" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
-                            <label class="checkbox-label"><input type="checkbox" name="fi_fehlerstrom_300_{{ fi.id }}" {% if fi.fehlerstrom_300 %}checked{% endif %}> 300mA</label>
+                            <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
+                            <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-300" name="fi_fehlerstrom_300_{{ fi.id }}" {% if fi.fehlerstrom_300 %}checked{% endif %}> 300mA</label>
                         </td>
                         <td>
                             <input type="number" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}" placeholder="mA">
@@ -421,6 +421,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 beruehrCheckboxen.forEach(function(other) {
                     if (other !== cb) other.checked = false;
                 });
+            }
+        });
+    });
+
+    // Exklusiv-Auswahl: FI Fehlerstrom 30mA/300mA pro Zeile
+    document.querySelectorAll('.fi-fehlerstrom-30').forEach(function(cb30) {
+        cb30.addEventListener('change', function() {
+            if (this.checked) {
+                var cb300 = this.closest('tr').querySelector('.fi-fehlerstrom-300');
+                if (cb300) cb300.checked = false;
+            }
+        });
+    });
+    document.querySelectorAll('.fi-fehlerstrom-300').forEach(function(cb300) {
+        cb300.addEventListener('change', function() {
+            if (this.checked) {
+                var cb30 = this.closest('tr').querySelector('.fi-fehlerstrom-30');
+                if (cb30) cb30.checked = false;
             }
         });
     });
