@@ -246,7 +246,7 @@ def fi_hinzufuegen(project_id, whk_id):
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/fi/<int:fi_id>/delete', methods=['POST'])
 @login_required
 def fi_loeschen(project_id, whk_id, fi_id):
-    """FI-Messung löschen (nur manuell hinzugefügte)."""
+    """FI-Messung löschen."""
     sn = Stuecknachweis.query.filter_by(
         project_id=project_id, whk_config_id=whk_id).first_or_404()
     fi = FiMessung.query.get_or_404(fi_id)
@@ -254,9 +254,94 @@ def fi_loeschen(project_id, whk_id, fi_id):
     if fi.stuecknachweis_id != sn.id:
         return jsonify({'success': False}), 403
 
+    # Mindestens 1 FI muss bestehen bleiben
+    anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
+    if anzahl <= 1:
+        return jsonify({'success': False, 'error': 'Mindestens eine FI-Messung erforderlich'}), 400
+
     db.session.delete(fi)
     db.session.commit()
     return jsonify({'success': True})
+
+
+@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/autosave', methods=['POST'])
+@login_required
+def stuecknachweis_autosave(project_id, whk_id):
+    """Auto-Save für Stücknachweis-Formular."""
+    sn = Stuecknachweis.query.filter_by(
+        project_id=project_id, whk_config_id=whk_id).first_or_404()
+    whk = WHKConfig.query.get_or_404(whk_id)
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False}), 400
+
+    try:
+        # Kopfdaten
+        for f in ['typbezeichnung', 'auftraggeber', 'hersteller',
+                   'schutzgrad', 'messgeraet_messung', 'messgeraet_fi', 'bemerkung']:
+            if f in data:
+                setattr(sn, f, data[f] or None)
+
+        if 'herstellungsdatum' in data and data['herstellungsdatum']:
+            try:
+                sn.herstellungsdatum = datetime.strptime(data['herstellungsdatum'], '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                pass
+
+        if 'herstellungsjahr' in data and data['herstellungsjahr']:
+            try:
+                sn.herstellungsjahr = int(data['herstellungsjahr'])
+            except (ValueError, TypeError):
+                pass
+
+        if 'preset_typ' in data:
+            whk.preset_typ = data['preset_typ']
+
+        # Boolean-Felder
+        bool_felder = [
+            'grund_erstpruefung', 'grund_wiederholung', 'grund_aenderung', 'grund_instandsetzung',
+            'schutz_tn_s', 'schutz_tn_c', 'schutz_tn_c_s', 'schutz_tt', 'schutz_it',
+            'beruehr_nicht_instruiert', 'beruehr_instruiert',
+            'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
+            'check_11_3_luft_2', 'check_11_3_luft_3',
+            'check_11_4_durch', 'check_11_4_geschr', 'check_11_5',
+            'check_11_6_verb', 'check_11_6_verd', 'check_11_7',
+            'check_11_8', 'check_11_1_kenn', 'check_11_1_doku', 'check_11_1_funk',
+            'niederohm_status', 'spannung_status', 'isolation_status'
+        ]
+        for f in bool_felder:
+            if f in data:
+                setattr(sn, f, bool(data[f]))
+
+        # Messungen Ergebnis (String)
+        for f in ['niederohm_ergebnis', 'spannung_ergebnis', 'isolation_ergebnis']:
+            if f in data:
+                setattr(sn, f, data[f] or '')
+
+        # FI-Messungen
+        if 'fi_messungen' in data:
+            for fi_data in data['fi_messungen']:
+                fi_id = fi_data.get('id')
+                if not fi_id:
+                    continue
+                fi = FiMessung.query.get(int(fi_id))
+                if fi and fi.stuecknachweis_id == sn.id:
+                    if 'sicherung' in fi_data:
+                        fi.sicherung = fi_data['sicherung']
+                    val_i = str(fi_data.get('delta_i_ma', '')).strip()
+                    val_t = str(fi_data.get('delta_t_ms', '')).strip()
+                    fi.delta_i_ma = int(val_i) if val_i else None
+                    fi.delta_t_ms = int(val_t) if val_t else None
+                    fi.fehlerstrom_30 = fi_data.get('fehlerstrom_30', False)
+                    fi.fehlerstrom_300 = fi_data.get('fehlerstrom_300', False)
+                    fi.status = fi_data.get('status', True)
+
+        db.session.commit()
+        return jsonify({'success': True})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/pdf')

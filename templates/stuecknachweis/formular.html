@@ -324,9 +324,7 @@
                             </button>
                         </td>
                         <td style="text-align: center;">
-                            {% if fi.manuell %}
                             <button type="button" class="btn-delete-fi" data-fi-id="{{ fi.id }}" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 16px;" title="FI löschen">✕</button>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -548,5 +546,111 @@ function syncAllToggles() {
         }
     });
 }
+
+// ==================== AUTO-SAVE ====================
+var AUTOSAVE_URL = '/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/autosave';
+var autosaveTimer = null;
+var autosaveIndicator = null;
+
+function sammleFormularDaten() {
+    var sn = {};
+
+    // Text/Datum/Number Felder
+    ['typbezeichnung','auftraggeber','hersteller','herstellungsdatum',
+     'herstellungsjahr','messgeraet_messung','messgeraet_fi','schutzgrad'].forEach(function(f) {
+        var el = document.querySelector('[name="' + f + '"]');
+        if (el) sn[f] = el.value;
+    });
+
+    // Preset
+    var preset = document.querySelector('[name="preset_typ"]');
+    if (preset) sn['preset_typ'] = preset.value;
+
+    // Checkboxen (Boolean)
+    ['grund_erstpruefung','grund_wiederholung','grund_aenderung','grund_instandsetzung',
+     'schutz_tn_s','schutz_tn_c','schutz_tn_c_s','schutz_tt','schutz_it',
+     'beruehr_nicht_instruiert','beruehr_instruiert',
+     'check_11_2','check_11_3_kriech','check_11_3_luft_1',
+     'check_11_3_luft_2','check_11_3_luft_3',
+     'check_11_4_durch','check_11_4_geschr','check_11_5',
+     'check_11_6_verb','check_11_6_verd','check_11_7',
+     'check_11_8','check_11_1_kenn','check_11_1_doku','check_11_1_funk'
+    ].forEach(function(f) {
+        var el = document.querySelector('[name="' + f + '"]');
+        if (el) sn[f] = el.checked;
+    });
+
+    // Messungen Ergebnis (String) + Status (hidden input)
+    ['niederohm_ergebnis','spannung_ergebnis','isolation_ergebnis','bemerkung'].forEach(function(f) {
+        var el = document.querySelector('[name="' + f + '"]');
+        if (el) sn[f] = el.value;
+    });
+    ['niederohm_status','spannung_status','isolation_status'].forEach(function(f) {
+        var el = document.querySelector('[name="' + f + '"]');
+        if (el) sn[f] = (el.value === 'on');
+    });
+
+    // FI-Messungen
+    sn['fi_messungen'] = [];
+    document.querySelectorAll('tr[id^="fi-row-"]').forEach(function(row) {
+        var fiId = row.id.replace('fi-row-', '');
+        var fi = { id: parseInt(fiId) };
+        var sig = row.querySelector('[name$="_sicherung"]');
+        var di = row.querySelector('[name$="_delta_i"]');
+        var dt = row.querySelector('[name$="_delta_t"]');
+        var f30 = row.querySelector('.fi-fehlerstrom-30');
+        var f300 = row.querySelector('.fi-fehlerstrom-300');
+        var st = row.querySelector('[name$="_status"]');
+        if (sig) fi.sicherung = sig.value;
+        if (di) fi.delta_i_ma = di.value;
+        if (dt) fi.delta_t_ms = dt.value;
+        if (f30) fi.fehlerstrom_30 = f30.checked;
+        if (f300) fi.fehlerstrom_300 = f300.checked;
+        if (st) fi.status = (st.value === 'on');
+        sn['fi_messungen'].push(fi);
+    });
+
+    return sn;
+}
+
+function zeigeAutosaveStatus(text) {
+    if (!autosaveIndicator) {
+        autosaveIndicator = document.createElement('span');
+        autosaveIndicator.style.cssText = 'margin-left:12px; font-size:0.85rem; color:#6b7280;';
+        var actions = document.querySelector('.form-actions');
+        if (actions) actions.appendChild(autosaveIndicator);
+    }
+    autosaveIndicator.textContent = text;
+}
+
+function autosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(function() {
+        zeigeAutosaveStatus('Speichern...');
+        fetch(AUTOSAVE_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(sammleFormularDaten())
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                zeigeAutosaveStatus('✓ Gespeichert');
+                setTimeout(function() { zeigeAutosaveStatus(''); }, 2000);
+            } else {
+                zeigeAutosaveStatus('Fehler');
+            }
+        })
+        .catch(function() { zeigeAutosaveStatus('Fehler'); });
+    }, 1500);
+}
+
+// Auto-Save auf alle Inputs binden
+document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select').forEach(function(el) {
+    el.addEventListener('change', autosave);
+    if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
+        el.addEventListener('input', autosave);
+    }
+});
 </script>
 {% endblock %}
