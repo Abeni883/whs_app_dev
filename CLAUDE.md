@@ -194,24 +194,46 @@ DATABASE_URL=sqlite:///whs_dev.db
 
 ---
 
-## Bekannte Einschränkungen / Offene Punkte
+## Implementierter Stand — Stücknachweis Feature ✅
 
-- xhtml2pdf: Header-Logo und Tabellenformatierung in PDFs noch in Arbeit
-- GWH-Abnahmetest: Parameter-Prüfung (ZSK/HGLS) noch nicht vollständig implementiert
+### Datenbank (neue Tabellen)
+- `stuecknachweis` — Kopfdaten, Normen (16 Checkboxen), Messungen, Grund/Schutz/Berührungsschutz, Schutzgrad, Messgeräte
+- `fi_messungen` — Sicherungen, Fehlerstrom (30mA/300mA), ∆I/∆t, Status
+
+### WHKConfig Erweiterungen
+- `whk_typ` (Typbezeichnung z.B. WHK_20_LU_01_16)
+- `preset_typ` (kabine_16hz/50hz, rahmen_16hz/50hz)
+
+### Neue Routen (blueprints/stuecknachweis.py)
+- `GET /projekt/<id>/stuecknachweis/whk-auswahl`
+- `GET/POST /projekt/<id>/whk/<id>/stuecknachweis`
+- `GET /projekt/<id>/whk/<id>/stuecknachweis/pdf`
+- `GET /projekt/<id>/whk/<id>/konformitaet/pdf`
+
+### Neue Templates
+- `templates/stuecknachweis/formular.html`
+- `templates/stuecknachweis/whk_auswahl.html`
+- `templates/stuecknachweis/pdf_stuecknachweis.html` (3 Seiten)
+- `templates/stuecknachweis/pdf_konformitaet.html` (1 Seite)
+
+### PDF-Export
+- **Stücknachweisprotokoll** — 3 Seiten: Kopfdaten | Normen EN 61439-1 | Messungen + FI + Vorbehalt
+- **Konformitätserklärung** — 1 Seite: Firma, Produkt, Norm, CE-Jahr, Unterschrift
+- Beide via xhtml2pdf mit `@frame` Header/Footer, Base64-Logo
+
+### UI-Änderungen
+- Projektübersicht: EN 61439 Button (blau, eigene `.en61439-link` Klasse)
+- Konfiguration: Spalte "Typ" (`whk_typ`), TS/AH gekürzt, Tabelle zentriert
+- WHK-Auswahl: Status-Badge (Vorhanden/Nicht erstellt)
+- Stücknachweis-Formular: Normen-Tabelle mit rowspan-Gruppierung, Exklusiv-Checkboxen (Grund/Berührungsschutz), editierbare Messgeräte/Schutzgrad
+
+---
+
+## Offene Punkte / Nächste Schritte
+
+- Produktiv-Übernahme (DB-Migrationen beachten!)
+- GWH-Abnahmetest: Parameter-Prüfung (ZSK/HGLS) noch nicht vollständig
 - Zeiterfassung: API-Endpunkte vorhanden, UI-Integration laufend
-
-### Stücknachweis-Feature (in Entwicklung)
-- Formular: Kopfdaten, Normen EN 61439-1, Messungen, FI-Messungen ✅
-- Preset-Logik (4 Typen: kabine_16hz/50hz, rahmen_16hz/50hz) ✅
-- WHK-Auswahlseite (`/projekt/<id>/stuecknachweis/whk-auswahl`) ✅
-- EN 61439 Button in Projektübersicht ✅
-- Grund der Prüfung / Schutzmassnahme / Berührungsschutz ✅
-- Schutzgrad editierbar unter Berührungsschutz ✅
-- Fehlerstrom-Spalte (30mA/300mA) in FI-Messungen ✅
-- Messgerät-Felder editierbar (Messungen + FI separat) ✅
-- Normen-Tabelle gruppierte Struktur mit rowspan ✅
-- PDF-Export Konformitätserklärung ✅
-- PDF-Export Stücknachweisprotokoll ✅
 
 ---
 
