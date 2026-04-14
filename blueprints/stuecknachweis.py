@@ -99,6 +99,26 @@ def stuecknachweis_formular(project_id, whk_id):
 
         db.session.commit()
 
+    # FI-Messungen aktualisieren wenn Abgang-Anzahl geändert wurde
+    aktuelle_fi_anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
+    soll_anzahl = len(generiere_fi_sicherungen(whk.anzahl_abgaenge))
+
+    if aktuelle_fi_anzahl != soll_anzahl:
+        FiMessung.query.filter_by(stuecknachweis_id=sn.id).delete()
+        sicherungen = generiere_fi_sicherungen(whk.anzahl_abgaenge)
+        for idx, sicherung in enumerate(sicherungen):
+            fi = FiMessung(
+                stuecknachweis_id=sn.id,
+                sicherung=sicherung,
+                fehlerstrom_300=True,
+                fehlerstrom_30=False,
+                status=True,
+                reihenfolge=idx
+            )
+            db.session.add(fi)
+        db.session.commit()
+        flash('Anzahl Abgänge wurde geändert — FI-Messungen wurden aktualisiert.', 'info')
+
     # Schutzgrad-Map
     schutzgrad_map = {
         'kabine_16hz': 'IP55', 'kabine_50hz': 'IP55',
