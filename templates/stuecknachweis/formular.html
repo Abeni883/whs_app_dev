@@ -454,15 +454,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     // FI hinzufügen
-    document.getElementById('btn-fi-hinzufuegen').addEventListener('click', function() {
-        fetch("{{ url_for('stuecknachweis.fi_hinzufuegen', project_id=projekt.id, whk_id=whk.id) }}", {
-            method: 'POST'
+    var btnFi = document.getElementById('btn-fi-hinzufuegen');
+    if (btnFi) {
+        btnFi.addEventListener('click', function() {
+        var addUrl = '/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/add';
+        fetch(addUrl, { method: 'POST' })
+        .then(function(r) {
+            if (!r.ok) throw new Error('Server: ' + r.status);
+            return r.json();
         })
-        .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
                 var id = data.fi_id;
-                var tbody = document.querySelector('#stuecknachweis-form table:last-of-type tbody');
+                var tables = document.querySelectorAll('.project-table.sn-table');
+                var tbody = tables[tables.length - 1].querySelector('tbody');
                 var row = document.createElement('tr');
                 row.id = 'fi-row-' + id;
                 row.innerHTML =
@@ -486,15 +491,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (cb30) cb30.addEventListener('change', function() { if (this.checked && cb300) cb300.checked = false; });
                 if (cb300) cb300.addEventListener('change', function() { if (this.checked && cb30) cb30.checked = false; });
             }
-        });
+        })
+        .catch(function(err) { console.error('FI hinzufügen Fehler:', err); });
     });
+    }
 
     // FI löschen (Event-Delegation)
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('btn-delete-fi')) {
             var fiId = e.target.dataset.fiId;
             if (confirm('FI-Messung löschen?')) {
-                fetch("{{ url_for('stuecknachweis.fi_loeschen', project_id=projekt.id, whk_id=whk.id, fi_id=0) }}".replace('/0/', '/' + fiId + '/'), {
+                fetch('/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/' + fiId + '/delete', {
                     method: 'POST'
                 })
                 .then(function(r) { return r.json(); })
