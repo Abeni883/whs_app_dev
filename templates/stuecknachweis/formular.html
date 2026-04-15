@@ -15,7 +15,7 @@
         <span>Stücknachweis {{ whk.whk_nummer }}</span>
     </nav>
 
-    <h2>Stücknachweis — {{ typbezeichnung }}</h2>
+    <h2>Stücknachweis — {{ typbezeichnung }} <span id="autosave-status" style="font-size: 0.7rem; font-weight: normal; color: #6b7280;"></span></h2>
 
     <form method="POST" id="stuecknachweis-form">
 
@@ -596,12 +596,12 @@ function sammleFormularDaten() {
     document.querySelectorAll('tr[id^="fi-row-"]').forEach(function(row) {
         var fiId = row.id.replace('fi-row-', '');
         var fi = { id: parseInt(fiId) };
-        var sig = row.querySelector('[name$="_sicherung"]');
-        var di = row.querySelector('[name$="_delta_i"]');
-        var dt = row.querySelector('[name$="_delta_t"]');
+        var sig = row.querySelector('[name="fi_' + fiId + '_sicherung"]');
+        var di = row.querySelector('[name="fi_' + fiId + '_delta_i"]');
+        var dt = row.querySelector('[name="fi_' + fiId + '_delta_t"]');
         var f30 = row.querySelector('.fi-fehlerstrom-30');
         var f300 = row.querySelector('.fi-fehlerstrom-300');
-        var st = row.querySelector('[name$="_status"]');
+        var st = row.querySelector('[name="fi_' + fiId + '_status"]');
         if (sig) fi.sicherung = sig.value;
         if (di) fi.delta_i_ma = di.value;
         if (dt) fi.delta_t_ms = dt.value;
@@ -615,13 +615,11 @@ function sammleFormularDaten() {
 }
 
 function zeigeAutosaveStatus(text) {
-    if (!autosaveIndicator) {
-        autosaveIndicator = document.createElement('span');
-        autosaveIndicator.style.cssText = 'margin-left:12px; font-size:0.85rem; color:#6b7280;';
-        var actions = document.querySelector('.form-actions');
-        if (actions) actions.appendChild(autosaveIndicator);
+    var el = document.getElementById('autosave-status');
+    if (el) {
+        el.textContent = text;
+        el.style.color = text.indexOf('Fehler') >= 0 ? '#ef4444' : '#10b981';
     }
-    autosaveIndicator.textContent = text;
 }
 
 function autosave() {
