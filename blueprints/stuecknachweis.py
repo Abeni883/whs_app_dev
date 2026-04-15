@@ -100,11 +100,15 @@ def stuecknachweis_formular(project_id, whk_id):
         db.session.commit()
 
     # FI-Messungen aktualisieren wenn Abgang-Anzahl geändert wurde
-    aktuelle_fi_anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
+    # Nur automatisch generierte FI zählen (nicht manuell hinzugefügte)
+    auto_fi_anzahl = FiMessung.query.filter_by(
+        stuecknachweis_id=sn.id, manuell=False).count()
     soll_anzahl = len(generiere_fi_sicherungen(whk.anzahl_abgaenge))
 
-    if aktuelle_fi_anzahl != soll_anzahl:
-        FiMessung.query.filter_by(stuecknachweis_id=sn.id).delete()
+    if auto_fi_anzahl != soll_anzahl:
+        # Nur automatisch generierte FI löschen, manuelle behalten
+        FiMessung.query.filter_by(
+            stuecknachweis_id=sn.id, manuell=False).delete()
         sicherungen = generiere_fi_sicherungen(whk.anzahl_abgaenge)
         for idx, sicherung in enumerate(sicherungen):
             fi = FiMessung(
@@ -113,7 +117,8 @@ def stuecknachweis_formular(project_id, whk_id):
                 fehlerstrom_300=True,
                 fehlerstrom_30=False,
                 status=True,
-                reihenfolge=idx
+                reihenfolge=idx,
+                manuell=False
             )
             db.session.add(fi)
         db.session.commit()

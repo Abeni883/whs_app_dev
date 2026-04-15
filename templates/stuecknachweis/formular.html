@@ -531,6 +531,7 @@ function toggleStatus(btn, hiddenName) {
         hidden.value = 'on';
         hidden.name = hiddenName;
     }
+    if (typeof autosave === 'function') autosave();
 }
 
 function syncAllToggles() {
