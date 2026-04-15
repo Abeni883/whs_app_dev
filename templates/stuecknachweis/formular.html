@@ -395,12 +395,12 @@ function applyPreset(presetKey, nurSchutzgrad) {
     }
 }
 
-document.getElementById('preset_typ').addEventListener('change', function() {
-    applyPreset(this.value, false);
-});
-
-// Beim Laden: Schutzgrad nur setzen wenn kein gespeicherter Wert vorhanden
+// Beim Laden: Alles initialisieren
 document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('preset_typ').addEventListener('change', function() {
+        applyPreset(this.value, false);
+    });
+
     const schutzgradInput = document.getElementById('schutzgrad');
     if (!schutzgradInput.value) {
         applyPreset(document.getElementById('preset_typ').value, true);
@@ -512,6 +512,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    // Auto-Save Initialisierung (muss hier sein, innerhalb DOMContentLoaded)
+    window._autosaveReady = true;
 });
 
 // ==================== TOGGLE-LOGIK ====================
@@ -649,12 +651,14 @@ function autosave() {
     }, 1500);
 }
 
-// Auto-Save auf alle Inputs binden
-document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select').forEach(function(el) {
-    el.addEventListener('change', autosave);
-    if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
-        el.addEventListener('input', autosave);
-    }
+// Auto-Save auf alle Inputs binden (nach DOM ready)
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select').forEach(function(el) {
+        el.addEventListener('change', autosave);
+        if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
+            el.addEventListener('input', autosave);
+        }
+    });
 });
 </script>
 {% endblock %}
