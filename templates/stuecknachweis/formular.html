@@ -15,7 +15,8 @@
         <span>Stücknachweis {{ whk.whk_nummer }}</span>
     </nav>
 
-    <h2>Stücknachweis — {{ typbezeichnung }} <span id="autosave-status" style="font-size: 0.7rem; font-weight: normal; color: #6b7280;"></span></h2>
+    <h2>Stücknachweis — {{ typbezeichnung }}</h2>
+    <div id="autosave-status" style="font-size: 0.85rem; min-height: 1.2em; margin-bottom: 8px; color: #10b981;"></div>
 
     <form method="POST" id="stuecknachweis-form">
 
@@ -626,21 +627,25 @@ function autosave() {
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(function() {
         zeigeAutosaveStatus('Speichern...');
+        var daten = sammleFormularDaten();
         fetch(AUTOSAVE_URL, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(sammleFormularDaten())
+            body: JSON.stringify(daten)
         })
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            if (!r.ok) { throw new Error('Status ' + r.status); }
+            return r.json();
+        })
         .then(function(data) {
             if (data.success) {
-                zeigeAutosaveStatus('✓ Gespeichert');
-                setTimeout(function() { zeigeAutosaveStatus(''); }, 2000);
+                zeigeAutosaveStatus('Gespeichert');
+                setTimeout(function() { zeigeAutosaveStatus(''); }, 3000);
             } else {
-                zeigeAutosaveStatus('Fehler');
+                zeigeAutosaveStatus('Fehler: ' + (data.error || ''));
             }
         })
-        .catch(function() { zeigeAutosaveStatus('Fehler'); });
+        .catch(function(err) { zeigeAutosaveStatus('Fehler: ' + err.message); });
     }, 1500);
 }
 
