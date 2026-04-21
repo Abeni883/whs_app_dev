@@ -656,7 +656,8 @@ function autosave() {
     console.log('autosave() aufgerufen');
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(function() {
-        zeigeAutosaveStatus('Speichern...');
+        var badgeStart = document.getElementById('autosave-badge');
+        if (badgeStart) { badgeStart.textContent = 'Speichern...'; badgeStart.style.color = '#6b7280'; }
         var daten = sammleFormularDaten();
         console.log('Sende Daten, FI-Messungen:', daten.fi_messungen ? daten.fi_messungen.length : 0);
         fetch(AUTOSAVE_URL, {
@@ -671,16 +672,32 @@ function autosave() {
         })
         .then(function(data) {
             console.log('Response Data:', data);
+            var badgeEl = document.getElementById('autosave-badge');
+            console.log('Badge Element:', badgeEl, 'textContent vorher:', badgeEl ? badgeEl.textContent : 'NULL');
             if (data.success) {
-                zeigeAutosaveStatus('Gespeichert');
-                setTimeout(function() { zeigeAutosaveStatus(''); }, 3000);
+                if (badgeEl) {
+                    badgeEl.textContent = 'Gespeichert';
+                    badgeEl.style.color = '#10b981';
+                    badgeEl.style.display = 'block';
+                    console.log('Badge textContent nachher:', badgeEl.textContent);
+                }
+                setTimeout(function() {
+                    if (badgeEl) { badgeEl.textContent = ''; }
+                }, 3000);
             } else {
-                zeigeAutosaveStatus('Fehler: ' + (data.error || ''));
+                if (badgeEl) {
+                    badgeEl.textContent = 'Fehler: ' + (data.error || '');
+                    badgeEl.style.color = '#ef4444';
+                }
             }
         })
         .catch(function(err) {
             console.error('Fetch Fehler:', err);
-            zeigeAutosaveStatus('Fehler: ' + err.message);
+            var badgeEl = document.getElementById('autosave-badge');
+            if (badgeEl) {
+                badgeEl.textContent = 'Fehler: ' + err.message;
+                badgeEl.style.color = '#ef4444';
+            }
         });
     }, 1500);
 }

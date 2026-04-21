@@ -214,6 +214,12 @@ def stuecknachweis_formular(project_id, whk_id):
     # Typbezeichnung: whk_typ falls vorhanden, sonst whk_nummer
     typbezeichnung = whk.whk_typ or whk.whk_nummer
 
+    # Debug: Prüfe geladene Werte
+    print(f"[SN DEBUG] GET sn.id={sn.id}, niederohm={sn.niederohm_ergebnis}, isolation={sn.isolation_ergebnis}")
+    print(f"[SN DEBUG] FI count: {len(sn.fi_messungen)}")
+    for fi in sn.fi_messungen:
+        print(f"[SN DEBUG]   FI {fi.id}: sicherung={fi.sicherung}, delta_i={fi.delta_i_ma}, delta_t={fi.delta_t_ms}, status={fi.status}")
+
     return render_template('stuecknachweis/formular.html',
                            projekt=projekt,
                            whk=whk,
