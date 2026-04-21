@@ -354,6 +354,16 @@
     </form>
 </div>
 
+<div id="sn-config"
+     data-save-url="{{ url_for('stuecknachweis.stuecknachweis_autosave', project_id=projekt.id, whk_id=whk.id) }}"
+     data-fi-add-url="{{ url_for('stuecknachweis.fi_hinzufuegen', project_id=projekt.id, whk_id=whk.id) }}"
+     data-fi-delete-url-base="/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/"
+     style="display:none;">
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
 <script>
 // ==================== PRESET-LOGIK ====================
 const PRESET_CHECKBOXEN = {
@@ -456,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var btnFi = document.getElementById('btn-fi-hinzufuegen');
     if (btnFi) {
         btnFi.addEventListener('click', function() {
-        var addUrl = '/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/add';
+        var addUrl = document.getElementById('sn-config').dataset.fiAddUrl;
         fetch(addUrl, { method: 'POST' })
         .then(function(r) {
             if (!r.ok) throw new Error('Server: ' + r.status);
@@ -500,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.classList.contains('btn-delete-fi')) {
             var fiId = e.target.dataset.fiId;
             if (confirm('FI-Messung löschen?')) {
-                fetch('/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/' + fiId + '/delete', {
+                fetch(document.getElementById('sn-config').dataset.fiDeleteUrlBase + fiId + '/delete', {
                     method: 'POST'
                 })
                 .then(function(r) { return r.json(); })
@@ -552,7 +562,9 @@ function syncAllToggles() {
 }
 
 // ==================== AUTO-SAVE ====================
-var AUTOSAVE_URL = '/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/autosave';
+var snConfig = document.getElementById('sn-config');
+var AUTOSAVE_URL = snConfig.dataset.saveUrl;
+console.log('Save URL:', AUTOSAVE_URL);
 var autosaveTimer = null;
 var autosaveIndicator = null;
 
@@ -661,4 +673,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock %}
+{% endblock scripts %}
