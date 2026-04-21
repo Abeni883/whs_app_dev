@@ -568,8 +568,9 @@ try {
 }
 var autosaveTimer = null;
 var autosaveIndicator = null;
-console.log('Funktionen werden definiert...');
+console.log('>>> Punkt A: nach try-catch');
 
+console.log('>>> Punkt B: vor sammleFormularDaten');
 function sammleFormularDaten() {
     var sn = {};
 
@@ -630,6 +631,7 @@ function sammleFormularDaten() {
 
     return sn;
 }
+console.log('>>> Punkt C: sammleFormularDaten definiert');
 
 function zeigeAutosaveStatus(text) {
     var el = document.getElementById('autosave-badge');
@@ -638,6 +640,7 @@ function zeigeAutosaveStatus(text) {
         el.style.color = text.indexOf('Fehler') >= 0 ? '#ef4444' : '#10b981';
     }
 }
+console.log('>>> Punkt D: zeigeAutosaveStatus definiert');
 
 function autosave() {
     clearTimeout(autosaveTimer);
@@ -664,7 +667,7 @@ function autosave() {
         .catch(function(err) { zeigeAutosaveStatus('Fehler: ' + err.message); });
     }, 1500);
 }
-console.log('Funktionen definiert OK');
+console.log('>>> Punkt E: autosave definiert, ALLE Funktionen OK');
 
 // Auto-Save auf alle Inputs binden (DOM bereits geladen)
 try {
