@@ -16,7 +16,7 @@
     </nav>
 
     <h2>Stücknachweis — {{ typbezeichnung }}</h2>
-    <div id="autosave-status" style="font-size: 0.85rem; min-height: 1.2em; margin-bottom: 8px; color: #10b981;"></div>
+    <div id="autosave-badge" style="font-size:0.85rem; min-height:1.2em; margin-top:4px;"></div>
 
     <form method="POST" id="stuecknachweis-form">
 
@@ -618,7 +618,7 @@ function sammleFormularDaten() {
 }
 
 function zeigeAutosaveStatus(text) {
-    var el = document.getElementById('autosave-status');
+    var el = document.getElementById('autosave-badge');
     if (el) {
         el.textContent = text;
         el.style.color = text.indexOf('Fehler') >= 0 ? '#ef4444' : '#10b981';
