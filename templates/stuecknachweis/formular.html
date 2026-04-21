@@ -345,7 +345,7 @@
 
         <!-- ==================== AKTIONEN ==================== -->
         <div class="form-group form-actions">
-            <button type="submit" class="btn-primary">Speichern &amp; Zur&uuml;ck</button>
+            <button type="submit" class="btn-primary">Zur&uuml;ck</button>
             <a href="{{ url_for('stuecknachweis.stuecknachweis_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Stücknachweis</a>
             <a href="{{ url_for('stuecknachweis.konformitaet_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Konformitätserklärung</a>
             <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="btn-cancel">Abbrechen</a>
