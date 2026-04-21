@@ -16,7 +16,7 @@
     </nav>
 
     <h2>Stücknachweis — {{ typbezeichnung }}</h2>
-    <div id="save-status" class="save-status" style="display: none;"></div>
+    <div id="save-status" class="save-status" style="display: none;"><!-- v2 --></div>
 
     <form method="POST" id="stuecknachweis-form">
 
@@ -361,7 +361,7 @@
      style="display:none;">
 </div>
 <script>
-console.log('SN Script Start');
+console.log('SN Script v2 - showSaveStatus Version');
 // ==================== PRESET-LOGIK ====================
 const PRESET_CHECKBOXEN = {
     check_11_2: true, check_11_3_kriech: true,
