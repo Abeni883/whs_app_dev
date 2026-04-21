@@ -253,7 +253,7 @@
                         <td>11.9</td>
                         <td>Isolationswiderstand 500V</td>
                         <td>&gt; 1.0 M&#8486;</td>
-                        <td><input type="text" name="isolation_ergebnis" value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. 150"></td>
+                        <td><input type="text" name="isolation_ergebnis" value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. >500"></td>
                         <td class="sn-toggle-cell">
                             <input type="hidden" name="isolation_status" value="">
                             <button type="button" class="sn-toggle {% if sn.isolation_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
