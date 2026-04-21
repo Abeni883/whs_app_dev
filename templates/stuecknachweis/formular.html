@@ -611,7 +611,9 @@ function sammleFormularDaten() {
 
     // FI-Messungen
     sn['fi_messungen'] = [];
-    document.querySelectorAll('tr[id^="fi-row-"]').forEach(function(row) {
+    var fiRows = document.querySelectorAll('tr[id^="fi-row-"]');
+    console.log('FI Rows gefunden:', fiRows.length);
+    fiRows.forEach(function(row) {
         var fiId = row.id.replace('fi-row-', '');
         var fi = { id: parseInt(fiId) };
         var sig = row.querySelector('[name="fi_' + fiId + '_sicherung"]');
@@ -620,6 +622,9 @@ function sammleFormularDaten() {
         var f30 = row.querySelector('.fi-fehlerstrom-30');
         var f300 = row.querySelector('.fi-fehlerstrom-300');
         var st = row.querySelector('[name="fi_' + fiId + '_status"]');
+        console.log('FI', fiId, '- Sicherung:', sig ? sig.value : 'NOT FOUND',
+                     'DeltaI:', di ? di.value : 'NOT FOUND',
+                     'DeltaT:', dt ? dt.value : 'NOT FOUND');
         if (sig) fi.sicherung = sig.value;
         if (di) fi.delta_i_ma = di.value;
         if (dt) fi.delta_t_ms = dt.value;
@@ -643,20 +648,24 @@ function zeigeAutosaveStatus(text) {
 console.log('>>> Punkt D: zeigeAutosaveStatus definiert');
 
 function autosave() {
+    console.log('autosave() aufgerufen');
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(function() {
         zeigeAutosaveStatus('Speichern...');
         var daten = sammleFormularDaten();
+        console.log('Sende Daten, FI-Messungen:', daten.fi_messungen ? daten.fi_messungen.length : 0);
         fetch(AUTOSAVE_URL, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(daten)
         })
         .then(function(r) {
+            console.log('Response Status:', r.status);
             if (!r.ok) { throw new Error('Status ' + r.status); }
             return r.json();
         })
         .then(function(data) {
+            console.log('Response Data:', data);
             if (data.success) {
                 zeigeAutosaveStatus('Gespeichert');
                 setTimeout(function() { zeigeAutosaveStatus(''); }, 3000);
@@ -664,10 +673,15 @@ function autosave() {
                 zeigeAutosaveStatus('Fehler: ' + (data.error || ''));
             }
         })
-        .catch(function(err) { zeigeAutosaveStatus('Fehler: ' + err.message); });
+        .catch(function(err) {
+            console.error('Fetch Fehler:', err);
+            zeigeAutosaveStatus('Fehler: ' + err.message);
+        });
     }, 1500);
 }
-console.log('>>> Punkt E: autosave definiert, ALLE Funktionen OK');
+// Global verfügbar machen
+window.autosave = autosave;
+console.log('>>> Punkt E: autosave definiert, window.autosave:', typeof window.autosave);
 
 // Auto-Save auf alle Inputs binden (DOM bereits geladen)
 try {
