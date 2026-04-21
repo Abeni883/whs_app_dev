@@ -17,6 +17,7 @@
 
     <h2>Stücknachweis — {{ typbezeichnung }}</h2>
     <div id="autosave-badge" style="font-size:0.85rem; min-height:1.2em; margin-top:4px;"></div>
+    <button type="button" onclick="console.log('Manueller Trigger'); if(typeof autosave==='function'){autosave();}else{console.error('autosave nicht verfügbar');}" style="font-size:0.75rem; padding:2px 8px; background:#ddd; border:1px solid #999; cursor:pointer;">Test Autosave</button>
 
     <form method="POST" id="stuecknachweis-form">
 
@@ -687,27 +688,38 @@ function autosave() {
 window.autosave = autosave;
 console.log('>>> Punkt E: autosave definiert, window.autosave:', typeof window.autosave);
 
-// Auto-Save auf alle Inputs binden (DOM bereits geladen)
+// Auto-Save via Event-Delegation auf dem Formular (fängt auch dynamisch hinzugefügte Felder)
 try {
-    console.log('Binde Event-Listener - START');
+    console.log('Binde Event-Listener via Delegation - START');
 
-    var snConfigCheck = document.getElementById('sn-config');
-    console.log('sn-config:', snConfigCheck);
+    var formEl = document.getElementById('stuecknachweis-form');
+    console.log('Form gefunden:', formEl !== null);
 
-    var badgeCheck = document.getElementById('autosave-badge');
-    console.log('autosave-badge:', badgeCheck);
+    if (formEl) {
+        formEl.addEventListener('change', function(e) {
+            var tag = e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+                console.log('Change auf:', e.target.name || e.target.className, '=', e.target.value || e.target.checked);
+                autosave();
+            }
+        });
 
-    var felder = document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select');
-    console.log('Felder gefunden:', felder.length);
+        formEl.addEventListener('input', function(e) {
+            var tag = e.target.tagName;
+            var type = e.target.type;
+            if (tag === 'TEXTAREA' || type === 'text' || type === 'number' || type === 'date') {
+                console.log('Input auf:', e.target.name, '=', e.target.value);
+                autosave();
+            }
+        });
 
-    felder.forEach(function(el) {
-        el.addEventListener('change', autosave);
-        if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
-            el.addEventListener('input', autosave);
-        }
-    });
+        console.log('Auto-Save Event-Delegation bereit');
+    }
 
-    console.log('Auto-Save bereit:', felder.length, 'Felder');
+    // Test: Prüfe ob readonly/disabled Inputs existieren
+    var deaktiviert = document.querySelectorAll('#stuecknachweis-form input[readonly], #stuecknachweis-form input[disabled]');
+    console.log('Readonly/Disabled Inputs:', deaktiviert.length);
+
 } catch(err) {
     console.error('FEHLER beim Binden:', err.message, err.stack);
 }
