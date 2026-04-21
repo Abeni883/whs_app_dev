@@ -92,8 +92,6 @@
     <!-- Shared JavaScript Functions -->
     <script src="{{ url_for('static', filename='js/shared.js') }}"></script>
 
-    {% block scripts %}{% endblock %}
-
     <script>
         // Theme Toggle Functionality
         (function() {
@@ -239,5 +237,7 @@
             setInterval(heartbeat, 60000);
         })();
     </script>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>
