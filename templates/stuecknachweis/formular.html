@@ -218,13 +218,14 @@
                         <th style="width: 8%;">Abschnitt</th>
                         <th>Funktion</th>
                         <th style="width: 15%;">Grenzwert</th>
-                        <th style="width: 20%;">Ergebnis</th>
+                        <th style="width: 16%;">Ergebnis</th>
+                        <th style="width: 6%;">Einheit</th>
                         <th style="width: 12%; text-align: center;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="sn-info-block" colspan="5">
+                        <td class="sn-info-block" colspan="6">
                             <strong>Messungen</strong><br>
                             <ul class="sn-info-list">
                                 <li>Messwerte von Isolationsmessung (500VDC)</li>
@@ -241,6 +242,7 @@
                         <td>Niederohmmessung 25A</td>
                         <td>&lt; 0.100 &#8486;</td>
                         <td><input type="text" name="niederohm_ergebnis" value="{{ sn.niederohm_ergebnis or '' }}" placeholder="z.B. 0.045"></td>
+                        <td style="white-space:nowrap;">&#8486;</td>
                         <td class="sn-toggle-cell">
                             <input type="hidden" name="niederohm_status" value="">
                             <button type="button" class="sn-toggle {% if sn.niederohm_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
@@ -254,6 +256,7 @@
                         <td>Isolationswiderstand 500V</td>
                         <td>&gt; 1.0 M&#8486;</td>
                         <td><input type="text" name="isolation_ergebnis" value="{{ sn.isolation_ergebnis or '' }}" placeholder="z.B. >500"></td>
+                        <td style="white-space:nowrap;">M&#8486;</td>
                         <td class="sn-toggle-cell">
                             <input type="hidden" name="isolation_status" value="">
                             <button type="button" class="sn-toggle {% if sn.isolation_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
@@ -267,6 +270,7 @@
                         <td>Spannungsfestigkeit 2500V</td>
                         <td>&lt; 2.0 mA</td>
                         <td><input type="text" name="spannung_ergebnis" value="{{ sn.spannung_ergebnis or '' }}" placeholder="z.B. 0.8"></td>
+                        <td style="white-space:nowrap;">mA</td>
                         <td class="sn-toggle-cell">
                             <input type="hidden" name="spannung_status" value="">
                             <button type="button" class="sn-toggle {% if sn.spannung_status %}sn-toggle-ok{% else %}sn-toggle-fail{% endif %}"
