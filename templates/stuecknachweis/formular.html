@@ -360,11 +360,8 @@
      data-fi-delete-url-base="/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/"
      style="display:none;">
 </div>
-{% endblock %}
-
-{% block scripts %}
-{{ super() }}
 <script>
+console.log('SN Script Start');
 // ==================== PRESET-LOGIK ====================
 const PRESET_CHECKBOXEN = {
     check_11_2: true, check_11_3_kriech: true,
@@ -673,4 +670,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock scripts %}
+{% endblock %}
