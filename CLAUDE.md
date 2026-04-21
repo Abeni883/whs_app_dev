@@ -81,6 +81,34 @@ App läuft dann auf: `http://localhost:5002`
 
 ---
 
+## Server-Management
+
+**WICHTIG: Niemals `taskkill //F //IM python.exe` verwenden!**  
+Das beendet BEIDE Server (Prod + Dev).
+
+| | Prod | Dev |
+|---|---|---|
+| Port | 5001 | 5002 |
+| Pfad | `C:\inetpub\whs_app_prod_neu` | `C:\inetpub\whs_app_dev` |
+| Status | Muss IMMER laufen | Nur während Entwicklung |
+
+**Dev-Server neustarten (nur Dev-Prozess beenden):**
+```bash
+# Port-spezifisch den Dev-Prozess finden und beenden
+for pid in $(netstat -ano | grep ":5002 " | grep "ABH" | awk '{print $5}' | sort -u); do
+  taskkill //F //PID $pid 2>/dev/null
+done
+# Neu starten
+cd C:\inetpub\whs_app_dev && ./venv/Scripts/python.exe app.py > /dev/null 2>&1 &
+```
+
+**Prod-Server starten (falls nötig):**
+```bash
+cd C:\inetpub\whs_app_prod_neu && FLASK_PORT=5001 ./venv/Scripts/python.exe app.py > /dev/null 2>&1 &
+```
+
+---
+
 ## Git-Workflow
 
 ```powershell
