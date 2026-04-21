@@ -402,67 +402,69 @@ function applyPreset(presetKey, nurSchutzgrad) {
     }
 }
 
-// Beim Laden: Alles initialisieren
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('preset_typ').addEventListener('change', function() {
-        applyPreset(this.value, false);
-    });
+// DOM ist bereits geladen — direkt initialisieren
+console.log('Initialisiere UI-Logik');
 
-    const schutzgradInput = document.getElementById('schutzgrad');
-    if (!schutzgradInput.value) {
-        applyPreset(document.getElementById('preset_typ').value, true);
-    }
-    syncAllToggles();
+document.getElementById('preset_typ').addEventListener('change', function() {
+    applyPreset(this.value, false);
+});
 
-    // Exklusiv-Auswahl: Grund der Prüfung (nur eine Checkbox gleichzeitig)
-    const grundCheckboxen = document.querySelectorAll(
-        'input[name="grund_erstpruefung"], input[name="grund_wiederholung"], input[name="grund_aenderung"], input[name="grund_instandsetzung"]'
-    );
-    grundCheckboxen.forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            if (this.checked) {
-                grundCheckboxen.forEach(function(other) {
-                    if (other !== cb) other.checked = false;
-                });
-            }
-        });
-    });
+const schutzgradInput = document.getElementById('schutzgrad');
+if (!schutzgradInput.value) {
+    applyPreset(document.getElementById('preset_typ').value, true);
+}
+syncAllToggles();
 
-    // Exklusiv-Auswahl: Berührungsschutz (nur eine Checkbox gleichzeitig)
-    const beruehrCheckboxen = document.querySelectorAll(
-        'input[name="beruehr_nicht_instruiert"], input[name="beruehr_instruiert"]'
-    );
-    beruehrCheckboxen.forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            if (this.checked) {
-                beruehrCheckboxen.forEach(function(other) {
-                    if (other !== cb) other.checked = false;
-                });
-            }
-        });
+// Exklusiv-Auswahl: Grund der Prüfung (nur eine Checkbox gleichzeitig)
+const grundCheckboxen = document.querySelectorAll(
+    'input[name="grund_erstpruefung"], input[name="grund_wiederholung"], input[name="grund_aenderung"], input[name="grund_instandsetzung"]'
+);
+grundCheckboxen.forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        if (this.checked) {
+            grundCheckboxen.forEach(function(other) {
+                if (other !== cb) other.checked = false;
+            });
+        }
     });
+});
 
-    // Exklusiv-Auswahl: FI Fehlerstrom 30mA/300mA pro Zeile
-    document.querySelectorAll('.fi-fehlerstrom-30').forEach(function(cb30) {
-        cb30.addEventListener('change', function() {
-            if (this.checked) {
-                var cb300 = this.closest('tr').querySelector('.fi-fehlerstrom-300');
-                if (cb300) cb300.checked = false;
-            }
-        });
+// Exklusiv-Auswahl: Berührungsschutz (nur eine Checkbox gleichzeitig)
+const beruehrCheckboxen = document.querySelectorAll(
+    'input[name="beruehr_nicht_instruiert"], input[name="beruehr_instruiert"]'
+);
+beruehrCheckboxen.forEach(function(cb) {
+    cb.addEventListener('change', function() {
+        if (this.checked) {
+            beruehrCheckboxen.forEach(function(other) {
+                if (other !== cb) other.checked = false;
+            });
+        }
     });
-    document.querySelectorAll('.fi-fehlerstrom-300').forEach(function(cb300) {
-        cb300.addEventListener('change', function() {
-            if (this.checked) {
-                var cb30 = this.closest('tr').querySelector('.fi-fehlerstrom-30');
-                if (cb30) cb30.checked = false;
-            }
-        });
+});
+
+// Exklusiv-Auswahl: FI Fehlerstrom 30mA/300mA pro Zeile
+document.querySelectorAll('.fi-fehlerstrom-30').forEach(function(cb30) {
+    cb30.addEventListener('change', function() {
+        if (this.checked) {
+            var cb300 = this.closest('tr').querySelector('.fi-fehlerstrom-300');
+            if (cb300) cb300.checked = false;
+        }
     });
-    // FI hinzufügen
-    var btnFi = document.getElementById('btn-fi-hinzufuegen');
-    if (btnFi) {
-        btnFi.addEventListener('click', function() {
+});
+document.querySelectorAll('.fi-fehlerstrom-300').forEach(function(cb300) {
+    cb300.addEventListener('change', function() {
+        if (this.checked) {
+            var cb30 = this.closest('tr').querySelector('.fi-fehlerstrom-30');
+            if (cb30) cb30.checked = false;
+        }
+    });
+});
+
+// FI hinzufügen
+var btnFi = document.getElementById('btn-fi-hinzufuegen');
+if (btnFi) {
+    btnFi.addEventListener('click', function() {
         var addUrl = document.getElementById('sn-config').dataset.fiAddUrl;
         fetch(addUrl, { method: 'POST' })
         .then(function(r) {
@@ -500,27 +502,24 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(function(err) { console.error('FI hinzufügen Fehler:', err); });
     });
-    }
+}
 
-    // FI löschen (Event-Delegation)
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-delete-fi')) {
-            var fiId = e.target.dataset.fiId;
-            if (confirm('FI-Messung löschen?')) {
-                fetch(document.getElementById('sn-config').dataset.fiDeleteUrlBase + fiId + '/delete', {
-                    method: 'POST'
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.success) {
-                        document.getElementById('fi-row-' + fiId).remove();
-                    }
-                });
-            }
+// FI löschen (Event-Delegation)
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('btn-delete-fi')) {
+        var fiId = e.target.dataset.fiId;
+        if (confirm('FI-Messung löschen?')) {
+            fetch(document.getElementById('sn-config').dataset.fiDeleteUrlBase + fiId + '/delete', {
+                method: 'POST'
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    document.getElementById('fi-row-' + fiId).remove();
+                }
+            });
         }
-    });
-    // Auto-Save Initialisierung (muss hier sein, innerhalb DOMContentLoaded)
-    window._autosaveReady = true;
+    }
 });
 
 // ==================== TOGGLE-LOGIK ====================
@@ -660,14 +659,16 @@ function autosave() {
     }, 1500);
 }
 
-// Auto-Save auf alle Inputs binden (nach DOM ready)
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select').forEach(function(el) {
-        el.addEventListener('change', autosave);
-        if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
-            el.addEventListener('input', autosave);
-        }
-    });
+// Auto-Save auf alle Inputs binden (DOM bereits geladen)
+console.log('Binde Event-Listener');
+var felder = document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select');
+console.log('Felder gefunden:', felder.length);
+felder.forEach(function(el) {
+    el.addEventListener('change', autosave);
+    if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
+        el.addEventListener('input', autosave);
+    }
 });
+console.log('Auto-Save bereit,', felder.length, 'Felder');
 </script>
 {% endblock %}
