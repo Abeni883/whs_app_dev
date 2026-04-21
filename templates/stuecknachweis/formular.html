@@ -16,8 +16,7 @@
     </nav>
 
     <h2>Stücknachweis — {{ typbezeichnung }}</h2>
-    <div id="autosave-badge" style="position:fixed; top:70px; right:20px; z-index:9999; font-size:0.9rem; font-weight:bold; padding:6px 12px; border-radius:4px; background:rgba(0,0,0,0.7); color:#10b981; display:none; min-width:120px; text-align:center;"></div>
-    <button type="button" onclick="console.log('Manueller Trigger'); if(typeof autosave==='function'){autosave();}else{console.error('autosave nicht verfügbar');}" style="font-size:0.75rem; padding:2px 8px; background:#ddd; border:1px solid #999; cursor:pointer;">Test Autosave</button>
+    <div id="save-status" class="save-status" style="display: none;"></div>
 
     <form method="POST" id="stuecknachweis-form">
 
@@ -639,66 +638,33 @@ function sammleFormularDaten() {
 }
 console.log('>>> Punkt C: sammleFormularDaten definiert');
 
-function zeigeAutosaveStatus(text) {
-    var el = document.getElementById('autosave-badge');
-    console.log('zeigeBadge:', text, '| Element:', el, '| vorhanden:', el !== null);
-    if (!el) {
-        console.error('Badge nicht gefunden!');
-        return;
-    }
-    el.textContent = text;
-    el.style.color = text.indexOf('Fehler') >= 0 ? '#ef4444' : '#10b981';
-    console.log('Badge gesetzt:', el.textContent, el.style.color);
-}
-console.log('>>> Punkt D: zeigeAutosaveStatus definiert');
+console.log('>>> Punkt D: showSaveStatus aus shared.js verfügbar:', typeof showSaveStatus);
 
 function autosave() {
     console.log('autosave() aufgerufen');
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(function() {
-        var badgeStart = document.getElementById('autosave-badge');
-        if (badgeStart) { badgeStart.textContent = 'Speichern...'; badgeStart.style.color = '#9ca3af'; badgeStart.style.display = 'block'; }
+        showSaveStatus('saving');
         var daten = sammleFormularDaten();
-        console.log('Sende Daten, FI-Messungen:', daten.fi_messungen ? daten.fi_messungen.length : 0);
         fetch(AUTOSAVE_URL, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(daten)
         })
         .then(function(r) {
-            console.log('Response Status:', r.status);
             if (!r.ok) { throw new Error('Status ' + r.status); }
             return r.json();
         })
         .then(function(data) {
-            console.log('Response Data:', data);
-            var badgeEl = document.getElementById('autosave-badge');
-            console.log('Badge Element:', badgeEl, 'textContent vorher:', badgeEl ? badgeEl.textContent : 'NULL');
             if (data.success) {
-                if (badgeEl) {
-                    badgeEl.textContent = 'Gespeichert';
-                    badgeEl.style.color = '#10b981';
-                    badgeEl.style.display = 'block';
-                }
-                setTimeout(function() {
-                    if (badgeEl) { badgeEl.style.display = 'none'; badgeEl.textContent = ''; }
-                }, 3000);
+                showSaveStatus('saved');
             } else {
-                if (badgeEl) {
-                    badgeEl.textContent = 'Fehler: ' + (data.error || '');
-                    badgeEl.style.color = '#ef4444';
-                    badgeEl.style.display = 'block';
-                }
+                showSaveStatus('error', data.error || 'Unbekannter Fehler');
             }
         })
         .catch(function(err) {
             console.error('Fetch Fehler:', err);
-            var badgeEl = document.getElementById('autosave-badge');
-            if (badgeEl) {
-                badgeEl.textContent = 'Fehler: ' + err.message;
-                badgeEl.style.color = '#ef4444';
-                badgeEl.style.display = 'block';
-            }
+            showSaveStatus('error', err.message);
         });
     }, 1500);
 }
