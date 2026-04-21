@@ -640,10 +640,14 @@ console.log('>>> Punkt C: sammleFormularDaten definiert');
 
 function zeigeAutosaveStatus(text) {
     var el = document.getElementById('autosave-badge');
-    if (el) {
-        el.textContent = text;
-        el.style.color = text.indexOf('Fehler') >= 0 ? '#ef4444' : '#10b981';
+    console.log('zeigeBadge:', text, '| Element:', el, '| vorhanden:', el !== null);
+    if (!el) {
+        console.error('Badge nicht gefunden!');
+        return;
     }
+    el.textContent = text;
+    el.style.color = text.indexOf('Fehler') >= 0 ? '#ef4444' : '#10b981';
+    console.log('Badge gesetzt:', el.textContent, el.style.color);
 }
 console.log('>>> Punkt D: zeigeAutosaveStatus definiert');
 
