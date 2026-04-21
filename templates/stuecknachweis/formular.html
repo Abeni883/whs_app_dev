@@ -558,11 +558,17 @@ function syncAllToggles() {
 }
 
 // ==================== AUTO-SAVE ====================
-var snConfig = document.getElementById('sn-config');
-var AUTOSAVE_URL = snConfig.dataset.saveUrl;
-console.log('Save URL:', AUTOSAVE_URL);
+try {
+    var snConfig = document.getElementById('sn-config');
+    console.log('sn-config gefunden:', snConfig !== null);
+    var AUTOSAVE_URL = snConfig.dataset.saveUrl;
+    console.log('Save URL:', AUTOSAVE_URL);
+} catch(err) {
+    console.error('FEHLER bei URL-Init:', err.message, err.stack);
+}
 var autosaveTimer = null;
 var autosaveIndicator = null;
+console.log('Funktionen werden definiert...');
 
 function sammleFormularDaten() {
     var sn = {};
@@ -658,17 +664,31 @@ function autosave() {
         .catch(function(err) { zeigeAutosaveStatus('Fehler: ' + err.message); });
     }, 1500);
 }
+console.log('Funktionen definiert OK');
 
 // Auto-Save auf alle Inputs binden (DOM bereits geladen)
-console.log('Binde Event-Listener');
-var felder = document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select');
-console.log('Felder gefunden:', felder.length);
-felder.forEach(function(el) {
-    el.addEventListener('change', autosave);
-    if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
-        el.addEventListener('input', autosave);
-    }
-});
-console.log('Auto-Save bereit,', felder.length, 'Felder');
+try {
+    console.log('Binde Event-Listener - START');
+
+    var snConfigCheck = document.getElementById('sn-config');
+    console.log('sn-config:', snConfigCheck);
+
+    var badgeCheck = document.getElementById('autosave-badge');
+    console.log('autosave-badge:', badgeCheck);
+
+    var felder = document.querySelectorAll('#stuecknachweis-form input, #stuecknachweis-form textarea, #stuecknachweis-form select');
+    console.log('Felder gefunden:', felder.length);
+
+    felder.forEach(function(el) {
+        el.addEventListener('change', autosave);
+        if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'number' || el.type === 'date') {
+            el.addEventListener('input', autosave);
+        }
+    });
+
+    console.log('Auto-Save bereit:', felder.length, 'Felder');
+} catch(err) {
+    console.error('FEHLER beim Binden:', err.message, err.stack);
+}
 </script>
 {% endblock %}
