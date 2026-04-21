@@ -192,6 +192,11 @@ def calculate_all_projects_test_progress():
         progress = int((completed_tests / expected_tests) * 100)
         progress_dict[projekt.id] = min(100, max(0, progress))
 
+        # Debug: Zeige Berechnung
+        print(f"[PROGRESS] Projekt {projekt.id} ({projekt.energie}): "
+              f"Erwartet={expected_tests}, Beantwortet={completed_tests}, "
+              f"Progress={progress}%")
+
     return progress_dict
 
 
