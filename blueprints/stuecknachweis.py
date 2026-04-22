@@ -388,6 +388,13 @@ def stuecknachweis_pdf(project_id, whk_id):
             b64 = base64.b64encode(f.read()).decode('utf-8')
             achermann_logo_base64 = f'data:image/png;base64,{b64}'
 
+    # Spacer-Höhe berechnen: Platz zwischen FI-Tabelle und Bemerkung
+    # Seite 3 hat ca. 220mm nutzbare Höhe (A4 minus Header/Footer/Margins)
+    fi_anzahl = len(fi_messungen)
+    fi_tabelle_hoehe = 35 + (fi_anzahl * 10)  # mm: Info+Header + pro Zeile
+    benoetigt_unten = 75  # mm: Bemerkung + Vorbehalt + Unterschrift
+    spacer_mm = max(0, 220 - fi_tabelle_hoehe - benoetigt_unten)
+
     html = render_template(
         'stuecknachweis/pdf_stuecknachweis.html',
         stuecknachweis=sn,
@@ -396,7 +403,8 @@ def stuecknachweis_pdf(project_id, whk_id):
         typbezeichnung=typbezeichnung,
         schutzgrad=schutzgrad,
         fi_messungen=fi_messungen,
-        achermann_logo_base64=achermann_logo_base64
+        achermann_logo_base64=achermann_logo_base64,
+        spacer_mm=spacer_mm
     )
 
     pdf_buffer = BytesIO()

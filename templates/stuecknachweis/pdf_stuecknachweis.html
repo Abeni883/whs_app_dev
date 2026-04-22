@@ -416,6 +416,11 @@
     {% endfor %}
 </table>
 
+<!-- Spacer: füllt verbleibenden Platz zwischen FI und Bemerkung -->
+{% if spacer_mm > 0 %}
+<div style="height: {{ spacer_mm }}mm;"></div>
+{% endif %}
+
 <!-- I) BEMERKUNG -->
 <table style="width: 100%; border: 1px solid #999; border-collapse: collapse; margin-top: 8px;">
     <tr>
