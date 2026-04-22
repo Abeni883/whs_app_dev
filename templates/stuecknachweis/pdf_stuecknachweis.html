@@ -115,19 +115,19 @@
     </tr>
     <tr>
         <td style="padding: 6px 10px; border-bottom: 1px solid #ccc; font-weight: bold;">Hersteller:</td>
-        <td style="padding: 6px 10px; border-bottom: 1px solid #ccc;">{{ stuecknachweis.hersteller or 'Achermann &amp; Co. AG' }}</td>
+        <td style="padding: 6px 10px; border-bottom: 1px solid #ccc;"><strong>{{ stuecknachweis.hersteller or 'Achermann &amp; Co. AG' }}</strong></td>
     </tr>
     <tr>
         <td style="padding: 6px 10px; border-bottom: 1px solid #ccc; font-weight: bold;">Typbezeichnung oder Kennnummer:</td>
-        <td style="padding: 6px 10px; border-bottom: 1px solid #ccc;">{{ typbezeichnung }}</td>
+        <td style="padding: 6px 10px; border-bottom: 1px solid #ccc;"><strong>{{ typbezeichnung }}</strong></td>
     </tr>
     <tr>
         <td style="padding: 6px 10px; border-bottom: 1px solid #ccc; font-weight: bold;">Auftraggeber:</td>
-        <td style="padding: 6px 10px; border-bottom: 1px solid #ccc;">{{ stuecknachweis.auftraggeber or 'SBB AG' }}</td>
+        <td style="padding: 6px 10px; border-bottom: 1px solid #ccc;"><strong>{{ stuecknachweis.auftraggeber or 'SBB AG' }}</strong></td>
     </tr>
     <tr>
         <td style="padding: 6px 10px; font-weight: bold;">Herstellungsdatum:</td>
-        <td style="padding: 6px 10px;">{{ stuecknachweis.herstellungsdatum|datefmt }}</td>
+        <td style="padding: 6px 10px;"><strong>{{ stuecknachweis.herstellungsdatum|datefmt }}</strong></td>
     </tr>
 </table>
 
@@ -138,16 +138,16 @@
     </tr>
     <tr>
         <td style="width: 25%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.grund_erstpruefung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Erstpr&uuml;fung
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.grund_erstpruefung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Erstpr&uuml;fung
         </td>
         <td style="width: 25%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.grund_wiederholung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Wiederholungspr&uuml;fung
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.grund_wiederholung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Wiederholungspr&uuml;fung
         </td>
         <td style="width: 25%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.grund_aenderung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> &Auml;nderung
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.grund_aenderung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> &Auml;nderung
         </td>
         <td style="width: 25%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.grund_instandsetzung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Instandsetzung
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.grund_instandsetzung %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Instandsetzung
         </td>
     </tr>
 </table>
@@ -159,19 +159,19 @@
     </tr>
     <tr>
         <td style="width: 20%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.schutz_tn_s %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TN-S
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.schutz_tn_s %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TN-S
         </td>
         <td style="width: 20%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.schutz_tn_c %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TN-C
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.schutz_tn_c %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TN-C
         </td>
         <td style="width: 20%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.schutz_tn_c_s %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TN-C-S
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.schutz_tn_c_s %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TN-C-S
         </td>
         <td style="width: 20%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.schutz_tt %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TT
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.schutz_tt %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> TT
         </td>
         <td style="width: 20%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.schutz_it %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> IT
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.schutz_it %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> IT
         </td>
     </tr>
 </table>
@@ -183,10 +183,10 @@
     </tr>
     <tr>
         <td style="width: 35%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.beruehr_nicht_instruiert %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Nicht instruierte Personen
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.beruehr_nicht_instruiert %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Nicht instruierte Personen
         </td>
         <td style="width: 35%; padding: 6px 10px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.beruehr_instruiert %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Instruierte Personen
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.beruehr_instruiert %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span> Instruierte Personen
         </td>
         <td style="width: 30%; padding: 6px 10px;">
             Schutzgrad: <strong>{{ stuecknachweis.schutzgrad or schutzgrad }}</strong>
@@ -210,7 +210,7 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.2</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Schutzart von Umh&uuml;llungen</strong></td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_2 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_2 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
@@ -219,7 +219,7 @@
         <td rowspan="5" style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px; vertical-align: middle;">11.3</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Kriechstrecke</strong></td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_3_kriech %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_3_kriech %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
@@ -229,21 +229,21 @@
     <tr>
         <td style="padding: 4px 4px 4px 20px; border: 1px solid #999;">Kleiner als die in Tabelle 1 (EN 61439-1)</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_3_luft_1 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_3_luft_1 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Pr&uuml;fung</td>
     </tr>
     <tr>
         <td style="padding: 4px 4px 4px 20px; border: 1px solid #999;">Nicht offensichtlich gr&ouml;sser als in Tabelle 1 (EN 61439-1)</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_3_luft_2 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_3_luft_2 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Messung / Pr&uuml;fung</td>
     </tr>
     <tr>
         <td style="padding: 4px 4px 4px 20px; border: 1px solid #999;">Gr&ouml;sser als Tabelle 1 (EN 61439-1)</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_3_luft_3 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_3_luft_3 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
@@ -255,14 +255,14 @@
     <tr>
         <td style="padding: 4px; border: 1px solid #999;">Durchg&auml;ngigkeit von Schutzleiterkreisen</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_4_durch %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_4_durch %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
     <tr>
         <td style="padding: 4px; border: 1px solid #999;">Geschraubte Verbindungen von Schutzleiterkreisen</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_4_geschr %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_4_geschr %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Stichproben</td>
     </tr>
@@ -271,7 +271,7 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.5</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Einbau von Betriebsmitteln</strong></td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_5 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_5 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
@@ -280,14 +280,14 @@
         <td rowspan="2" style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px; vertical-align: middle;">11.6</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Verbindungen</strong> elektrischer Stromkreise korrekt angezogen</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_6_verb %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_6_verb %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Stichproben</td>
     </tr>
     <tr>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Verdrahtung</strong> &Uuml;bereinstimmung mit den Fertigungsunterl.</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_6_verd %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_6_verd %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
@@ -296,7 +296,7 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.7</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>&Uuml;bereinstimmung der Anschl&uuml;sse</strong> f&uuml;r von aussen eingef&uuml;hrte Leiter</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_7 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_7 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
@@ -305,7 +305,7 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.8</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Mechanische Funktionen</strong></td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_8 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_8 %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Pr&uuml;fung</td>
     </tr>
@@ -314,21 +314,21 @@
         <td rowspan="3" style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px; vertical-align: middle;">11.10</td>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Kennzeichnung</strong> der Schaltger&auml;tekombination</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_1_kenn %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_1_kenn %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
     <tr>
         <td style="padding: 4px; border: 1px solid #999;">Vollst&auml;ndigkeit der Technischen Dokumentation</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_1_doku %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_1_doku %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Sichtpr&uuml;fung</td>
     </tr>
     <tr>
         <td style="padding: 4px; border: 1px solid #999;"><strong>Elektrische Funktionspr&uuml;fungen</strong> bei komplexen Anlagen</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">
-            <span style="border: 1px solid #333; padding: 1px 3px;">{% if stuecknachweis.check_11_1_funk %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
+            <span style="border: 1px solid #333; padding: 1px 3px; font-weight: bold;">{% if stuecknachweis.check_11_1_funk %}&#10003;{% else %}&nbsp;&nbsp;{% endif %}</span>
         </td>
         <td style="padding: 4px; border: 1px solid #999;">Pr&uuml;fung</td>
     </tr>
@@ -358,21 +358,21 @@
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">8.4</td>
         <td style="padding: 4px; border: 1px solid #999;">Niederohmmessung 25A</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&lt; 0.100 &#8486;</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.niederohm_ergebnis %}{{ stuecknachweis.niederohm_ergebnis }} &#8486;{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.niederohm_ergebnis %}<strong>{{ stuecknachweis.niederohm_ergebnis }}</strong> &#8486;{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.niederohm_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
     <tr>
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">11.9</td>
         <td style="padding: 4px; border: 1px solid #999;">Isolationswiderstand 500V</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&gt; 1.0 M&#8486;</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_ergebnis %}{{ stuecknachweis.isolation_ergebnis }} M&#8486;{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_ergebnis %}<strong>{{ stuecknachweis.isolation_ergebnis }}</strong> M&#8486;{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.isolation_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
     <tr>
         <td style="text-align: center; font-weight: bold; background-color: #e8e8e8; border: 1px solid #999; padding: 4px;">10.9</td>
         <td style="padding: 4px; border: 1px solid #999;">Spannungsfestigkeit 2500V</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">&lt; 2.0 mA</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.spannung_ergebnis %}{{ stuecknachweis.spannung_ergebnis }} mA{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.spannung_ergebnis %}<strong>{{ stuecknachweis.spannung_ergebnis }}</strong> mA{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 4px;">{% if stuecknachweis.spannung_status %}Richtig{% else %}Falsch{% endif %}</td>
     </tr>
 </table>
@@ -406,9 +406,9 @@
     {% for fi in fi_messungen %}
     <tr>
         <td style="text-align: center; font-weight: bold; border: 1px solid #999; padding: 3px;">{{ fi.sicherung }}</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.fehlerstrom_300 %}300 mA{% elif fi.fehlerstrom_30 %}30 mA{% else %}&nbsp;{% endif %}</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_i_ma is not none %}{{ fi.delta_i_ma }} mA{% else %}&nbsp;{% endif %}</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_t_ms is not none %}{{ fi.delta_t_ms }} ms{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;"><strong>{% if fi.fehlerstrom_300 %}300 mA{% elif fi.fehlerstrom_30 %}30 mA{% else %}&nbsp;{% endif %}</strong></td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_i_ma is not none %}<strong>{{ fi.delta_i_ma }}</strong> mA{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_t_ms is not none %}<strong>{{ fi.delta_t_ms }}</strong> ms{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;">
             {% if fi.delta_i_ma is not none %}{% if fi.status %}Richtig{% else %}Falsch{% endif %}{% else %}&nbsp;{% endif %}
         </td>
@@ -427,7 +427,7 @@
 <table style="width: 100%; border: 1px solid #999; border-collapse: collapse; margin-top: 8px;">
     <tr>
         <td style="width: 20%; padding: 6px 10px; font-weight: bold; border-right: 1px solid #ccc; vertical-align: top;">Bemerkung:</td>
-        <td style="padding: 10px; vertical-align: top; height: 40px;">{{ stuecknachweis.bemerkung or '-' }}</td>
+        <td style="padding: 10px; vertical-align: top; height: 40px;"><strong>{{ stuecknachweis.bemerkung or '-' }}</strong></td>
     </tr>
 </table>
 
