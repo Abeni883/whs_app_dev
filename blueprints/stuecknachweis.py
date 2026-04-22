@@ -398,7 +398,7 @@ def stuecknachweis_pdf(project_id, whk_id):
     # Ziel: Unterschrift endet bei ~750pt (nahe Content-Ende)
     fi_hoehe_pt = 45 + (fi_anzahl * 21)  # pt
     unten_pt = 240  # pt: Bemerkung+Vorbehalt+Unterschrift
-    verfuegbar_pt = 700  # pt: Content-Bereich
+    verfuegbar_pt = 600  # pt: Content-Bereich (100pt höher als original)
     spacer_pt = max(0, verfuegbar_pt - fi_hoehe_pt - unten_pt)
     spacer_mm = round(spacer_pt * 25.4 / 72)  # pt → mm
 
