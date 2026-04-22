@@ -389,11 +389,18 @@ def stuecknachweis_pdf(project_id, whk_id):
             achermann_logo_base64 = f'data:image/png;base64,{b64}'
 
     # Spacer-Höhe berechnen: Platz zwischen FI-Tabelle und Bemerkung
-    # Seite 3 hat ca. 220mm nutzbare Höhe (A4 minus Header/Footer/Margins)
+    # Content-Bereich: ca. 195mm (A4 297mm - 2.5cm top - 2.5cm bottom - Header/Footer)
     fi_anzahl = len(fi_messungen)
-    fi_tabelle_hoehe = 35 + (fi_anzahl * 10)  # mm: Info+Header + pro Zeile
-    benoetigt_unten = 75  # mm: Bemerkung + Vorbehalt + Unterschrift
-    spacer_mm = max(0, 220 - fi_tabelle_hoehe - benoetigt_unten)
+    # Content-Bereich Seite 3: top=71pt(2.5cm) bis bottom=771pt → 700pt = 247mm
+    # FI endet bei ca. 208pt = 73mm ab Seitenanfang, 2mm ab Content-Start (71pt)
+    # FI-Tabelle: Header(Info+Spalten) ~45pt + pro Zeile ~21pt
+    # Bemerkung+Vorbehalt+Unterschrift: ~240pt = 85mm
+    # Ziel: Unterschrift endet bei ~750pt (nahe Content-Ende)
+    fi_hoehe_pt = 45 + (fi_anzahl * 21)  # pt
+    unten_pt = 240  # pt: Bemerkung+Vorbehalt+Unterschrift
+    verfuegbar_pt = 700  # pt: Content-Bereich
+    spacer_pt = max(0, verfuegbar_pt - fi_hoehe_pt - unten_pt)
+    spacer_mm = round(spacer_pt * 25.4 / 72)  # pt → mm
 
     html = render_template(
         'stuecknachweis/pdf_stuecknachweis.html',
