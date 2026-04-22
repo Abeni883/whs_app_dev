@@ -288,38 +288,45 @@
 
         <div class="form-group">
             <table class="project-table sn-table">
+                <colgroup>
+                    <col style="width: 20%">
+                    <col style="width: 25%">
+                    <col style="width: 13%">
+                    <col style="width: 13%">
+                    <col style="width: 12%">
+                    <col style="width: 5%">
+                </colgroup>
                 <thead>
                     <tr>
-                        <th style="width: 14%;">Sicherung</th>
-                        <th style="width: 14%;">Fehlerstrom</th>
-                        <th style="width: 16%;">&#8710;I FI [mA]</th>
-                        <th style="width: 16%;">&#8710;t FI [ms]</th>
-                        <th style="width: 12%; text-align: center;">Status</th>
-                        <th style="width: 5%; text-align: center;"></th>
+                        <th>Sicherung</th>
+                        <th>Fehlerstrom</th>
+                        <th>&#8710;I FI [mA]</th>
+                        <th>&#8710;t FI [ms]</th>
+                        <th style="text-align: center;">Status</th>
+                        <th style="text-align: center;"></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td class="sn-info-block" colspan="6">
-                            <strong>FI Messungen</strong><br>
-                            Verwendetes Messgerät:<br>
-                            <input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" style="margin-top: 4px; margin-left: 0;" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">
+                            <strong>FI Messungen</strong> — Verwendetes Messgerät:
+                            <input type="text" name="messgeraet_fi" id="messgeraet_fi" class="sn-inline-input" style="margin-left: 4px; width: 200px;" value="{{ sn.messgeraet_fi or 'HT FullTest 3' }}" placeholder="HT FullTest 3">
                         </td>
                     </tr>
                     {% for fi in sn.fi_messungen %}
                     <tr id="fi-row-{{ fi.id }}">
-                        <td>
+                        <td style="padding: 4px 8px;">
                             <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}">
                         </td>
-                        <td class="fi-fehlerstrom-cell">
-                            <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
+                        <td class="fi-fehlerstrom-cell" style="padding: 4px 8px; white-space: nowrap;">
+                            <label class="checkbox-label" style="margin-right: 8px;"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
                             <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-300" name="fi_fehlerstrom_300_{{ fi.id }}" {% if fi.fehlerstrom_300 %}checked{% endif %}> 300mA</label>
                         </td>
-                        <td>
-                            <input type="number" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}" placeholder="mA">
+                        <td style="padding: 4px 8px;">
+                            <input type="number" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma if fi.delta_i_ma is not none else '' }}" placeholder="mA" style="width: 100%;">
                         </td>
-                        <td>
-                            <input type="number" name="fi_{{ fi.id }}_delta_t" value="{{ fi.delta_t_ms if fi.delta_t_ms is not none else '' }}" placeholder="ms">
+                        <td style="padding: 4px 8px;">
+                            <input type="number" name="fi_{{ fi.id }}_delta_t" value="{{ fi.delta_t_ms if fi.delta_t_ms is not none else '' }}" placeholder="ms" style="width: 100%;">
                         </td>
                         <td class="sn-toggle-cell">
                             <input type="hidden" name="fi_{{ fi.id }}_status" value="">
