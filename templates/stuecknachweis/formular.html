@@ -318,8 +318,8 @@
                         <td style="padding: 4px 8px;">
                             <input type="text" name="fi_{{ fi.id }}_sicherung" value="{{ fi.sicherung }}">
                         </td>
-                        <td class="fi-fehlerstrom-cell" style="padding: 4px 8px; white-space: nowrap;">
-                            <label class="checkbox-label" style="margin-right: 8px;"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
+                        <td class="fi-fehlerstrom-cell" style="padding: 4px 8px;">
+                            <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_{{ fi.id }}" {% if fi.fehlerstrom_30 %}checked{% endif %}> 30mA</label>
                             <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-300" name="fi_fehlerstrom_300_{{ fi.id }}" {% if fi.fehlerstrom_300 %}checked{% endif %}> 300mA</label>
                         </td>
                         <td style="padding: 4px 8px;">
