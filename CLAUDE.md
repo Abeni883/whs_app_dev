@@ -209,6 +209,40 @@ DATABASE_URL=sqlite:///whs_dev.db
 
 ---
 
+## HTTPS-Konfiguration (SSL/TLS)
+
+App läuft über HTTPS mit selbstsigniertem Zertifikat. `cert.pem` + `key.pem` liegen im App-Root, sind in `.gitignore`.
+
+**URL:** `https://192.168.1.202:5002`  (**http:// funktioniert nicht** — Server hört nur TLS)
+
+### Zertifikat erzeugen / rezertifizieren
+```powershell
+cd C:\inetpub\whs_app_dev
+venv\Scripts\python.exe scripts\generate_cert.py
+```
+Zertifikat: CN `192.168.1.202`, SAN `IP:192.168.1.202, DNS:localhost, IP:127.0.0.1`, 3 Jahre gültig.
+
+Das Script liegt original in `C:\inetpub\whs_app_prod_neu\scripts\generate_cert.py` — bei Bedarf in Dev synchronisieren.
+
+### Browser-Warnung beim ersten Aufruf
+„Erweitert" → „Weiter zu 192.168.1.202". Danach erscheint die Warnung nicht mehr für diese Adresse.
+
+### Server-Management (WICHTIG)
+
+- **Nie** `taskkill /F /IM python.exe` verwenden — das tötet Prod **und** Dev gleichzeitig.
+- Port-spezifisch killen:
+  ```cmd
+  for /f "tokens=5" %a in ('netstat -ano ^| findstr :5002 ^| findstr LISTENING') do taskkill /F /PID %a
+  ```
+- Server **immer** aus dem App-Verzeichnis starten (sonst werden `cert.pem`/`key.pem` nicht gefunden → Fallback auf HTTP):
+  ```cmd
+  cd /d C:\inetpub\whs_app_dev
+  start "WHS DEV 5002" cmd /k "venv\Scripts\python.exe app.py"
+  ```
+- SSL wird automatisch aktiviert, wenn `cert.pem` + `key.pem` im cwd existieren. Fehlen sie, startet die App auf HTTP.
+
+---
+
 ## Unterschiede zur Produktion
 
 | | Produktion | Developer |
