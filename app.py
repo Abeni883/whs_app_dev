@@ -640,5 +640,17 @@ def einstellungen_allgemein():
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('FLASK_PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    import os.path as osp
+    port = int(os.environ.get('FLASK_PORT', 5002))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    cert = 'cert.pem'
+    key = 'key.pem'
+    if osp.exists(cert) and osp.exists(key):
+        print(f'HTTPS aktiv auf Port {port}')
+        app.run(host='0.0.0.0', port=port,
+                debug=debug,
+                ssl_context=(cert, key))
+    else:
+        print(f'HTTP auf Port {port} (kein Zertifikat)')
+        app.run(host='0.0.0.0', port=port,
+                debug=debug)
