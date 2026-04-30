@@ -83,3 +83,12 @@ tmp/
 debug_*.txt
 debug_*.log
 GIT-Token
+
+# ==================== TLS / HTTPS ====================
+cert.pem
+key.pem
+
+# ==================== LOKALE DATEIEN ====================
+cookies.txt
+prompt.txt
+test_*.html
