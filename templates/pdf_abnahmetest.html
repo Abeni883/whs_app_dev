@@ -266,27 +266,27 @@
         <tbody>
             <tr>
                 <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Betriebspunkt (Projektname):</td>
-                <td style="border: 1px solid #000; padding: 3px 8px;">{{ projektname }}</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ projektname or '&nbsp;'|safe }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">DIDOK:</td>
-                <td style="border: 1px solid #000; padding: 3px 8px;">{{ didok }}</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ didok or '&nbsp;'|safe }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Projektleiter SBB AG:</td>
-                <td style="border: 1px solid #000; padding: 3px 8px;">{{ projektleiter_sbb }}</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ projektleiter_sbb or '&nbsp;'|safe }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Baumappen Version (Datum):</td>
-                <td style="border: 1px solid #000; padding: 3px 8px;">{{ baumappenversion }}</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ baumappenversion or '&nbsp;'|safe }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Pr&uuml;fer:</td>
-                <td style="border: 1px solid #000; padding: 3px 8px;">{{ pruefer_achermann }}</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ pruefer_achermann or '&nbsp;'|safe }}</td>
             </tr>
             <tr>
                 <td style="border: 1px solid #000; padding: 3px 8px; font-weight: bold; width: 45%;">Pr&uuml;fdatum:</td>
-                <td style="border: 1px solid #000; padding: 3px 8px;">{{ pruefdatum }}</td>
+                <td style="border: 1px solid #000; padding: 3px 8px;">{{ pruefdatum or '&nbsp;'|safe }}</td>
             </tr>
         </tbody>
     </table>
