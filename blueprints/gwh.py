@@ -816,26 +816,22 @@ def gwh_test_zsk_allgemein(projekt_id):
 
     ergebnisse_json = json.dumps(ergebnisse, ensure_ascii=False)
 
-    # Berechne erste unbeantwortete Frage (für Multi-Spalten)
+    # Berechne erste unbeantwortete Frage (alle Spalten müssen beantwortet sein)
     first_unanswered = 0
     for i, frage in enumerate(testfragen):
         frage_id = frage.id
-        if frage_id not in ergebnisse:
-            first_unanswered = i
-            break
-        # Prüfe ob mindestens eine Spalte beantwortet ist
-        has_answer = False
+        has_answer = True
         for spalte in spalten:
-            if spalte in ergebnisse.get(frage_id, {}):
-                erg = ergebnisse[frage_id][spalte]
-                if erg.get('lss_ch', {}).get('result') or erg.get('wh_lts', {}).get('result'):
-                    has_answer = True
-                    break
+            erg = ergebnisse.get(frage_id, {}).get(spalte, {})
+            lss = erg.get('lss_ch', {}).get('result')
+            wh = erg.get('wh_lts', {}).get('result')
+            if not lss or not wh:
+                has_answer = False
+                break
         if not has_answer:
             first_unanswered = i
             break
     else:
-        # Alle Fragen haben mindestens eine Antwort
         first_unanswered = 0
 
     return render_template('gwh_test_seite.html',
@@ -1166,21 +1162,18 @@ def gwh_test_teile(projekt_id, zsk_nummer):
 
     ergebnisse_json = json.dumps(ergebnisse, ensure_ascii=False)
 
-    # Berechne erste unbeantwortete Frage (für Multi-Spalten)
+    # Berechne erste unbeantwortete Frage (alle Spalten müssen beantwortet sein)
     first_unanswered = 0
     for i, frage in enumerate(testfragen):
         frage_id = frage.id
-        if frage_id not in ergebnisse:
-            first_unanswered = i
-            break
-        # Prüfe ob mindestens eine Spalte beantwortet ist
-        has_answer = False
+        has_answer = True
         for spalte in spalten:
-            if spalte in ergebnisse.get(frage_id, {}):
-                erg = ergebnisse[frage_id][spalte]
-                if erg.get('lss_ch', {}).get('result') or erg.get('wh_lts', {}).get('result'):
-                    has_answer = True
-                    break
+            erg = ergebnisse.get(frage_id, {}).get(spalte, {})
+            lss = erg.get('lss_ch', {}).get('result')
+            wh = erg.get('wh_lts', {}).get('result')
+            if not lss or not wh:
+                has_answer = False
+                break
         if not has_answer:
             first_unanswered = i
             break

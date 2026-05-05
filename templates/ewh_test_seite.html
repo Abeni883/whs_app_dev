@@ -456,34 +456,31 @@ function updateProgressBar() {
     document.getElementById('progress-fill').style.width = progress + '%';
 
     // Berechne beantwortete Fragen für Text
-    // Bei Multi-Spalten: Frage gilt als beantwortet wenn mindestens eine Spalte beantwortet ist
+    // Frage gilt als beantwortet wenn ALLE Spalten BEIDE Systeme (LSS-CH + WH-LTS) haben
     let answeredCount = 0;
     fragenData.forEach(frage => {
         const frageId = frage.id;
-        if (ergebnisse[frageId]) {
-            let isAnswered = false;
+        if (!ergebnisse[frageId]) return;
 
-            if (multiSpalten) {
-                // Prüfe ob mindestens eine Spalte beantwortet ist
-                for (const spalte of spalten) {
-                    if (ergebnisse[frageId][spalte]) {
-                        const lssAnswered = ergebnisse[frageId][spalte].lss_ch && ergebnisse[frageId][spalte].lss_ch.result;
-                        const whAnswered = ergebnisse[frageId][spalte].wh_lts && ergebnisse[frageId][spalte].wh_lts.result;
-                        if (lssAnswered || whAnswered) {
-                            isAnswered = true;
-                            break;
-                        }
-                    }
+        let isAnswered = true;
+        if (multiSpalten) {
+            for (const spalte of spalten) {
+                const erg = ergebnisse[frageId][spalte];
+                const lss = erg && erg.lss_ch && erg.lss_ch.result;
+                const wh = erg && erg.wh_lts && erg.wh_lts.result;
+                if (!lss || !wh) {
+                    isAnswered = false;
+                    break;
                 }
-            } else {
-                const lssAnswered = ergebnisse[frageId].lss_ch && ergebnisse[frageId].lss_ch.result;
-                const whAnswered = ergebnisse[frageId].wh_lts && ergebnisse[frageId].wh_lts.result;
-                isAnswered = lssAnswered || whAnswered;
             }
+        } else {
+            const lss = ergebnisse[frageId].lss_ch && ergebnisse[frageId].lss_ch.result;
+            const wh = ergebnisse[frageId].wh_lts && ergebnisse[frageId].wh_lts.result;
+            isAnswered = !!(lss && wh);
+        }
 
-            if (isAnswered) {
-                answeredCount++;
-            }
+        if (isAnswered) {
+            answeredCount++;
         }
     });
 

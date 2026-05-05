@@ -539,33 +539,31 @@ function updateProgressBar() {
     const progress = ((currentQuestionIndex + 1) / fragenData.length) * 100;
     document.getElementById('progress-fill').style.width = progress + '%';
 
-    // Berechne beantwortete Fragen für Text (Multi-Spalten-kompatibel)
+    // Berechne beantwortete Fragen für Text
+    // Frage gilt als beantwortet wenn ALLE Spalten BEIDE Systeme (LSS-CH + WH-LTS) haben
     let answeredCount = 0;
     fragenData.forEach(frage => {
         const frageId = frage.id;
-        if (ergebnisse[frageId]) {
-            let hasAnswer = false;
-            if (isMultiSpaltenMode) {
-                // Multi-Spalten: Prüfe ob mindestens eine Spalte beantwortet ist
-                for (const spalte of spalten) {
-                    if (ergebnisse[frageId][spalte]) {
-                        const lss = ergebnisse[frageId][spalte].lss_ch;
-                        const wh = ergebnisse[frageId][spalte].wh_lts;
-                        if ((lss && lss.result) || (wh && wh.result)) {
-                            hasAnswer = true;
-                            break;
-                        }
-                    }
+        if (!ergebnisse[frageId]) return;
+
+        let hasAnswer = true;
+        if (isMultiSpaltenMode) {
+            for (const spalte of spalten) {
+                const erg = ergebnisse[frageId][spalte];
+                const lss = erg && erg.lss_ch && erg.lss_ch.result;
+                const wh = erg && erg.wh_lts && erg.wh_lts.result;
+                if (!lss || !wh) {
+                    hasAnswer = false;
+                    break;
                 }
-            } else {
-                // Single-Spalte
-                const lssAnswered = ergebnisse[frageId].lss_ch && ergebnisse[frageId].lss_ch.result;
-                const whAnswered = ergebnisse[frageId].wh_lts && ergebnisse[frageId].wh_lts.result;
-                hasAnswer = lssAnswered || whAnswered;
             }
-            if (hasAnswer) {
-                answeredCount++;
-            }
+        } else {
+            const lss = ergebnisse[frageId].lss_ch && ergebnisse[frageId].lss_ch.result;
+            const wh = ergebnisse[frageId].wh_lts && ergebnisse[frageId].wh_lts.result;
+            hasAnswer = !!(lss && wh);
+        }
+        if (hasAnswer) {
+            answeredCount++;
         }
     });
 
