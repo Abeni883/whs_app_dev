@@ -171,6 +171,14 @@ def generate_pdf_export(projekt, selected_sections):
             # Format 2: komponente_index='', spalte='Anlage' (regulärer Speicher)
             return get_test_result(question_id, system, '', 'Anlage')
 
+        # Helper für Antriebsheizung: aktuelles Speicherformat ist spalte='AH',
+        # Legacy-Daten nutzen spalte='Antriebsheizung' (Rückwärtskompatibilität)
+        def get_ah_result(question_id, system, komponente_index):
+            result = get_test_result(question_id, system, komponente_index, 'AH')
+            if result['icon']:
+                return result
+            return get_test_result(question_id, system, komponente_index, 'Antriebsheizung')
+
         # Daten basierend auf selected_sections filtern
         anlage_tests = []
         if 'wh_anlage' in selected_sections:
@@ -253,8 +261,8 @@ def generate_pdf_export(projekt, selected_sections):
             if whk_config.hat_antriebsheizung:
                 ah_fragen = [q for q in test_questions if q.komponente_typ == 'Antriebsheizung']
                 for frage in ah_fragen:
-                    wh_lts_result = get_test_result(frage.id, 'wh_lts', whk_nummer_normalized, 'Antriebsheizung')
-                    lss_ch_result = get_test_result(frage.id, 'lss_ch', whk_nummer_normalized, 'Antriebsheizung')
+                    wh_lts_result = get_ah_result(frage.id, 'wh_lts', whk_nummer_normalized)
+                    lss_ch_result = get_ah_result(frage.id, 'lss_ch', whk_nummer_normalized)
 
                     ah_tests.append({
                         'frage_text': frage.frage_text,
@@ -311,6 +319,13 @@ def generate_pdf_export(projekt, selected_sections):
             key = f"{question_id}_{system}_{komponente_index}_{spalte}"
             result_data = results_dict.get(key, {})
             return result_data.get('result')
+
+        def get_ah_value(question_id, system, komponente_index):
+            """Antriebsheizung-Wert: aktuelles Format spalte='AH', Legacy-Fallback 'Antriebsheizung'."""
+            val = get_result_value(question_id, system, komponente_index, 'AH')
+            if val:
+                return val
+            return get_result_value(question_id, system, komponente_index, 'Antriebsheizung')
 
         # Anlage-Fehler
         # DB speichert: komponente_index='Anlage', spalte='Anlage'
@@ -408,8 +423,8 @@ def generate_pdf_export(projekt, selected_sections):
             if whk_config.hat_antriebsheizung:
                 ah_fragen = [q for q in test_questions if q.komponente_typ == 'Antriebsheizung']
                 for frage in ah_fragen:
-                    wh_lts_val = get_result_value(frage.id, 'wh_lts', whk_nummer_normalized, 'Antriebsheizung')
-                    lss_ch_val = get_result_value(frage.id, 'lss_ch', whk_nummer_normalized, 'Antriebsheizung')
+                    wh_lts_val = get_ah_value(frage.id, 'wh_lts', whk_nummer_normalized)
+                    lss_ch_val = get_ah_value(frage.id, 'lss_ch', whk_nummer_normalized)
                     if wh_lts_val == 'falsch' or lss_ch_val == 'falsch':
                         failed_tests.append({
                             'komponente': f"{whk_nummer} - Antriebsheizung",
@@ -1780,6 +1795,13 @@ def export_pdf(projekt_id):
                 'bemerkung': result_data.get('bemerkung') or ''
             }
 
+        # Helper für Antriebsheizung: aktuelles Format spalte='AH', Legacy-Fallback 'Antriebsheizung'
+        def get_ah_result(question_id, system, komponente_index):
+            result = get_test_result(question_id, system, komponente_index, 'AH')
+            if result['icon']:
+                return result
+            return get_test_result(question_id, system, komponente_index, 'Antriebsheizung')
+
         # WH-Anlage Tests vorbereiten
         anlage_tests = []
         anlage_fragen = [q for q in test_questions if q.komponente_typ == 'Anlage']
@@ -1859,8 +1881,8 @@ def export_pdf(projekt_id):
             if whk_config.hat_antriebsheizung:
                 ah_fragen = [q for q in test_questions if q.komponente_typ == 'Antriebsheizung']
                 for frage in ah_fragen:
-                    wh_lts_result = get_test_result(frage.id, 'wh_lts', whk_nummer_normalized, 'Antriebsheizung')
-                    lss_ch_result = get_test_result(frage.id, 'lss_ch', whk_nummer_normalized, 'Antriebsheizung')
+                    wh_lts_result = get_ah_result(frage.id, 'wh_lts', whk_nummer_normalized)
+                    lss_ch_result = get_ah_result(frage.id, 'lss_ch', whk_nummer_normalized)
 
                     ah_tests.append({
                         'frage_text': frage.frage_text,
