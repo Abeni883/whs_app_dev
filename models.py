@@ -882,8 +882,8 @@ class FiMessung(db.Model):
     sicherung = db.Column(db.String(20), nullable=False)    # z.B. 'F302.2'
     fehlerstrom_30 = db.Column(db.Boolean, default=False)    # 30mA
     fehlerstrom_300 = db.Column(db.Boolean, default=True)    # 300mA
-    delta_i_ma = db.Column(db.Integer, nullable=True)        # ∆I FI [mA]
-    delta_t_ms = db.Column(db.Integer, nullable=True)        # ∆t FI [ms]
+    delta_i_ma = db.Column(db.Float, nullable=True)          # ∆I FI [mA] (Dezimalwerte erlaubt)
+    delta_t_ms = db.Column(db.Float, nullable=True)          # ∆t FI [ms] (Dezimalwerte erlaubt)
     status = db.Column(db.Boolean, default=True)
     reihenfolge = db.Column(db.Integer, default=0)
     manuell = db.Column(db.Boolean, default=False)

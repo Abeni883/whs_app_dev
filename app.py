@@ -140,6 +140,20 @@ def datefmt(value):
     return str(value)
 
 
+@app.template_filter('numfmt')
+def numfmt(value):
+    """Zahl ohne überflüssige Dezimalstellen anzeigen (25.0 -> 25, 15.5 -> 15.5)."""
+    if value is None or value == '':
+        return ''
+    try:
+        f = float(value)
+    except (ValueError, TypeError):
+        return str(value)
+    if f == int(f):
+        return str(int(f))
+    return ('%g' % f)
+
+
 def allowed_file(filename):
     """Prüft ob die Dateiendung erlaubt ist."""
     return '.' in filename and \

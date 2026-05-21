@@ -17,6 +17,23 @@ from models import (
 stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
 
 
+def _parse_num(value):
+    """Parst einen mA/ms-Wert robust.
+
+    Gibt float oder None zurück und wirft niemals — verhindert HTTP 500
+    bei Dezimal-, Komma- oder ungültigen Eingaben.
+    """
+    if value is None:
+        return None
+    s = str(value).strip().replace(',', '.')
+    if not s:
+        return None
+    try:
+        return float(s)
+    except (ValueError, TypeError):
+        return None
+
+
 @stuecknachweis_bp.route('/projekt/<int:project_id>/stuecknachweis/whk-auswahl')
 @login_required
 def whk_auswahl(project_id):
@@ -186,10 +203,8 @@ def stuecknachweis_formular(project_id, whk_id):
                 fi.sicherung = request.form.get(f'{prefix}_sicherung', fi.sicherung)
                 fi.fehlerstrom_30 = f'fi_fehlerstrom_30_{fi.id}' in request.form
                 fi.fehlerstrom_300 = f'fi_fehlerstrom_300_{fi.id}' in request.form
-                delta_i = request.form.get(f'{prefix}_delta_i', '').strip()
-                fi.delta_i_ma = int(delta_i) if delta_i else None
-                delta_t = request.form.get(f'{prefix}_delta_t', '').strip()
-                fi.delta_t_ms = int(delta_t) if delta_t else None
+                fi.delta_i_ma = _parse_num(request.form.get(f'{prefix}_delta_i', ''))
+                fi.delta_t_ms = _parse_num(request.form.get(f'{prefix}_delta_t', ''))
                 fi.status = f'{prefix}_status' in request.form
 
             # Schutzgrad (editierbares Feld)
@@ -339,10 +354,8 @@ def stuecknachweis_autosave(project_id, whk_id):
                 if fi and fi.stuecknachweis_id == sn.id:
                     if 'sicherung' in fi_data:
                         fi.sicherung = fi_data['sicherung']
-                    val_i = str(fi_data.get('delta_i_ma', '')).strip()
-                    val_t = str(fi_data.get('delta_t_ms', '')).strip()
-                    fi.delta_i_ma = int(val_i) if val_i else None
-                    fi.delta_t_ms = int(val_t) if val_t else None
+                    fi.delta_i_ma = _parse_num(fi_data.get('delta_i_ma'))
+                    fi.delta_t_ms = _parse_num(fi_data.get('delta_t_ms'))
                     fi.fehlerstrom_30 = fi_data.get('fehlerstrom_30', False)
                     fi.fehlerstrom_300 = fi_data.get('fehlerstrom_300', False)
                     fi.status = fi_data.get('status', True)

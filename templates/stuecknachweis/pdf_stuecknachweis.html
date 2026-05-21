@@ -407,8 +407,8 @@
     <tr>
         <td style="text-align: center; font-weight: bold; border: 1px solid #999; padding: 3px;">{{ fi.sicherung }}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;"><strong>{% if fi.fehlerstrom_300 %}300 mA{% elif fi.fehlerstrom_30 %}30 mA{% else %}&nbsp;{% endif %}</strong></td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_i_ma is not none %}<strong>{{ fi.delta_i_ma }}</strong> mA{% else %}&nbsp;{% endif %}</td>
-        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_t_ms is not none %}<strong>{{ fi.delta_t_ms }}</strong> ms{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_i_ma is not none %}<strong>{{ fi.delta_i_ma | numfmt }}</strong> mA{% else %}&nbsp;{% endif %}</td>
+        <td style="text-align: center; border: 1px solid #999; padding: 3px;">{% if fi.delta_t_ms is not none %}<strong>{{ fi.delta_t_ms | numfmt }}</strong> ms{% else %}&nbsp;{% endif %}</td>
         <td style="text-align: center; border: 1px solid #999; padding: 3px;">
             {% if fi.delta_i_ma is not none %}{% if fi.status %}Richtig{% else %}Falsch{% endif %}{% else %}&nbsp;{% endif %}
         </td>
