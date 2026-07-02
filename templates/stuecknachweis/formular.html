@@ -10,7 +10,7 @@
         <span class="breadcrumb-sep">›</span>
         <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}">{{ projekt.projektname }}</a>
         <span class="breadcrumb-sep">›</span>
-        <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}">EN 61439</a>
+        <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}">{{ norm_name }}</a>
         <span class="breadcrumb-sep">›</span>
         <span>Stücknachweis {{ objekt_bezeichnung }}</span>
     </nav>
@@ -102,8 +102,8 @@
             </div>
         </div>
 
-        <!-- ==================== NORMEN EN 61439-1 ==================== -->
-        <h3 class="sn-section-title">Normen EN 61439-1</h3>
+        <!-- ==================== NORMEN ==================== -->
+        <h3 class="sn-section-title">Normen {{ norm_name }}</h3>
 
         <div class="form-group">
             <table class="project-table sn-table sn-normen-table">
@@ -134,17 +134,17 @@
                         <td class="normen-gruppe-header" colspan="3"><strong>Luftstrecken</strong></td>
                     </tr>
                     <tr>
-                        <td class="normen-unterzeile">Kleiner als die in Tabelle 1 (EN 61439-1)</td>
+                        <td class="normen-unterzeile">Kleiner als die in Tabelle 1 ({{ norm_name }})</td>
                         <td class="sn-check-cell"><input type="checkbox" name="check_11_3_luft_1" {% if sn.check_11_3_luft_1 %}checked{% endif %}></td>
                         <td>Prüfung</td>
                     </tr>
                     <tr>
-                        <td class="normen-unterzeile">Nicht offensichtlich grösser als in Tabelle 1 (EN 61439-1)</td>
+                        <td class="normen-unterzeile">Nicht offensichtlich grösser als in Tabelle 1 ({{ norm_name }})</td>
                         <td class="sn-check-cell"><input type="checkbox" name="check_11_3_luft_2" {% if sn.check_11_3_luft_2 %}checked{% endif %}></td>
                         <td>Messung / Prüfung</td>
                     </tr>
                     <tr class="normen-gruppe-end">
-                        <td class="normen-unterzeile">Grösser als Tabelle 1 (EN 61439-1)</td>
+                        <td class="normen-unterzeile">Grösser als Tabelle 1 ({{ norm_name }})</td>
                         <td class="sn-check-cell"><input type="checkbox" name="check_11_3_luft_3" {% if sn.check_11_3_luft_3 %}checked{% endif %}></td>
                         <td>Sichtprüfung</td>
                     </tr>

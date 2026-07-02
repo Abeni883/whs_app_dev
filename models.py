@@ -462,6 +462,9 @@ class AppSettings(db.Model):
     # Zeiterfassung
     zeiterfassung_timeout_minuten = db.Column(db.Integer, default=60)  # Standard: 60 Minuten
 
+    # Konfigurierbarer Norm-Name (GUI + PDF-Exporte)
+    norm_name = db.Column(db.String(100), nullable=False, default='EN 61439-1/2')
+
     # Timestamps
     geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -477,6 +480,17 @@ class AppSettings(db.Model):
 
     def __repr__(self):
         return f'<AppSettings timeout={self.zeiterfassung_timeout_minuten}min>'
+
+
+NORM_NAME_DEFAULT = 'EN 61439-1/2'
+
+
+def get_norm_name():
+    """Gibt den konfigurierten Norm-Namen zurück (Fallback: Standardwert)."""
+    settings = AppSettings.query.first()
+    if settings and settings.norm_name:
+        return settings.norm_name
+    return NORM_NAME_DEFAULT
 
 
 class TestabschlussItem(db.Model):

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}EN 61439 — {{ projekt.projektname }}{% endblock %}
+{% block title %}{{ norm_name }} — {{ projekt.projektname }}{% endblock %}
 
 {% block content %}
 {% macro status_badge(status) %}
@@ -19,12 +19,12 @@
         <span class="breadcrumb-sep">›</span>
         <span>{{ projekt.projektname }}</span>
         <span class="breadcrumb-sep">›</span>
-        <span>EN 61439</span>
+        <span>{{ norm_name }}</span>
     </nav>
 
     <div class="page-header">
         <div>
-            <h2>EN 61439 — Stücknachweis &amp; Konformitätserklärung</h2>
+            <h2>{{ norm_name }} — Stücknachweis &amp; Konformitätserklärung</h2>
             <p style="color: var(--text-secondary); margin-top: 4px;">
                 {{ projekt.projektname }}
                 {% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}

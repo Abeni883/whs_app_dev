@@ -70,6 +70,7 @@ from models import (
     TestResult,  # Legacy
     ProjectTimeLog,
     AppSettings,
+    get_norm_name,
     TestabschlussItem,
     # GWH-Modelle
     ZSKConfig,
@@ -651,6 +652,35 @@ def einstellungen_allgemein():
         return redirect(url_for('einstellungen_allgemein'))
 
     return render_template('einstellungen_allgemein.html', settings=settings)
+
+
+@app.context_processor
+def inject_norm_name():
+    """Stellt den konfigurierbaren Norm-Namen in ALLEN Templates bereit."""
+    return dict(norm_name=get_norm_name())
+
+
+@app.route('/einstellungen/en61439', methods=['GET', 'POST'])
+@login_required
+def einstellungen_en61439():
+    """Konfiguration der Norm-Bezeichnung (GUI + PDF-Exporte)."""
+    settings = AppSettings.get_settings()
+
+    if request.method == 'POST':
+        try:
+            norm_name = (request.form.get('norm_name') or '').strip()
+            if norm_name:
+                settings.norm_name = norm_name
+                db.session.commit()
+                flash('Einstellungen wurden gespeichert.', 'success')
+            else:
+                flash('Die Norm-Bezeichnung darf nicht leer sein.', 'error')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Fehler beim Speichern: {str(e)}', 'error')
+        return redirect(url_for('einstellungen_en61439'))
+
+    return render_template('einstellungen_en61439.html', norm_name=settings.norm_name)
 
 
 if __name__ == '__main__':

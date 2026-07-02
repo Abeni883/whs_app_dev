@@ -40,7 +40,7 @@
                     <th>Projektinformationen</th>
                     <th>WH-Anlage</th>
                     <th>Abnahmetest</th>
-                    <th>EN 61439</th>
+                    <th>{{ norm_name }}</th>
                     <th>Löschen</th>
                 </tr>
             </thead>
@@ -87,7 +87,7 @@
                     </td>
                     <td>
                         {% if projekt.energie == 'EWH' %}
-                            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="en61439-link">EN 61439</a>
+                            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="en61439-link">{{ norm_name }}</a>
                         {% else %}
                             <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
