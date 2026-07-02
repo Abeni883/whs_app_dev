@@ -11,7 +11,7 @@ from datetime import datetime, date
 
 from models import (
     db, Project, WHKConfig, Stuecknachweis, FiMessung,
-    generiere_fi_sicherungen
+    SteuerungConfig, generiere_fi_sicherungen
 )
 
 stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
@@ -62,9 +62,15 @@ def whk_auswahl(project_id):
             'has_stuecknachweis': sn is not None,
         })
 
+    # Steuerungen (SHDSL) laden — werden unter den WHKs angezeigt
+    steuerungen = SteuerungConfig.query.filter_by(
+        projekt_id=project_id
+    ).order_by(SteuerungConfig.reihenfolge).all()
+
     return render_template('stuecknachweis/whk_auswahl.html',
                            projekt=projekt,
-                           whk_data=whk_data)
+                           whk_data=whk_data,
+                           steuerungen=steuerungen)
 
 
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis', methods=['GET', 'POST'])

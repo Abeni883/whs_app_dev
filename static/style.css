@@ -1453,6 +1453,12 @@ footer {
     color: var(--accent-yellow, #f59e0b);
 }
 
+/* Preset-Badge Variante für Steuerung (SHDSL) — blau statt amber */
+.preset-badge-steuerung {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--accent-blue, #3b82f6);
+}
+
 /* Breadcrumb navigation */
 .breadcrumb {
     display: flex;

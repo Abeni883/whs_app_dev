@@ -24,7 +24,7 @@
         <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück</a>
     </div>
 
-    {% if whk_data %}
+    {% if whk_data or steuerungen %}
         <table class="project-table">
             <thead>
                 <tr>
@@ -53,6 +53,23 @@
                     </td>
                     <td>
                         <a href="{{ url_for('stuecknachweis.stuecknachweis_formular', project_id=projekt.id, whk_id=item.whk.id) }}" class="btn-primary btn-sm">Öffnen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% for st in steuerungen %}
+                <tr>
+                    <td>
+                        <strong>{{ st.name or 'Steuerung' }}</strong>
+                        {% if st.typ %}<span style="color: var(--text-secondary);"> — {{ st.typ }}</span>{% endif %}
+                    </td>
+                    <td>
+                        <span class="preset-badge preset-badge-steuerung">Steuerung SHDSL</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-offen">Nicht erstellt</span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn-primary btn-sm" disabled title="Stücknachweis für Steuerung folgt" style="opacity: 0.5; cursor: not-allowed;">Öffnen</button>
                     </td>
                 </tr>
                 {% endfor %}
