@@ -66,10 +66,14 @@
                         <span class="preset-badge preset-badge-steuerung">Steuerung SHDSL</span>
                     </td>
                     <td>
-                        <span class="status-badge status-offen">Nicht erstellt</span>
+                        {% if st.stuecknachweis %}
+                            <span class="status-badge status-vorhanden">Vorhanden</span>
+                        {% else %}
+                            <span class="status-badge status-offen">Nicht erstellt</span>
+                        {% endif %}
                     </td>
                     <td>
-                        <button type="button" class="btn-primary btn-sm" disabled title="Stücknachweis für Steuerung folgt" style="opacity: 0.5; cursor: not-allowed;">Öffnen</button>
+                        <a href="{{ url_for('stuecknachweis.steuerung_stuecknachweis_formular', project_id=projekt.id, steuerung_id=st.id) }}" class="btn-primary btn-sm">Öffnen</a>
                     </td>
                 </tr>
                 {% endfor %}

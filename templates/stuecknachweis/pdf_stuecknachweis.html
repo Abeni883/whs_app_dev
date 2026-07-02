@@ -111,7 +111,7 @@
 <table style="width: 100%; border: 1px solid #999; border-collapse: collapse; margin-top: 10px;">
     <tr>
         <td style="width: 40%; padding: 6px 10px; border-bottom: 1px solid #ccc; font-weight: bold;">Art des Produkts (Produktenorm):</td>
-        <td style="width: 60%; padding: 6px 10px; border-bottom: 1px solid #ccc;">Weichenheizkabine</td>
+        <td style="width: 60%; padding: 6px 10px; border-bottom: 1px solid #ccc;">{{ produkt_art or 'Weichenheizkabine' }}</td>
     </tr>
     <tr>
         <td style="padding: 6px 10px; border-bottom: 1px solid #ccc; font-weight: bold;">Hersteller:</td>
@@ -127,7 +127,7 @@
     </tr>
     <tr>
         <td style="padding: 6px 10px; font-weight: bold;">Herstellungsdatum:</td>
-        <td style="padding: 6px 10px;"><strong>{{ stuecknachweis.herstellungsdatum|datefmt }}</strong></td>
+        <td style="padding: 6px 10px;"><strong>{% if ist_steuerung %}{{ stuecknachweis.herstellungsdatum_text or '-' }}{% else %}{{ stuecknachweis.herstellungsdatum|datefmt }}{% endif %}</strong></td>
     </tr>
 </table>
 
@@ -380,7 +380,8 @@
 <!-- ==================== SEITE 3 ==================== -->
 <pdf:nextpage />
 
-<!-- H) FI-MESSUNGEN -->
+<!-- H) FI-MESSUNGEN (nur wenn mind. 1 FI vorhanden — z.B. Steuerungen ohne FI) -->
+{% if fi_messungen|length > 0 %}
 <table style="width: 100%; border: 1px solid #999; border-collapse: collapse; font-size: 8pt;">
     <colgroup>
         <col style="width: 15%">
@@ -415,6 +416,7 @@
     </tr>
     {% endfor %}
 </table>
+{% endif %}
 
 <!-- Spacer: füllt verbleibenden Platz zwischen FI und Bemerkung -->
 {% if spacer_mm > 0 %}

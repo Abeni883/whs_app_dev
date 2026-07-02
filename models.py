@@ -256,6 +256,8 @@ class SteuerungConfig(db.Model):
     # Steuerungs-Daten
     name = db.Column(db.String(100), nullable=True)
     typ = db.Column(db.String(100), nullable=True)
+    # Preset für Stücknachweis (EN 61439): schrank_mit_tuer (IP55) / schrank_ohne_tuer (IP2X)
+    preset_typ = db.Column(db.String(20), nullable=False, default='schrank_mit_tuer')
     reihenfolge = db.Column(db.Integer, default=0, index=True)
 
     # Timestamps
@@ -821,8 +823,11 @@ class Stuecknachweis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # Foreign Keys
+    # Ein Stücknachweis gehört ENTWEDER zu einer WHK ODER zu einer Steuerung (SHDSL).
+    # Daher sind beide FKs nullable; genau einer ist gesetzt.
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
-    whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id'), nullable=False)
+    whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id'), nullable=True)
+    steuerung_config_id = db.Column(db.Integer, db.ForeignKey('steuerung_configs.id'), nullable=True)
 
     # Kopfdaten
     typbezeichnung = db.Column(db.String(100), nullable=True)
@@ -832,6 +837,8 @@ class Stuecknachweis(db.Model):
     # Herstellung
     herstellungsdatum = db.Column(db.Date, nullable=True)
     herstellungsjahr = db.Column(db.Integer, nullable=True)
+    # Freitext-Datum für Steuerungen (Umbau-Historie, z.B. "2002 / 2016 / 02.07.2026")
+    herstellungsdatum_text = db.Column(db.String(100), nullable=True)
 
     # Grund der Prüfung
     grund_erstpruefung = db.Column(db.Boolean, default=True)
@@ -890,8 +897,14 @@ class Stuecknachweis(db.Model):
     # Relationships
     project = db.relationship('Project', backref='stuecknachweise')
     whk_config = db.relationship('WHKConfig', backref=db.backref('stuecknachweis', uselist=False))
+    steuerung_config = db.relationship('SteuerungConfig', backref=db.backref('stuecknachweis', uselist=False))
     fi_messungen = db.relationship('FiMessung', backref='stuecknachweis',
                                     cascade='all, delete-orphan', order_by='FiMessung.reihenfolge')
+
+    @property
+    def ist_steuerung(self):
+        """True, wenn dieser Stücknachweis zu einer Steuerung (SHDSL) gehört."""
+        return self.steuerung_config_id is not None
 
     def __repr__(self):
         return (f'<Stuecknachweis id={self.id} project_id={self.project_id} '

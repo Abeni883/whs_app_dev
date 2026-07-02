@@ -54,6 +54,8 @@ instance/
 # ==================== KONFIGURATION (SENSITIVE DATEN) ====================
 config_local.py
 *.backup
+*.bak
+*.bak_*
 
 # ==================== WINDOWS ARTEFAKTE ====================
 Thumbs.db

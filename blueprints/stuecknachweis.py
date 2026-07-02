@@ -1,8 +1,12 @@
 """
 Blueprint für Stücknachweis-Verwaltung (EWH).
 
-Stücknachweis-Protokoll und Konformitätserklärung pro WHK,
+Stücknachweis-Protokoll und Konformitätserklärung pro WHK ODER pro Steuerung (SHDSL),
 inkl. Normen-Prüfung (EN 61439-1), Messungen und FI-Messungen.
+
+Ein Stücknachweis gehört entweder zu einer WHK (whk_config_id) oder zu einer
+Steuerung (steuerung_config_id). Formular und PDF werden für beide Typen
+wiederverwendet; Unterschiede werden über das ist_steuerung-Flag gesteuert.
 """
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
@@ -15,6 +19,34 @@ from models import (
 )
 
 stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
+
+
+# ==================== KONSTANTEN ====================
+
+# Schutzgrad-Ableitung aus Preset (WHK + Steuerung)
+SCHUTZGRAD_MAP = {
+    # WHK Presets
+    'kabine_16hz': 'IP55', 'kabine_50hz': 'IP55',
+    'rahmen_16hz': 'IP2X', 'rahmen_50hz': 'IP2X',
+    # Steuerung (SHDSL) Presets
+    'schrank_mit_tuer': 'IP55',
+    'schrank_ohne_tuer': 'IP2X',
+}
+
+# Checkbox-Felder (Grund/Schutz/Berührung + Normen EN 61439-1)
+CHECKBOX_FELDER = [
+    'grund_erstpruefung', 'grund_wiederholung', 'grund_aenderung', 'grund_instandsetzung',
+    'schutz_tn_s', 'schutz_tn_c', 'schutz_tn_c_s', 'schutz_tt', 'schutz_it',
+    'beruehr_nicht_instruiert', 'beruehr_instruiert',
+    'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
+    'check_11_3_luft_2', 'check_11_3_luft_3',
+    'check_11_4_durch', 'check_11_4_geschr', 'check_11_5',
+    'check_11_6_verb', 'check_11_6_verd', 'check_11_7',
+    'check_11_8', 'check_11_1_kenn', 'check_11_1_doku', 'check_11_1_funk',
+]
+
+# Boolean-Felder für Auto-Save (JSON)
+BOOL_FELDER_AUTOSAVE = CHECKBOX_FELDER + ['niederohm_status', 'spannung_status', 'isolation_status']
 
 
 def _parse_num(value):
@@ -34,6 +66,107 @@ def _parse_num(value):
         return None
 
 
+# ==================== SHARED HELPERS ====================
+
+def _speichere_form(sn, config, ist_steuerung):
+    """Speichert alle Formularfelder (request.form) in sn/config.
+
+    Gemeinsam für WHK- und Steuerung-Stücknachweis.
+    """
+    # Kopfdaten
+    sn.typbezeichnung = request.form.get('typbezeichnung', '').strip() or None
+    sn.auftraggeber = request.form.get('auftraggeber', '').strip() or 'SBB AG'
+    sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
+
+    # Preset-Typ auf die Konfiguration (WHK oder Steuerung) speichern
+    preset_typ = request.form.get('preset_typ', config.preset_typ)
+    if preset_typ in SCHUTZGRAD_MAP:
+        config.preset_typ = preset_typ
+
+    # Herstellung: Steuerung = Freitext, WHK = Date-Picker
+    if ist_steuerung:
+        sn.herstellungsdatum_text = request.form.get('herstellungsdatum_text', '').strip() or None
+    else:
+        datum_str = request.form.get('herstellungsdatum', '')
+        if datum_str:
+            sn.herstellungsdatum = datetime.strptime(datum_str, '%Y-%m-%d').date()
+    jahr_str = request.form.get('herstellungsjahr', '')
+    if jahr_str:
+        sn.herstellungsjahr = int(jahr_str)
+
+    # Checkboxen
+    for feld in CHECKBOX_FELDER:
+        setattr(sn, feld, feld in request.form)
+
+    # Messungen
+    sn.messgeraet_messung = request.form.get('messgeraet_messung', '').strip() or 'HT FullTest 3'
+    sn.messgeraet_fi = request.form.get('messgeraet_fi', '').strip() or 'HT FullTest 3'
+    sn.niederohm_ergebnis = request.form.get('niederohm_ergebnis', '')
+    sn.niederohm_status = 'niederohm_status' in request.form
+    sn.spannung_ergebnis = request.form.get('spannung_ergebnis', '')
+    sn.spannung_status = 'spannung_status' in request.form
+    sn.isolation_ergebnis = request.form.get('isolation_ergebnis', '')
+    sn.isolation_status = 'isolation_status' in request.form
+
+    # FI-Messungen (frisch laden, inkl. manuell hinzugefügte)
+    for fi in FiMessung.query.filter_by(stuecknachweis_id=sn.id).all():
+        prefix = f'fi_{fi.id}'
+        fi.sicherung = request.form.get(f'{prefix}_sicherung', fi.sicherung)
+        fi.fehlerstrom_30 = f'fi_fehlerstrom_30_{fi.id}' in request.form
+        fi.fehlerstrom_300 = f'fi_fehlerstrom_300_{fi.id}' in request.form
+        fi.delta_i_ma = _parse_num(request.form.get(f'{prefix}_delta_i', ''))
+        fi.delta_t_ms = _parse_num(request.form.get(f'{prefix}_delta_t', ''))
+        fi.status = f'{prefix}_status' in request.form
+
+    # Schutzgrad + Bemerkung
+    sn.schutzgrad = request.form.get('schutzgrad', '').strip() or None
+    sn.bemerkung = request.form.get('bemerkung', '')
+
+
+def _render_formular(projekt, sn, config, ist_steuerung):
+    """Rendert das Stücknachweis-Formular (gemeinsam für WHK/Steuerung)."""
+    schutzgrad = SCHUTZGRAD_MAP.get(config.preset_typ, 'IP55')
+
+    if ist_steuerung:
+        objekt_bezeichnung = config.name or 'Steuerung'
+        typbezeichnung = config.name or 'Steuerung'
+    else:
+        objekt_bezeichnung = config.whk_nummer
+        typbezeichnung = config.whk_typ or config.whk_nummer
+
+    return render_template(
+        'stuecknachweis/formular.html',
+        projekt=projekt,
+        sn=sn,
+        ist_steuerung=ist_steuerung,
+        preset_typ_aktuell=config.preset_typ,
+        objekt_bezeichnung=objekt_bezeichnung,
+        typbezeichnung=typbezeichnung,
+        schutzgrad=schutzgrad,
+        autosave_url=url_for('stuecknachweis.stuecknachweis_autosave', sn_id=sn.id),
+        fi_add_url=url_for('stuecknachweis.fi_hinzufuegen', sn_id=sn.id),
+        fi_delete_base=f'/stuecknachweis/{sn.id}/fi/',
+        pdf_sn_url=url_for('stuecknachweis.stuecknachweis_pdf', sn_id=sn.id),
+        pdf_konf_url=url_for('stuecknachweis.konformitaet_pdf', sn_id=sn.id),
+        auswahl_url=url_for('stuecknachweis.whk_auswahl', project_id=projekt.id),
+    )
+
+
+def _logo_base64():
+    """Achermann-Logo als Base64 Data-URL (oder leerer String)."""
+    import os
+    import base64
+    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    logo_path = os.path.join(app_root, 'assets', 'logo.png')
+    if os.path.exists(logo_path):
+        with open(logo_path, 'rb') as f:
+            b64 = base64.b64encode(f.read()).decode('utf-8')
+            return f'data:image/png;base64,{b64}'
+    return ''
+
+
+# ==================== AUSWAHLSEITE ====================
+
 @stuecknachweis_bp.route('/projekt/<int:project_id>/stuecknachweis/whk-auswahl')
 @login_required
 def whk_auswahl(project_id):
@@ -46,16 +179,15 @@ def whk_auswahl(project_id):
     whk_configs = WHKConfig.query.filter_by(projekt_id=project_id).order_by(WHKConfig.whk_nummer).all()
 
     # Prüfe pro WHK ob ein Stücknachweis existiert
+    preset_labels = {
+        'kabine_16hz': 'Kabine 16.7Hz',
+        'kabine_50hz': 'Kabine 50Hz',
+        'rahmen_16hz': 'Rahmen 16.7Hz',
+        'rahmen_50hz': 'Rahmen 50Hz',
+    }
     whk_data = []
     for whk in whk_configs:
         sn = Stuecknachweis.query.filter_by(whk_config_id=whk.id).first()
-        # Preset-Typ lesbar formatieren
-        preset_labels = {
-            'kabine_16hz': 'Kabine 16.7Hz',
-            'kabine_50hz': 'Kabine 50Hz',
-            'rahmen_16hz': 'Rahmen 16.7Hz',
-            'rahmen_50hz': 'Rahmen 50Hz',
-        }
         whk_data.append({
             'whk': whk,
             'preset_label': preset_labels.get(whk.preset_typ, whk.preset_typ),
@@ -73,15 +205,12 @@ def whk_auswahl(project_id):
                            steuerungen=steuerungen)
 
 
+# ==================== FORMULAR: WHK ====================
+
 @stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis', methods=['GET', 'POST'])
 @login_required
 def stuecknachweis_formular(project_id, whk_id):
-    """
-    Stücknachweis-Formular anzeigen und speichern.
-
-    GET: Formular anzeigen (bei erstem Aufruf auto-initialisieren)
-    POST: Alle Felder speichern inkl. FI-Messungen
-    """
+    """Stücknachweis-Formular für eine WHK anzeigen und speichern."""
     projekt = Project.query.get(project_id)
     if not projekt:
         flash('Projekt nicht gefunden!', 'error')
@@ -92,11 +221,9 @@ def stuecknachweis_formular(project_id, whk_id):
         flash('WHK-Konfiguration nicht gefunden!', 'error')
         return redirect(url_for('konfiguration.projekt_konfiguration', projekt_id=project_id))
 
-    # Stücknachweis laden oder erstellen
+    # Stücknachweis laden oder erstellen (inkl. FI-Auto-Generierung)
     sn = Stuecknachweis.query.filter_by(project_id=project_id, whk_config_id=whk_id).first()
-
     if not sn:
-        # Erste Öffnung: Auto-Initialisierung
         sn = Stuecknachweis(
             project_id=project_id,
             whk_config_id=whk_id,
@@ -107,154 +234,93 @@ def stuecknachweis_formular(project_id, whk_id):
             herstellungsjahr=datetime.now().year,
         )
         db.session.add(sn)
-        db.session.flush()  # ID generieren für FI-Messungen
+        db.session.flush()
 
-        # FI-Messungen automatisch generieren
-        sicherungen = generiere_fi_sicherungen(whk.anzahl_abgaenge)
-        for idx, sicherung in enumerate(sicherungen):
-            fi = FiMessung(
-                stuecknachweis_id=sn.id,
-                sicherung=sicherung,
-                status=True,
-                reihenfolge=idx
-            )
-            db.session.add(fi)
-
+        for idx, sicherung in enumerate(generiere_fi_sicherungen(whk.anzahl_abgaenge)):
+            db.session.add(FiMessung(
+                stuecknachweis_id=sn.id, sicherung=sicherung, status=True, reihenfolge=idx))
         db.session.commit()
 
-    # FI-Messungen aktualisieren wenn Abgang-Anzahl geändert wurde
-    # Nur automatisch generierte FI zählen (nicht manuell hinzugefügte)
-    auto_fi_anzahl = FiMessung.query.filter_by(
-        stuecknachweis_id=sn.id, manuell=False).count()
+    # FI-Messungen aktualisieren wenn Abgang-Anzahl geändert wurde (nur WHK, nur auto-generierte)
+    auto_fi_anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id, manuell=False).count()
     soll_anzahl = len(generiere_fi_sicherungen(whk.anzahl_abgaenge))
-
     if auto_fi_anzahl != soll_anzahl:
-        # Nur automatisch generierte FI löschen, manuelle behalten
-        FiMessung.query.filter_by(
-            stuecknachweis_id=sn.id, manuell=False).delete()
-        sicherungen = generiere_fi_sicherungen(whk.anzahl_abgaenge)
-        for idx, sicherung in enumerate(sicherungen):
-            fi = FiMessung(
-                stuecknachweis_id=sn.id,
-                sicherung=sicherung,
-                fehlerstrom_300=True,
-                fehlerstrom_30=False,
-                status=True,
-                reihenfolge=idx,
-                manuell=False
-            )
-            db.session.add(fi)
+        FiMessung.query.filter_by(stuecknachweis_id=sn.id, manuell=False).delete()
+        for idx, sicherung in enumerate(generiere_fi_sicherungen(whk.anzahl_abgaenge)):
+            db.session.add(FiMessung(
+                stuecknachweis_id=sn.id, sicherung=sicherung,
+                fehlerstrom_300=True, fehlerstrom_30=False,
+                status=True, reihenfolge=idx, manuell=False))
         db.session.commit()
         flash('Anzahl Abgänge wurde geändert — FI-Messungen wurden aktualisiert.', 'info')
 
-    # Schutzgrad-Map
-    schutzgrad_map = {
-        'kabine_16hz': 'IP55', 'kabine_50hz': 'IP55',
-        'rahmen_16hz': 'IP2X', 'rahmen_50hz': 'IP2X'
-    }
-
     if request.method == 'POST':
         try:
-            # Kopfdaten
-            sn.typbezeichnung = request.form.get('typbezeichnung', '').strip() or None
-            sn.auftraggeber = request.form.get('auftraggeber', '').strip() or 'SBB AG'
-            sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
-
-            # Preset-Typ aus Formular lesen und auf WHK speichern
-            preset_typ = request.form.get('preset_typ', whk.preset_typ)
-            if preset_typ in schutzgrad_map:
-                whk.preset_typ = preset_typ
-
-            # Herstellung
-            datum_str = request.form.get('herstellungsdatum', '')
-            if datum_str:
-                sn.herstellungsdatum = datetime.strptime(datum_str, '%Y-%m-%d').date()
-            jahr_str = request.form.get('herstellungsjahr', '')
-            if jahr_str:
-                sn.herstellungsjahr = int(jahr_str)
-
-            # Checkboxen
-            checkbox_felder = [
-                # Grund der Prüfung / Schutzmassnahme / Berührungsschutz
-                'grund_erstpruefung', 'grund_wiederholung',
-                'grund_aenderung', 'grund_instandsetzung',
-                'schutz_tn_s', 'schutz_tn_c', 'schutz_tn_c_s',
-                'schutz_tt', 'schutz_it',
-                'beruehr_nicht_instruiert', 'beruehr_instruiert',
-                # Normen EN 61439-1
-                'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
-                'check_11_3_luft_2', 'check_11_3_luft_3',
-                'check_11_4_durch', 'check_11_4_geschr', 'check_11_5',
-                'check_11_6_verb', 'check_11_6_verd', 'check_11_7',
-                'check_11_8', 'check_11_1_kenn', 'check_11_1_doku',
-                'check_11_1_funk'
-            ]
-            for feld in checkbox_felder:
-                setattr(sn, feld, feld in request.form)
-
-            # Messungen
-            sn.messgeraet_messung = request.form.get('messgeraet_messung', '').strip() or 'HT FullTest 3'
-            sn.messgeraet_fi = request.form.get('messgeraet_fi', '').strip() or 'HT FullTest 3'
-            sn.niederohm_ergebnis = request.form.get('niederohm_ergebnis', '')
-            sn.niederohm_status = 'niederohm_status' in request.form
-            sn.spannung_ergebnis = request.form.get('spannung_ergebnis', '')
-            sn.spannung_status = 'spannung_status' in request.form
-            sn.isolation_ergebnis = request.form.get('isolation_ergebnis', '')
-            sn.isolation_status = 'isolation_status' in request.form
-
-            # FI-Messungen aktualisieren (frisch aus DB laden, inkl. manuell hinzugefügte)
-            alle_fi = FiMessung.query.filter_by(stuecknachweis_id=sn.id).all()
-            for fi in alle_fi:
-                prefix = f'fi_{fi.id}'
-                fi.sicherung = request.form.get(f'{prefix}_sicherung', fi.sicherung)
-                fi.fehlerstrom_30 = f'fi_fehlerstrom_30_{fi.id}' in request.form
-                fi.fehlerstrom_300 = f'fi_fehlerstrom_300_{fi.id}' in request.form
-                fi.delta_i_ma = _parse_num(request.form.get(f'{prefix}_delta_i', ''))
-                fi.delta_t_ms = _parse_num(request.form.get(f'{prefix}_delta_t', ''))
-                fi.status = f'{prefix}_status' in request.form
-
-            # Schutzgrad (editierbares Feld)
-            sn.schutzgrad = request.form.get('schutzgrad', '').strip() or None
-
-            # Bemerkung
-            sn.bemerkung = request.form.get('bemerkung', '')
-
+            _speichere_form(sn, whk, ist_steuerung=False)
             db.session.commit()
             flash('Stücknachweis erfolgreich gespeichert.', 'success')
-
         except Exception as e:
             db.session.rollback()
             flash(f'Fehler beim Speichern: {str(e)}', 'error')
+        return redirect(url_for('stuecknachweis.whk_auswahl', project_id=project_id))
 
-        return redirect(url_for('stuecknachweis.whk_auswahl',
-                                project_id=project_id))
-
-    # Schutzgrad serverseitig ableiten
-    schutzgrad = schutzgrad_map.get(whk.preset_typ, 'IP55')
-
-    # Typbezeichnung: whk_typ falls vorhanden, sonst whk_nummer
-    typbezeichnung = whk.whk_typ or whk.whk_nummer
-
-    # Debug: Prüfe geladene Werte
-    print(f"[SN DEBUG] GET sn.id={sn.id}, niederohm={sn.niederohm_ergebnis}, isolation={sn.isolation_ergebnis}")
-    print(f"[SN DEBUG] FI count: {len(sn.fi_messungen)}")
-    for fi in sn.fi_messungen:
-        print(f"[SN DEBUG]   FI {fi.id}: sicherung={fi.sicherung}, delta_i={fi.delta_i_ma}, delta_t={fi.delta_t_ms}, status={fi.status}")
-
-    return render_template('stuecknachweis/formular.html',
-                           projekt=projekt,
-                           whk=whk,
-                           sn=sn,
-                           schutzgrad=schutzgrad,
-                           typbezeichnung=typbezeichnung)
+    return _render_formular(projekt, sn, whk, ist_steuerung=False)
 
 
-@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/fi/add', methods=['POST'])
+# ==================== FORMULAR: STEUERUNG (SHDSL) ====================
+
+@stuecknachweis_bp.route('/projekt/<int:project_id>/steuerung/<int:steuerung_id>/stuecknachweis', methods=['GET', 'POST'])
 @login_required
-def fi_hinzufuegen(project_id, whk_id):
+def steuerung_stuecknachweis_formular(project_id, steuerung_id):
+    """Stücknachweis-Formular für eine Steuerung (SHDSL).
+
+    Unterschiede zu WHK: Freitext-Herstellungsdatum, Steuerung-Presets,
+    KEINE automatische FI-Generierung/Synchronisierung.
+    """
+    projekt = Project.query.get(project_id)
+    if not projekt:
+        flash('Projekt nicht gefunden!', 'error')
+        return redirect(url_for('projekte.projekte'))
+
+    st = SteuerungConfig.query.get(steuerung_id)
+    if not st or st.projekt_id != project_id:
+        flash('Steuerung nicht gefunden!', 'error')
+        return redirect(url_for('stuecknachweis.whk_auswahl', project_id=project_id))
+
+    # Stücknachweis laden oder erstellen — OHNE FI-Auto-Generierung
+    sn = Stuecknachweis.query.filter_by(project_id=project_id, steuerung_config_id=steuerung_id).first()
+    if not sn:
+        sn = Stuecknachweis(
+            project_id=project_id,
+            steuerung_config_id=steuerung_id,
+            typbezeichnung=st.name or 'Steuerung',
+            auftraggeber='SBB AG',
+            hersteller='Achermann & Co. AG',
+            herstellungsjahr=datetime.now().year,
+        )
+        db.session.add(sn)
+        db.session.commit()
+
+    if request.method == 'POST':
+        try:
+            _speichere_form(sn, st, ist_steuerung=True)
+            db.session.commit()
+            flash('Stücknachweis erfolgreich gespeichert.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Fehler beim Speichern: {str(e)}', 'error')
+        return redirect(url_for('stuecknachweis.whk_auswahl', project_id=project_id))
+
+    return _render_formular(projekt, sn, st, ist_steuerung=True)
+
+
+# ==================== FI-ENDPUNKTE (sn_id-basiert, WHK + Steuerung) ====================
+
+@stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/fi/add', methods=['POST'])
+@login_required
+def fi_hinzufuegen(sn_id):
     """Neue leere FI-Messung manuell hinzufügen."""
-    sn = Stuecknachweis.query.filter_by(
-        project_id=project_id, whk_config_id=whk_id).first_or_404()
+    sn = Stuecknachweis.query.get_or_404(sn_id)
 
     max_reihenfolge = db.session.query(
         db.func.max(FiMessung.reihenfolge)
@@ -275,42 +341,41 @@ def fi_hinzufuegen(project_id, whk_id):
     return jsonify({'success': True, 'fi_id': fi.id})
 
 
-@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/fi/<int:fi_id>/delete', methods=['POST'])
+@stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/fi/<int:fi_id>/delete', methods=['POST'])
 @login_required
-def fi_loeschen(project_id, whk_id, fi_id):
-    """FI-Messung löschen."""
-    sn = Stuecknachweis.query.filter_by(
-        project_id=project_id, whk_config_id=whk_id).first_or_404()
+def fi_loeschen(sn_id, fi_id):
+    """FI-Messung löschen.
+
+    Es gibt KEINE Mindestanzahl mehr — der Benutzer entscheidet selbst
+    (Steuerungen können ohne FI sein).
+    """
+    sn = Stuecknachweis.query.get_or_404(sn_id)
     fi = FiMessung.query.get_or_404(fi_id)
 
     if fi.stuecknachweis_id != sn.id:
         return jsonify({'success': False}), 403
-
-    # Mindestens 1 FI muss bestehen bleiben
-    anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
-    if anzahl <= 1:
-        return jsonify({'success': False, 'error': 'Mindestens eine FI-Messung erforderlich'}), 400
 
     db.session.delete(fi)
     db.session.commit()
     return jsonify({'success': True})
 
 
-@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/autosave', methods=['POST'])
+# ==================== AUTO-SAVE (sn_id-basiert) ====================
+
+@stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/autosave', methods=['POST'])
 @login_required
-def stuecknachweis_autosave(project_id, whk_id):
-    """Auto-Save für Stücknachweis-Formular."""
-    sn = Stuecknachweis.query.filter_by(
-        project_id=project_id, whk_config_id=whk_id).first_or_404()
-    whk = WHKConfig.query.get_or_404(whk_id)
+def stuecknachweis_autosave(sn_id):
+    """Auto-Save für Stücknachweis-Formular (WHK + Steuerung)."""
+    sn = Stuecknachweis.query.get_or_404(sn_id)
+    config = sn.steuerung_config if sn.ist_steuerung else sn.whk_config
     data = request.get_json()
     if not data:
         return jsonify({'success': False}), 400
 
     try:
-        # Kopfdaten
-        for f in ['typbezeichnung', 'auftraggeber', 'hersteller',
-                   'schutzgrad', 'messgeraet_messung', 'messgeraet_fi', 'bemerkung']:
+        # Kopfdaten (inkl. Freitext-Herstellungsdatum für Steuerungen)
+        for f in ['typbezeichnung', 'auftraggeber', 'hersteller', 'schutzgrad',
+                  'messgeraet_messung', 'messgeraet_fi', 'bemerkung', 'herstellungsdatum_text']:
             if f in data:
                 setattr(sn, f, data[f] or None)
 
@@ -326,22 +391,11 @@ def stuecknachweis_autosave(project_id, whk_id):
             except (ValueError, TypeError):
                 pass
 
-        if 'preset_typ' in data:
-            whk.preset_typ = data['preset_typ']
+        if 'preset_typ' in data and config is not None and data['preset_typ'] in SCHUTZGRAD_MAP:
+            config.preset_typ = data['preset_typ']
 
         # Boolean-Felder
-        bool_felder = [
-            'grund_erstpruefung', 'grund_wiederholung', 'grund_aenderung', 'grund_instandsetzung',
-            'schutz_tn_s', 'schutz_tn_c', 'schutz_tn_c_s', 'schutz_tt', 'schutz_it',
-            'beruehr_nicht_instruiert', 'beruehr_instruiert',
-            'check_11_2', 'check_11_3_kriech', 'check_11_3_luft_1',
-            'check_11_3_luft_2', 'check_11_3_luft_3',
-            'check_11_4_durch', 'check_11_4_geschr', 'check_11_5',
-            'check_11_6_verb', 'check_11_6_verd', 'check_11_7',
-            'check_11_8', 'check_11_1_kenn', 'check_11_1_doku', 'check_11_1_funk',
-            'niederohm_status', 'spannung_status', 'isolation_status'
-        ]
-        for f in bool_felder:
+        for f in BOOL_FELDER_AUTOSAVE:
             if f in data:
                 setattr(sn, f, bool(data[f]))
 
@@ -374,136 +428,106 @@ def stuecknachweis_autosave(project_id, whk_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/stuecknachweis/pdf')
+# ==================== PDF: STÜCKNACHWEIS (sn_id-basiert) ====================
+
+@stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/pdf')
 @login_required
-def stuecknachweis_pdf(project_id, whk_id):
-    """PDF Stücknachweisprotokoll generieren."""
-    import os
-    import base64
+def stuecknachweis_pdf(sn_id):
+    """PDF Stücknachweisprotokoll generieren (WHK + Steuerung)."""
     from io import BytesIO
     from xhtml2pdf import pisa
+    from flask import send_file
 
-    projekt = Project.query.get_or_404(project_id)
-    whk = WHKConfig.query.get_or_404(whk_id)
-    sn = Stuecknachweis.query.filter_by(
-        project_id=project_id, whk_config_id=whk_id).first_or_404()
+    sn = Stuecknachweis.query.get_or_404(sn_id)
+    projekt = Project.query.get_or_404(sn.project_id)
+    ist_steuerung = sn.ist_steuerung
+    config = sn.steuerung_config if ist_steuerung else sn.whk_config
+
     fi_messungen = FiMessung.query.filter_by(
         stuecknachweis_id=sn.id).order_by(FiMessung.reihenfolge).all()
 
-    typbezeichnung = whk.whk_typ or whk.whk_nummer
+    if ist_steuerung:
+        typbezeichnung = config.name or 'Steuerung'
+        produkt_art = 'Steuerung (SHDSL)'
+    else:
+        typbezeichnung = config.whk_typ or config.whk_nummer
+        produkt_art = 'Weichenheizkabine'
 
-    schutzgrad_map = {
-        'kabine_16hz': 'IP55', 'kabine_50hz': 'IP55',
-        'rahmen_16hz': 'IP2X', 'rahmen_50hz': 'IP2X'
-    }
-    schutzgrad = schutzgrad_map.get(whk.preset_typ, 'IP55')
+    schutzgrad = SCHUTZGRAD_MAP.get(config.preset_typ, 'IP55')
 
-    # Achermann Logo als Base64
-    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    logo_path = os.path.join(app_root, 'assets', 'logo.png')
-    achermann_logo_base64 = ''
-    if os.path.exists(logo_path):
-        with open(logo_path, 'rb') as f:
-            b64 = base64.b64encode(f.read()).decode('utf-8')
-            achermann_logo_base64 = f'data:image/png;base64,{b64}'
-
-    # Spacer-Höhe berechnen: Platz zwischen FI-Tabelle und Bemerkung
-    # Content-Bereich: ca. 195mm (A4 297mm - 2.5cm top - 2.5cm bottom - Header/Footer)
+    # Spacer-Höhe: Platz zwischen FI-Tabelle und Bemerkung.
+    # Bei 0 FI-Messungen wird die FI-Tabelle NICHT gerendert → Höhe 0.
     fi_anzahl = len(fi_messungen)
-    # Content-Bereich Seite 3: top=71pt(2.5cm) bis bottom=771pt → 700pt = 247mm
-    # FI endet bei ca. 208pt = 73mm ab Seitenanfang, 2mm ab Content-Start (71pt)
-    # FI-Tabelle: Header(Info+Spalten) ~45pt + pro Zeile ~21pt
-    # Bemerkung+Vorbehalt+Unterschrift: ~240pt = 85mm
-    # Ziel: Unterschrift endet bei ~750pt (nahe Content-Ende)
-    fi_hoehe_pt = 45 + (fi_anzahl * 21)  # pt
-    unten_pt = 240  # pt: Bemerkung+Vorbehalt+Unterschrift
-    verfuegbar_pt = 600  # pt: Content-Bereich (100pt höher als original)
+    fi_hoehe_pt = (45 + fi_anzahl * 21) if fi_anzahl > 0 else 0
+    unten_pt = 240
+    verfuegbar_pt = 600
     spacer_pt = max(0, verfuegbar_pt - fi_hoehe_pt - unten_pt)
-    spacer_mm = round(spacer_pt * 25.4 / 72)  # pt → mm
+    spacer_mm = round(spacer_pt * 25.4 / 72)
 
     html = render_template(
         'stuecknachweis/pdf_stuecknachweis.html',
         stuecknachweis=sn,
-        whk=whk,
         projekt=projekt,
+        ist_steuerung=ist_steuerung,
+        produkt_art=produkt_art,
         typbezeichnung=typbezeichnung,
         schutzgrad=schutzgrad,
         fi_messungen=fi_messungen,
-        achermann_logo_base64=achermann_logo_base64,
+        achermann_logo_base64=_logo_base64(),
         spacer_mm=spacer_mm
     )
 
     pdf_buffer = BytesIO()
-    pisa_status = pisa.CreatePDF(
-        BytesIO(html.encode('utf-8')), dest=pdf_buffer)
-
+    pisa_status = pisa.CreatePDF(BytesIO(html.encode('utf-8')), dest=pdf_buffer)
     if pisa_status.err:
         flash('Fehler bei der PDF-Generierung.', 'error')
-        return redirect(url_for('stuecknachweis.stuecknachweis_formular',
-                                project_id=project_id, whk_id=whk_id))
+        return redirect(url_for('stuecknachweis.whk_auswahl', project_id=sn.project_id))
 
     pdf_buffer.seek(0)
-    filename = f'Stuecknachweis_{typbezeichnung}.pdf'
-
-    from flask import send_file
     return send_file(
-        pdf_buffer,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name=filename
-    )
+        pdf_buffer, mimetype='application/pdf', as_attachment=True,
+        download_name=f'Stuecknachweis_{typbezeichnung}.pdf')
 
 
-@stuecknachweis_bp.route('/projekt/<int:project_id>/whk/<int:whk_id>/konformitaet/pdf')
+# ==================== PDF: KONFORMITÄTSERKLÄRUNG (sn_id-basiert) ====================
+
+@stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/konformitaet/pdf')
 @login_required
-def konformitaet_pdf(project_id, whk_id):
-    """PDF Konformitätserklärung generieren."""
-    import os
-    import base64
+def konformitaet_pdf(sn_id):
+    """PDF Konformitätserklärung generieren (WHK + Steuerung)."""
     from io import BytesIO
     from xhtml2pdf import pisa
+    from flask import send_file
 
-    projekt = Project.query.get_or_404(project_id)
-    whk = WHKConfig.query.get_or_404(whk_id)
-    sn = Stuecknachweis.query.filter_by(
-        project_id=project_id, whk_config_id=whk_id).first_or_404()
+    sn = Stuecknachweis.query.get_or_404(sn_id)
+    projekt = Project.query.get_or_404(sn.project_id)
+    ist_steuerung = sn.ist_steuerung
+    config = sn.steuerung_config if ist_steuerung else sn.whk_config
 
-    typbezeichnung = whk.whk_typ or whk.whk_nummer
-
-    # Achermann Logo als Base64
-    app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    logo_path = os.path.join(app_root, 'assets', 'logo.png')
-    achermann_logo_base64 = ''
-    if os.path.exists(logo_path):
-        with open(logo_path, 'rb') as f:
-            b64 = base64.b64encode(f.read()).decode('utf-8')
-            achermann_logo_base64 = f'data:image/png;base64,{b64}'
+    if ist_steuerung:
+        typbezeichnung = config.name or 'Steuerung'
+        produkt_art = 'Steuerung (SHDSL)'
+    else:
+        typbezeichnung = config.whk_typ or config.whk_nummer
+        produkt_art = 'Weichenheizkabine'
 
     html = render_template(
         'stuecknachweis/pdf_konformitaet.html',
         stuecknachweis=sn,
-        whk=whk,
         projekt=projekt,
+        ist_steuerung=ist_steuerung,
+        produkt_art=produkt_art,
         typbezeichnung=typbezeichnung,
-        achermann_logo_base64=achermann_logo_base64
+        achermann_logo_base64=_logo_base64()
     )
 
     pdf_buffer = BytesIO()
-    pisa_status = pisa.CreatePDF(
-        BytesIO(html.encode('utf-8')), dest=pdf_buffer)
-
+    pisa_status = pisa.CreatePDF(BytesIO(html.encode('utf-8')), dest=pdf_buffer)
     if pisa_status.err:
         flash('Fehler bei der PDF-Generierung.', 'error')
-        return redirect(url_for('stuecknachweis.stuecknachweis_formular',
-                                project_id=project_id, whk_id=whk_id))
+        return redirect(url_for('stuecknachweis.whk_auswahl', project_id=sn.project_id))
 
     pdf_buffer.seek(0)
-    filename = f'Konformitaetserklaerung_{typbezeichnung}.pdf'
-
-    from flask import send_file
     return send_file(
-        pdf_buffer,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name=filename
-    )
+        pdf_buffer, mimetype='application/pdf', as_attachment=True,
+        download_name=f'Konformitaetserklaerung_{typbezeichnung}.pdf')

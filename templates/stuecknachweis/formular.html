@@ -12,7 +12,7 @@
         <span class="breadcrumb-sep">›</span>
         <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}">EN 61439</a>
         <span class="breadcrumb-sep">›</span>
-        <span>Stücknachweis {{ whk.whk_nummer }}</span>
+        <span>Stücknachweis {{ objekt_bezeichnung }}</span>
     </nav>
 
     <h2>Stücknachweis — {{ typbezeichnung }}</h2>
@@ -40,8 +40,14 @@
 
         <div class="form-group">
             <label for="herstellungsdatum">Herstellungsdatum</label>
+            {% if ist_steuerung %}
+            <input type="text" id="herstellungsdatum_text" name="herstellungsdatum_text"
+                   value="{{ sn.herstellungsdatum_text or '' }}"
+                   placeholder="z.B. 2002 / 2016 / 02.07.2026">
+            {% else %}
             <input type="date" id="herstellungsdatum" name="herstellungsdatum"
                    value="{{ sn.herstellungsdatum.strftime('%Y-%m-%d') if sn.herstellungsdatum else '' }}">
+            {% endif %}
         </div>
 
         <div class="form-group">
@@ -51,13 +57,21 @@
         </div>
 
         <div class="form-group">
+            {% if ist_steuerung %}
+            <label for="preset_typ">Steuerung Preset</label>
+            <select id="preset_typ" name="preset_typ">
+                <option value="schrank_mit_tuer" {% if preset_typ_aktuell == 'schrank_mit_tuer' %}selected{% endif %}>Schrank mit Türe (IP55)</option>
+                <option value="schrank_ohne_tuer" {% if preset_typ_aktuell == 'schrank_ohne_tuer' %}selected{% endif %}>Schrank ohne Tür (IP2X)</option>
+            </select>
+            {% else %}
             <label for="preset_typ">WHK Preset</label>
             <select id="preset_typ" name="preset_typ">
-                <option value="kabine_16hz" {% if whk.preset_typ == 'kabine_16hz' %}selected{% endif %}>WHK Kabine 16.7Hz (IP55)</option>
-                <option value="kabine_50hz" {% if whk.preset_typ == 'kabine_50hz' %}selected{% endif %}>WHK Kabine 50Hz (IP55)</option>
-                <option value="rahmen_16hz" {% if whk.preset_typ == 'rahmen_16hz' %}selected{% endif %}>WHK Rahmen 16.7Hz (IP2X)</option>
-                <option value="rahmen_50hz" {% if whk.preset_typ == 'rahmen_50hz' %}selected{% endif %}>WHK Rahmen 50Hz (IP2X)</option>
+                <option value="kabine_16hz" {% if preset_typ_aktuell == 'kabine_16hz' %}selected{% endif %}>WHK Kabine 16.7Hz (IP55)</option>
+                <option value="kabine_50hz" {% if preset_typ_aktuell == 'kabine_50hz' %}selected{% endif %}>WHK Kabine 50Hz (IP55)</option>
+                <option value="rahmen_16hz" {% if preset_typ_aktuell == 'rahmen_16hz' %}selected{% endif %}>WHK Rahmen 16.7Hz (IP2X)</option>
+                <option value="rahmen_50hz" {% if preset_typ_aktuell == 'rahmen_50hz' %}selected{% endif %}>WHK Rahmen 50Hz (IP2X)</option>
             </select>
+            {% endif %}
         </div>
 
         <div class="form-group">
@@ -357,18 +371,18 @@
         <!-- ==================== AKTIONEN ==================== -->
         <div class="form-group form-actions">
             <button type="submit" class="btn-primary">Zur&uuml;ck</button>
-            <a href="{{ url_for('stuecknachweis.stuecknachweis_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Stücknachweis</a>
-            <a href="{{ url_for('stuecknachweis.konformitaet_pdf', project_id=projekt.id, whk_id=whk.id) }}" class="btn-secondary">PDF Konformitätserklärung</a>
-            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="btn-cancel">Abbrechen</a>
+            <a href="{{ pdf_sn_url }}" class="btn-secondary">PDF Stücknachweis</a>
+            <a href="{{ pdf_konf_url }}" class="btn-secondary">PDF Konformitätserklärung</a>
+            <a href="{{ auswahl_url }}" class="btn-cancel">Abbrechen</a>
         </div>
 
     </form>
 </div>
 
 <div id="sn-config"
-     data-save-url="{{ url_for('stuecknachweis.stuecknachweis_autosave', project_id=projekt.id, whk_id=whk.id) }}"
-     data-fi-add-url="{{ url_for('stuecknachweis.fi_hinzufuegen', project_id=projekt.id, whk_id=whk.id) }}"
-     data-fi-delete-url-base="/projekt/{{ projekt.id }}/whk/{{ whk.id }}/stuecknachweis/fi/"
+     data-save-url="{{ autosave_url }}"
+     data-fi-add-url="{{ fi_add_url }}"
+     data-fi-delete-url-base="{{ fi_delete_base }}"
      style="display:none;">
 </div>
 <script>
@@ -395,7 +409,10 @@ const PRESETS = {
     'kabine_16hz': { label: 'WHK Kabine 16.7Hz', schutzgrad: 'IP55', checkboxen: PRESET_CHECKBOXEN },
     'kabine_50hz': { label: 'WHK Kabine 50Hz',   schutzgrad: 'IP55', checkboxen: PRESET_CHECKBOXEN },
     'rahmen_16hz': { label: 'WHK Rahmen 16.7Hz', schutzgrad: 'IP2X', checkboxen: PRESET_CHECKBOXEN },
-    'rahmen_50hz': { label: 'WHK Rahmen 50Hz',   schutzgrad: 'IP2X', checkboxen: PRESET_CHECKBOXEN }
+    'rahmen_50hz': { label: 'WHK Rahmen 50Hz',   schutzgrad: 'IP2X', checkboxen: PRESET_CHECKBOXEN },
+    // Steuerung (SHDSL) Presets — gleiche Checkbox-Defaults wie WHK
+    'schrank_mit_tuer':  { label: 'Schrank mit Türe', schutzgrad: 'IP55', checkboxen: PRESET_CHECKBOXEN },
+    'schrank_ohne_tuer': { label: 'Schrank ohne Tür',  schutzgrad: 'IP2X', checkboxen: PRESET_CHECKBOXEN }
 };
 
 function applyPreset(presetKey, nurSchutzgrad) {
@@ -585,8 +602,8 @@ console.log('>>> Punkt B: vor sammleFormularDaten');
 function sammleFormularDaten() {
     var sn = {};
 
-    // Text/Datum/Number Felder
-    ['typbezeichnung','auftraggeber','hersteller','herstellungsdatum',
+    // Text/Datum/Number Felder (herstellungsdatum_text nur bei Steuerungen vorhanden)
+    ['typbezeichnung','auftraggeber','hersteller','herstellungsdatum','herstellungsdatum_text',
      'herstellungsjahr','messgeraet_messung','messgeraet_fi','schutzgrad'].forEach(function(f) {
         var el = document.querySelector('[name="' + f + '"]');
         if (el) sn[f] = el.value;
