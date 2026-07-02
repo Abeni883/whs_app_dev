@@ -28,9 +28,8 @@
         <table class="project-table">
             <thead>
                 <tr>
-                    <th>WHK Bezeichnung</th>
+                    <th>Bezeichnung</th>
                     <th>Preset Typ</th>
-                    <th>Abgänge</th>
                     <th>Stücknachweis</th>
                     <th>Aktion</th>
                 </tr>
@@ -45,7 +44,6 @@
                     <td>
                         <span class="preset-badge">{{ item.preset_label }}</span>
                     </td>
-                    <td>{{ item.whk.anzahl_abgaenge }}</td>
                     <td>
                         {% if item.has_stuecknachweis %}
                             <span class="status-badge status-vorhanden">Vorhanden</span>
