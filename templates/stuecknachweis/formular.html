@@ -24,6 +24,13 @@
         <h3 class="sn-section-title">Kopfdaten</h3>
 
         <div class="form-group">
+            <label for="norm_name">Norm</label>
+            <input type="text" id="norm_name" name="norm_name"
+                   value="{{ sn.norm_name or norm_name }}"
+                   placeholder="{{ norm_name }}" maxlength="100">
+        </div>
+
+        <div class="form-group">
             <label for="typbezeichnung">Typbezeichnung / Kennnummer</label>
             <input type="text" id="typbezeichnung" name="typbezeichnung" value="{{ sn.typbezeichnung or typbezeichnung }}" maxlength="100">
         </div>
@@ -598,7 +605,7 @@ function sammleFormularDaten() {
     var sn = {};
 
     // Text/Datum/Number Felder (herstellungsdatum_text nur bei Steuerungen vorhanden)
-    ['typbezeichnung','auftraggeber','hersteller','herstellungsdatum','herstellungsdatum_text',
+    ['norm_name','typbezeichnung','auftraggeber','hersteller','herstellungsdatum','herstellungsdatum_text',
      'herstellungsjahr','messgeraet_messung','messgeraet_fi','schutzgrad'].forEach(function(f) {
         var el = document.querySelector('[name="' + f + '"]');
         if (el) sn[f] = el.value;

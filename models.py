@@ -847,6 +847,8 @@ class Stuecknachweis(db.Model):
     typbezeichnung = db.Column(db.String(100), nullable=True)
     auftraggeber = db.Column(db.String(100), default='SBB AG')
     hersteller = db.Column(db.String(100), default='Achermann & Co. AG')
+    # Norm-Bezeichnung pro SN (überschreibt globalen Settings-Wert; NULL = Fallback auf Setting)
+    norm_name = db.Column(db.String(100), nullable=True)
 
     # Herstellung
     herstellungsdatum = db.Column(db.Date, nullable=True)

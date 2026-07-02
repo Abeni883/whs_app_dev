@@ -15,7 +15,7 @@ from datetime import datetime, date
 
 from models import (
     db, Project, WHKConfig, Stuecknachweis, FiMessung,
-    SteuerungConfig, generiere_fi_sicherungen
+    SteuerungConfig, generiere_fi_sicherungen, get_norm_name
 )
 
 stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
@@ -91,6 +91,8 @@ def _speichere_form(sn, config, ist_steuerung):
     sn.typbezeichnung = request.form.get('typbezeichnung', '').strip() or None
     sn.auftraggeber = request.form.get('auftraggeber', '').strip() or 'SBB AG'
     sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
+    # Norm: leeres Feld → Fallback auf globalen Settings-Wert
+    sn.norm_name = request.form.get('norm_name', '').strip() or get_norm_name()
 
     # Preset-Typ auf die Konfiguration (WHK oder Steuerung) speichern
     preset_typ = request.form.get('preset_typ', config.preset_typ)
@@ -247,6 +249,7 @@ def stuecknachweis_formular(project_id, whk_id):
             typbezeichnung=whk.whk_typ or whk.whk_nummer,
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
+            norm_name=get_norm_name(),
             herstellungsdatum=date.today(),
             herstellungsdatum_text=datetime.now().strftime('%d.%m.%Y'),
             herstellungsjahr=datetime.now().year,
@@ -314,6 +317,7 @@ def steuerung_stuecknachweis_formular(project_id, steuerung_id):
             typbezeichnung=st.name or 'Steuerung',
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
+            norm_name=get_norm_name(),
             herstellungsdatum_text=datetime.now().strftime('%d.%m.%Y'),
             herstellungsjahr=datetime.now().year,
         )
@@ -397,6 +401,10 @@ def stuecknachweis_autosave(sn_id):
                   'messgeraet_messung', 'messgeraet_fi', 'bemerkung', 'herstellungsdatum_text']:
             if f in data:
                 setattr(sn, f, data[f] or None)
+
+        # Norm: leeres Feld → Fallback auf globalen Settings-Wert
+        if 'norm_name' in data:
+            sn.norm_name = (data['norm_name'] or '').strip() or get_norm_name()
 
         if 'herstellungsdatum' in data and data['herstellungsdatum']:
             try:
@@ -483,6 +491,9 @@ def stuecknachweis_pdf(sn_id):
     spacer_pt = max(0, verfuegbar_pt - fi_hoehe_pt - unten_pt)
     spacer_mm = round(spacer_pt * 25.4 / 72)
 
+    # Effektiver Norm-Name: SN-Wert oder Fallback auf globales Setting
+    effektive_norm = sn.norm_name or get_norm_name()
+
     html = render_template(
         'stuecknachweis/pdf_stuecknachweis.html',
         stuecknachweis=sn,
@@ -493,7 +504,8 @@ def stuecknachweis_pdf(sn_id):
         schutzgrad=schutzgrad,
         fi_messungen=fi_messungen,
         achermann_logo_base64=_logo_base64(),
-        spacer_mm=spacer_mm
+        spacer_mm=spacer_mm,
+        sn_norm=effektive_norm
     )
 
     pdf_buffer = BytesIO()
@@ -534,6 +546,9 @@ def konformitaet_pdf(sn_id):
         typbezeichnung = config.whk_typ or config.whk_nummer
         produkt_art = 'Weichenheizkabine'
 
+    # Effektiver Norm-Name: SN-Wert oder Fallback auf globales Setting
+    effektive_norm = sn.norm_name or get_norm_name()
+
     html = render_template(
         'stuecknachweis/pdf_konformitaet.html',
         stuecknachweis=sn,
@@ -541,7 +556,8 @@ def konformitaet_pdf(sn_id):
         ist_steuerung=ist_steuerung,
         produkt_art=produkt_art,
         typbezeichnung=typbezeichnung,
-        achermann_logo_base64=_logo_base64()
+        achermann_logo_base64=_logo_base64(),
+        sn_norm=effektive_norm
     )
 
     pdf_buffer = BytesIO()
