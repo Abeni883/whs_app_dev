@@ -39,15 +39,10 @@
         </div>
 
         <div class="form-group">
-            <label for="herstellungsdatum">Herstellungsdatum</label>
-            {% if ist_steuerung %}
+            <label for="herstellungsdatum_text">Herstellungsdatum</label>
             <input type="text" id="herstellungsdatum_text" name="herstellungsdatum_text"
                    value="{{ sn.herstellungsdatum_text or '' }}"
-                   placeholder="z.B. 2002 / 2016 / 02.07.2026">
-            {% else %}
-            <input type="date" id="herstellungsdatum" name="herstellungsdatum"
-                   value="{{ sn.herstellungsdatum.strftime('%Y-%m-%d') if sn.herstellungsdatum else '' }}">
-            {% endif %}
+                   placeholder="z.B. 02.07.2026 oder 2002 / 2016 / 02.07.2026">
         </div>
 
         <div class="form-group">

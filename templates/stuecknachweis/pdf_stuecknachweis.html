@@ -127,7 +127,7 @@
     </tr>
     <tr>
         <td style="padding: 6px 10px; font-weight: bold;">Herstellungsdatum:</td>
-        <td style="padding: 6px 10px;"><strong>{% if ist_steuerung %}{{ stuecknachweis.herstellungsdatum_text or '-' }}{% else %}{{ stuecknachweis.herstellungsdatum|datefmt }}{% endif %}</strong></td>
+        <td style="padding: 6px 10px;"><strong>{{ stuecknachweis.herstellungsdatum_text or stuecknachweis.herstellungsdatum|datefmt or '&nbsp;' }}</strong></td>
     </tr>
 </table>
 

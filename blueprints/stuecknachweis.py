@@ -97,13 +97,8 @@ def _speichere_form(sn, config, ist_steuerung):
     if preset_typ in SCHUTZGRAD_MAP:
         config.preset_typ = preset_typ
 
-    # Herstellung: Steuerung = Freitext, WHK = Date-Picker
-    if ist_steuerung:
-        sn.herstellungsdatum_text = request.form.get('herstellungsdatum_text', '').strip() or None
-    else:
-        datum_str = request.form.get('herstellungsdatum', '')
-        if datum_str:
-            sn.herstellungsdatum = datetime.strptime(datum_str, '%Y-%m-%d').date()
+    # Herstellungsdatum: einheitlich Freitext (WHK + Steuerung)
+    sn.herstellungsdatum_text = request.form.get('herstellungsdatum_text', '').strip() or None
     jahr_str = request.form.get('herstellungsjahr', '')
     if jahr_str:
         sn.herstellungsjahr = int(jahr_str)
@@ -253,6 +248,7 @@ def stuecknachweis_formular(project_id, whk_id):
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
             herstellungsdatum=date.today(),
+            herstellungsdatum_text=datetime.now().strftime('%d.%m.%Y'),
             herstellungsjahr=datetime.now().year,
         )
         db.session.add(sn)
@@ -318,6 +314,7 @@ def steuerung_stuecknachweis_formular(project_id, steuerung_id):
             typbezeichnung=st.name or 'Steuerung',
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
+            herstellungsdatum_text=datetime.now().strftime('%d.%m.%Y'),
             herstellungsjahr=datetime.now().year,
         )
         db.session.add(sn)
