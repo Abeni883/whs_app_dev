@@ -49,6 +49,20 @@ CHECKBOX_FELDER = [
 BOOL_FELDER_AUTOSAVE = CHECKBOX_FELDER + ['niederohm_status', 'spannung_status', 'isolation_status']
 
 
+def _sn_status(sn):
+    """Ermittelt den Auswahllisten-Status eines Stücknachweises.
+
+    - 'vorhanden'      : beide PDFs (Stücknachweis + Konformität) exportiert
+    - 'in_arbeit'      : SN existiert, aber noch nicht beide PDFs exportiert
+    - 'nicht_erstellt' : noch kein SN (Formular nie geöffnet)
+    """
+    if sn and sn.pdf_stuecknachweis_exportiert and sn.pdf_konformitaet_exportiert:
+        return 'vorhanden'
+    if sn:
+        return 'in_arbeit'
+    return 'nicht_erstellt'
+
+
 def _parse_num(value):
     """Parst einen mA/ms-Wert robust.
 
@@ -191,7 +205,7 @@ def whk_auswahl(project_id):
         whk_data.append({
             'whk': whk,
             'preset_label': preset_labels.get(whk.preset_typ, whk.preset_typ),
-            'has_stuecknachweis': sn is not None,
+            'status': _sn_status(sn),
         })
 
     # Steuerungen (SHDSL) laden — werden unter den WHKs angezeigt
@@ -199,10 +213,18 @@ def whk_auswahl(project_id):
         projekt_id=project_id
     ).order_by(SteuerungConfig.reihenfolge).all()
 
+    steuerung_data = []
+    for st in steuerungen:
+        sn = Stuecknachweis.query.filter_by(steuerung_config_id=st.id).first()
+        steuerung_data.append({
+            'st': st,
+            'status': _sn_status(sn),
+        })
+
     return render_template('stuecknachweis/whk_auswahl.html',
                            projekt=projekt,
                            whk_data=whk_data,
-                           steuerungen=steuerungen)
+                           steuerung_data=steuerung_data)
 
 
 # ==================== FORMULAR: WHK ====================
@@ -483,6 +505,10 @@ def stuecknachweis_pdf(sn_id):
         flash('Fehler bei der PDF-Generierung.', 'error')
         return redirect(url_for('stuecknachweis.whk_auswahl', project_id=sn.project_id))
 
+    # Export-Zeitpunkt festhalten (für Status "Vorhanden" in der Auswahlliste)
+    sn.pdf_stuecknachweis_exportiert = datetime.utcnow()
+    db.session.commit()
+
     pdf_buffer.seek(0)
     return send_file(
         pdf_buffer, mimetype='application/pdf', as_attachment=True,
@@ -526,6 +552,10 @@ def konformitaet_pdf(sn_id):
     if pisa_status.err:
         flash('Fehler bei der PDF-Generierung.', 'error')
         return redirect(url_for('stuecknachweis.whk_auswahl', project_id=sn.project_id))
+
+    # Export-Zeitpunkt festhalten (für Status "Vorhanden" in der Auswahlliste)
+    sn.pdf_konformitaet_exportiert = datetime.utcnow()
+    db.session.commit()
 
     pdf_buffer.seek(0)
     return send_file(

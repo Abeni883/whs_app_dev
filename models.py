@@ -890,6 +890,10 @@ class Stuecknachweis(db.Model):
     # Bemerkung
     bemerkung = db.Column(db.Text, nullable=True)
 
+    # Export-Tracking: Zeitpunkt des letzten PDF-Exports (für Status "Vorhanden")
+    pdf_stuecknachweis_exportiert = db.Column(db.DateTime, nullable=True)
+    pdf_konformitaet_exportiert = db.Column(db.DateTime, nullable=True)
+
     # Timestamps
     erstellt_am = db.Column(db.DateTime, default=datetime.utcnow)
     geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

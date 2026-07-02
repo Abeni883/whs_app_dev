@@ -1436,6 +1436,11 @@ footer {
     color: var(--text-secondary);
 }
 
+.status-in-arbeit {
+    background-color: rgba(217, 119, 6, 0.15);
+    color: var(--accent-yellow, #d97706);
+}
+
 /* Small button variant */
 .btn-sm {
     padding: 0.3rem 0.7rem;

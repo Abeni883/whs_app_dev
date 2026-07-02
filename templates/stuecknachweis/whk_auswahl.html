@@ -3,6 +3,15 @@
 {% block title %}EN 61439 — {{ projekt.projektname }}{% endblock %}
 
 {% block content %}
+{% macro status_badge(status) %}
+    {% if status == 'vorhanden' %}
+        <span class="status-badge status-vorhanden">Vorhanden</span>
+    {% elif status == 'in_arbeit' %}
+        <span class="status-badge status-in-arbeit">In Arbeit</span>
+    {% else %}
+        <span class="status-badge status-offen">Nicht erstellt</span>
+    {% endif %}
+{% endmacro %}
 <div class="container">
     <!-- Breadcrumb -->
     <nav class="breadcrumb">
@@ -24,7 +33,7 @@
         <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück</a>
     </div>
 
-    {% if whk_data or steuerungen %}
+    {% if whk_data or steuerung_data %}
         <table class="project-table">
             <thead>
                 <tr>
@@ -45,35 +54,27 @@
                         <span class="preset-badge">{{ item.preset_label }}</span>
                     </td>
                     <td>
-                        {% if item.has_stuecknachweis %}
-                            <span class="status-badge status-vorhanden">Vorhanden</span>
-                        {% else %}
-                            <span class="status-badge status-offen">Nicht erstellt</span>
-                        {% endif %}
+                        {{ status_badge(item.status) }}
                     </td>
                     <td>
                         <a href="{{ url_for('stuecknachweis.stuecknachweis_formular', project_id=projekt.id, whk_id=item.whk.id) }}" class="btn-primary btn-sm">Öffnen</a>
                     </td>
                 </tr>
                 {% endfor %}
-                {% for st in steuerungen %}
+                {% for item in steuerung_data %}
                 <tr>
                     <td>
-                        <strong>{{ st.name or 'Steuerung' }}</strong>
-                        {% if st.typ %}<span style="color: var(--text-secondary);"> — {{ st.typ }}</span>{% endif %}
+                        <strong>{{ item.st.name or 'Steuerung' }}</strong>
+                        {% if item.st.typ %}<span style="color: var(--text-secondary);"> — {{ item.st.typ }}</span>{% endif %}
                     </td>
                     <td>
                         <span class="preset-badge preset-badge-steuerung">Steuerung SHDSL</span>
                     </td>
                     <td>
-                        {% if st.stuecknachweis %}
-                            <span class="status-badge status-vorhanden">Vorhanden</span>
-                        {% else %}
-                            <span class="status-badge status-offen">Nicht erstellt</span>
-                        {% endif %}
+                        {{ status_badge(item.status) }}
                     </td>
                     <td>
-                        <a href="{{ url_for('stuecknachweis.steuerung_stuecknachweis_formular', project_id=projekt.id, steuerung_id=st.id) }}" class="btn-primary btn-sm">Öffnen</a>
+                        <a href="{{ url_for('stuecknachweis.steuerung_stuecknachweis_formular', project_id=projekt.id, steuerung_id=item.st.id) }}" class="btn-primary btn-sm">Öffnen</a>
                     </td>
                 </tr>
                 {% endfor %}
