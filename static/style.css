@@ -1873,13 +1873,14 @@ td.normen-gruppe-header {
     color: #1e40af;
     text-decoration: none;
     font-weight: 600;
-    padding: 0.4rem 0.5rem;
+    padding: 0.4rem 0.6rem;
     border-radius: 6px;
     background-color: #dbeafe;
     border: 1px solid #93c5fd;
     transition: all 0.2s ease;
     display: inline-block;
-    width: 90px;
+    width: auto;
+    min-width: 90px;
     box-sizing: border-box;
     text-align: center;
     white-space: nowrap;
