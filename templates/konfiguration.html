@@ -11,6 +11,50 @@
     <!-- EWH-Konfiguration -->
     <div class="ewh-config-area" style="margin-top: 2rem;">
 
+        <!-- ==================== STEUERUNG (SHDSL)-SEKTION ==================== -->
+        <div class="config-section steuerung-section" style="margin-bottom: 3rem;">
+            <div class="config-title-container">
+                <h3>Steuerung (SHDSL)</h3>
+                <div class="whk-button-container">
+                    <button type="button" id="btn-add-steuerung" class="btn-add-whk" onclick="addSteuerungRow()">+ Steuerung hinzufügen</button>
+                </div>
+            </div>
+
+            <div class="config-table-section" style="margin-top: 1.5rem;">
+                <table class="config-table steuerung-table" style="table-layout: fixed; width: 100%;">
+                    <colgroup>
+                        <col style="width: 45%;">
+                        <col style="width: 45%;">
+                        <col style="width: 10%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Typ</th>
+                            <th style="text-align: center;">Löschen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="steuerung-tbody">
+                        {% if steuerung_configs and steuerung_configs|length > 0 %}
+                            {% for st in steuerung_configs %}
+                            <tr>
+                                <td>
+                                    <input type="text" class="whk-input steuerung-name" value="{{ st.name or '' }}" maxlength="100" placeholder="z.B. Steuerung 01">
+                                </td>
+                                <td>
+                                    <input type="text" class="whk-input steuerung-typ" value="{{ st.typ or '' }}" maxlength="100" placeholder="z.B. SHDSL-Modem">
+                                </td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <button type="button" class="btn-delete-whk" title="Steuerung löschen" onclick="deleteSteuerungRow(this)">×</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ==================== WHK-SEKTION ==================== -->
         <div class="config-section whk-section" style="margin-bottom: 3rem;">
             <div class="config-title-container">
@@ -356,6 +400,40 @@ function updateWHKCounter() {
     }
 }
 
+// ==================== STEUERUNG (SHDSL) FUNKTIONEN ====================
+function addSteuerungRow() {
+    const tbody = document.getElementById('steuerung-tbody');
+    if (!tbody) return;
+
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = `
+        <td>
+            <input type="text" class="whk-input steuerung-name" value="" maxlength="100" placeholder="z.B. Steuerung 01">
+        </td>
+        <td>
+            <input type="text" class="whk-input steuerung-typ" value="" maxlength="100" placeholder="z.B. SHDSL-Modem">
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+            <button type="button" class="btn-delete-whk" title="Steuerung löschen" onclick="deleteSteuerungRow(this)">×</button>
+        </td>
+    `;
+
+    tbody.appendChild(newRow);
+    triggerAutoSave();
+}
+
+function deleteSteuerungRow(button) {
+    const confirmed = confirm('Möchten Sie diese Steuerung wirklich löschen?');
+
+    if (confirmed) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+            triggerAutoSave();
+        }
+    }
+}
+
 // ==================== METEOSTATIONEN FUNKTIONEN ====================
 function getNextFreeMSNumber() {
     // Sammle alle existierenden MS-Nummern
@@ -595,6 +673,18 @@ function performAutoSave() {
         }
     });
 
+    // Sammle Steuerung (SHDSL)-Daten
+    const steuerungRows = document.querySelectorAll('#steuerung-tbody tr');
+    const steuerungData = [];
+
+    steuerungRows.forEach((row) => {
+        const name = (row.querySelector('.steuerung-name')?.value || '').trim();
+        const typ = (row.querySelector('.steuerung-typ')?.value || '').trim();
+        if (name || typ) {
+            steuerungData.push({ name: name, typ: typ });
+        }
+    });
+
     // Sende Daten an Server
     fetch(`/projekt/konfiguration/auto-save/${projektId}`, {
         method: 'POST',
@@ -603,7 +693,8 @@ function performAutoSave() {
         },
         body: JSON.stringify({
             whk_rows: whkData,
-            meteostationen: meteostationen
+            meteostationen: meteostationen,
+            steuerung_rows: steuerungData
         })
     })
     .then(response => response.json())

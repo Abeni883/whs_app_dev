@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 
-from models import db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation, EWHMeteostation
+from models import db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation, EWHMeteostation, SteuerungConfig
 
 konfiguration_bp = Blueprint('konfiguration', __name__)
 
@@ -68,6 +68,26 @@ def projekt_konfiguration(projekt_id):
                 db.session.add(whk_config)
                 whk_count += 1
 
+        # ========== Steuerung (SHDSL) verarbeiten ==========
+        # Lösche alle bestehenden Steuerungen und lege sie neu an
+        SteuerungConfig.query.filter_by(projekt_id=projekt_id).delete()
+
+        st_reihenfolge = 0
+        for key in request.form.keys():
+            if key.startswith('steuerung_name_'):
+                index = key.split('_')[-1]
+                st_name = request.form.get(f'steuerung_name_{index}', '').strip() or None
+                st_typ = request.form.get(f'steuerung_typ_{index}', '').strip() or None
+                if not st_name and not st_typ:
+                    continue  # Leere Zeilen überspringen
+                st_reihenfolge += 1
+                db.session.add(SteuerungConfig(
+                    projekt_id=projekt_id,
+                    name=st_name,
+                    typ=st_typ,
+                    reihenfolge=st_reihenfolge
+                ))
+
         db.session.commit()
         flash(f'Konfiguration erfolgreich gespeichert! ({whk_count} WHK konfiguriert)', 'success')
         return redirect(url_for('konfiguration.projekt_konfiguration', projekt_id=projekt_id))
@@ -75,6 +95,7 @@ def projekt_konfiguration(projekt_id):
     # GET-Request: Lade bestehende Konfigurationen
     whk_configs = WHKConfig.query.filter_by(projekt_id=projekt_id).order_by(WHKConfig.whk_nummer).all()
     ewh_meteostationen = EWHMeteostation.query.filter_by(projekt_id=projekt_id).order_by(EWHMeteostation.reihenfolge).all()
+    steuerung_configs = SteuerungConfig.query.filter_by(projekt_id=projekt_id).order_by(SteuerungConfig.reihenfolge).all()
 
     # Falls keine Meteostation vorhanden, automatisch eine erstellen
     if not ewh_meteostationen:
@@ -87,7 +108,8 @@ def projekt_konfiguration(projekt_id):
         db.session.commit()
         ewh_meteostationen = [default_ms]
 
-    return render_template('konfiguration.html', projekt=projekt, whk_configs=whk_configs, ewh_meteostationen=ewh_meteostationen)
+    return render_template('konfiguration.html', projekt=projekt, whk_configs=whk_configs,
+                           ewh_meteostationen=ewh_meteostationen, steuerung_configs=steuerung_configs)
 
 
 @konfiguration_bp.route('/projekt/konfiguration/auto-save/<int:projekt_id>', methods=['POST'])
@@ -209,6 +231,28 @@ def konfiguration_auto_save(projekt_id):
             db.session.add(default_ms)
             ms_count = 1
 
+        # ========== Steuerung (SHDSL) verarbeiten ==========
+        # Lösche alle bestehenden Steuerungen für dieses Projekt
+        SteuerungConfig.query.filter_by(projekt_id=projekt_id).delete()
+        db.session.flush()  # Sicherstellen dass Löschung vor Insert ausgeführt wird
+
+        steuerung_rows = data.get('steuerung_rows', [])
+        steuerung_count = 0
+
+        for idx, st_data in enumerate(steuerung_rows):
+            st_name = (st_data.get('name') or '').strip() or None
+            st_typ = (st_data.get('typ') or '').strip() or None
+            if not st_name and not st_typ:
+                continue  # Leere Zeilen überspringen
+
+            db.session.add(SteuerungConfig(
+                projekt_id=projekt_id,
+                name=st_name,
+                typ=st_typ,
+                reihenfolge=idx + 1
+            ))
+            steuerung_count += 1
+
         db.session.commit()
 
         return jsonify({
@@ -217,7 +261,8 @@ def konfiguration_auto_save(projekt_id):
             'timestamp': datetime.utcnow().isoformat(),
             'counts': {
                 'whk': whk_count,
-                'meteostationen': ms_count
+                'meteostationen': ms_count,
+                'steuerung': steuerung_count
             }
         })
 

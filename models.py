@@ -236,6 +236,41 @@ class WHKConfig(db.Model):
                 f'whk="{self.whk_nummer}" abgaenge={self.anzahl_abgaenge}>')
 
 
+class SteuerungConfig(db.Model):
+    """
+    Steuerung (SHDSL) Konfiguration für ein Projekt.
+
+    Reine Konfigurationskomponente ohne Abnahmetests. Speichert Name und Typ
+    der SHDSL-Steuerung(en) pro Projekt. Wird NICHT in Testfragen, Abnahmetest
+    oder Prozentberechnung einbezogen.
+    """
+    __tablename__ = 'steuerung_configs'
+
+    # Primary Key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign Key
+    projekt_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'),
+                          nullable=False, index=True)
+
+    # Steuerungs-Daten
+    name = db.Column(db.String(100), nullable=True)
+    typ = db.Column(db.String(100), nullable=True)
+    reihenfolge = db.Column(db.Integer, default=0, index=True)
+
+    # Timestamps
+    erstellt_am = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship
+    projekt = db.relationship('Project', backref=db.backref(
+        'steuerung_configs', lazy=True, cascade='all, delete-orphan',
+        order_by='SteuerungConfig.reihenfolge'))
+
+    def __repr__(self):
+        return (f'<SteuerungConfig id={self.id} projekt_id={self.projekt_id} '
+                f'name="{self.name}" typ="{self.typ}">')
+
+
 class TestQuestion(db.Model):
     """
     Testfragen-Vorlagen für Abnahmetests.
