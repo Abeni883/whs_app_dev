@@ -108,6 +108,22 @@
                    Buttons mit <span class="completed-indicator">100%</span> werden grün markiert.</p>
             </div>
 
+            {% if unassigned_meteostationen %}
+            <!-- Nicht zugeordnete Meteostationen (O-3/AP6) -->
+            <div class="alert alert-warning" style="margin-top: 1.5rem;">
+                <strong>Nicht zugeordnete Meteostationen:</strong>
+                Diese Meteostationen sind <strong>keiner WHK zugeordnet</strong> — Zuordnung und/oder Tests fehlen.
+                Sie zählen zum Testfortschritt (Nenner), daher erreicht das Projekt erst dann 100 %,
+                wenn sie einer WHK zugeordnet und getestet sind.
+                <ul style="margin-top: 0.5rem; margin-bottom: 0;">
+                {% for ms in unassigned_meteostationen %}
+                    <li>{{ ms.ms_nummer }} — Fortschritt
+                        <span style="color: {{ progress_color(ms.percent) }}; font-weight: bold;">{{ ms.percent }}%</span></li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
         </div>
 
     {% else %}
