@@ -13,7 +13,7 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from flask import Flask
-from models import db
+from models import db, enable_sqlite_foreign_keys
 
 
 def make_temp_app(register_blueprints=False):
@@ -31,6 +31,8 @@ def make_temp_app(register_blueprints=False):
     app.config['LOGIN_DISABLED'] = True
     app.secret_key = 'test'
     db.init_app(app)
+    with app.app_context():
+        enable_sqlite_foreign_keys(db.engine)
     if register_blueprints:
         from blueprints.stuecknachweis import stuecknachweis_bp
         app.register_blueprint(stuecknachweis_bp)

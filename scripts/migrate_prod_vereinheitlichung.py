@@ -12,6 +12,10 @@ Schritte:
       pdf_konformitaet_exportiert (rename -> create_all -> copy -> drop; FK zu
       fi_messungen bleibt ueber unveraenderte id-Werte erhalten)
   M4  herstellungsdatum (Date) -> herstellungsdatum_text (TT.MM.JJJJ) fuer alle SN
+  M5  ALTER stuecknachweis ADD COLUMN art_produkt_text (Steuerungs-Art-des-Produkts)
+  M6  FK-ondelete via Rebuild: stuecknachweis.project_id=CASCADE,
+      whk_config_id/steuerung_config_id=RESTRICT, fi_messungen.stuecknachweis_id=CASCADE
+      (zweite Verteidigungslinie zum App-Lösch-Schutz)
 
 VERWENDUNG (immer explizite Ziel-DB angeben — kein Default, um Unfaelle zu vermeiden):
     python scripts/migrate_prod_vereinheitlichung.py <pfad-zur-ziel-db.db>
@@ -125,6 +129,56 @@ def main(target_db):
                 'ALTER TABLE stuecknachweis ADD COLUMN art_produkt_text VARCHAR(100)'))
             db.session.commit()
             print('M5 stuecknachweis.art_produkt_text: hinzugefuegt (nullable, NULL = Fallback)')
+
+        # ---- M6: FK-ondelete (RESTRICT/CASCADE) via Table-Rebuild ----
+        # SQLite kann FK-Constraints nicht per ALTER aendern -> Tabelle neu bauen.
+        # Zweite Verteidigungslinie zum App-Lösch-Schutz:
+        #   stuecknachweis.project_id        -> ON DELETE CASCADE
+        #   stuecknachweis.whk_config_id     -> ON DELETE RESTRICT
+        #   stuecknachweis.steuerung_config_id -> ON DELETE RESTRICT
+        #   fi_messungen.stuecknachweis_id   -> ON DELETE CASCADE
+        def fk_ondelete(table, col):
+            for r in db.session.execute(text(f'PRAGMA foreign_key_list({table})')).fetchall():
+                # r = (id, seq, table, from, to, on_update, on_delete, match)
+                if r[3] == col:
+                    return r[6]
+            return None
+
+        def rebuild_table(table):
+            """Rename -> create_all (aus Modell, mit neuen FKs) -> gemeinsame Spalten
+            kopieren -> alte Tabelle droppen. FK-Enforcement muss vorher AUS sein."""
+            old_cols = list(columns(table).keys())
+            old_name = f'{table}_m6_old'
+            db.session.execute(text(f'DROP TABLE IF EXISTS {old_name}'))
+            db.session.execute(text(f'ALTER TABLE {table} RENAME TO {old_name}'))
+            db.session.commit()
+            db.create_all()  # legt {table} frisch mit Modell-Schema (inkl. ondelete) an
+            new_cols = list(columns(table).keys())
+            common = [c for c in old_cols if c in new_cols]
+            collist = ', '.join(common)
+            db.session.execute(text(
+                f'INSERT INTO {table} ({collist}) SELECT {collist} FROM {old_name}'))
+            db.session.execute(text(f'DROP TABLE {old_name}'))
+            db.session.commit()
+            return len(common)
+
+        sn_ok = fk_ondelete('stuecknachweis', 'whk_config_id') == 'RESTRICT'
+        fi_ok = fk_ondelete('fi_messungen', 'stuecknachweis_id') == 'CASCADE'
+        if sn_ok and fi_ok:
+            print('M6 FK-ondelete: bereits gesetzt (RESTRICT/CASCADE) -> uebersprungen')
+        else:
+            db.session.execute(text('PRAGMA foreign_keys=OFF'))
+            db.session.commit()
+            teile = []
+            if not sn_ok:
+                n = rebuild_table('stuecknachweis')
+                teile.append(f'stuecknachweis ({n} Spalten)')
+            if not fi_ok:
+                n = rebuild_table('fi_messungen')
+                teile.append(f'fi_messungen ({n} Spalten)')
+            print('M6 FK-ondelete: rebuilt -> ' + ', '.join(teile) +
+                  ' [project_id=CASCADE, whk/steuerung_config_id=RESTRICT, '
+                  'fi.stuecknachweis_id=CASCADE]')
 
         print('Migration abgeschlossen.')
     return 0

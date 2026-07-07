@@ -62,6 +62,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 from models import (
     db,
+    enable_sqlite_foreign_keys,
     User,
     Project,
     WHKConfig,
@@ -106,6 +107,11 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
 db.init_app(app)
+
+# SQLite-FK-Enforcement (PRAGMA foreign_keys=ON) für die Laufzeit aktivieren —
+# zweite Verteidigungslinie zum App-Lösch-Schutz (ondelete RESTRICT/CASCADE).
+with app.app_context():
+    enable_sqlite_foreign_keys(db.engine)
 
 # Flask-Login initialisieren
 login_manager = LoginManager()
