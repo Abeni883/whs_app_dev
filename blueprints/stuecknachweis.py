@@ -93,6 +93,8 @@ def _speichere_form(sn, config, ist_steuerung):
     sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
     # Norm: leeres Feld → Fallback auf globalen Settings-Wert
     sn.norm_name = request.form.get('norm_name', '').strip() or get_norm_name()
+    # Art des Produkts (nur Steuerungs-SN): leeres Feld → NULL = Fallback auf Config-Name
+    sn.art_produkt_text = request.form.get('art_produkt_text', '').strip() or None
 
     # Preset-Typ auf die Konfiguration (WHK oder Steuerung) speichern
     preset_typ = request.form.get('preset_typ', config.preset_typ)
@@ -141,9 +143,12 @@ def _render_formular(projekt, sn, config, ist_steuerung):
     if ist_steuerung:
         objekt_bezeichnung = config.name or 'Steuerung'
         typbezeichnung = config.name or 'Steuerung'
+        # Fallback für "Art des Produkts": Name der zugeordneten Steuerung
+        art_produkt_fallback = config.name or 'Steuerung (SHDSL)'
     else:
         objekt_bezeichnung = config.whk_nummer
         typbezeichnung = config.whk_typ or config.whk_nummer
+        art_produkt_fallback = None
 
     return render_template(
         'stuecknachweis/formular.html',
@@ -153,6 +158,7 @@ def _render_formular(projekt, sn, config, ist_steuerung):
         preset_typ_aktuell=config.preset_typ,
         objekt_bezeichnung=objekt_bezeichnung,
         typbezeichnung=typbezeichnung,
+        art_produkt_fallback=art_produkt_fallback,
         schutzgrad=schutzgrad,
         autosave_url=url_for('stuecknachweis.stuecknachweis_autosave', sn_id=sn.id),
         fi_add_url=url_for('stuecknachweis.fi_hinzufuegen', sn_id=sn.id),
@@ -416,6 +422,10 @@ def stuecknachweis_autosave(sn_id):
         if 'norm_name' in data:
             sn.norm_name = (data['norm_name'] or '').strip() or get_norm_name()
 
+        # Art des Produkts (Steuerung): leeres Feld → NULL = Fallback auf Config-Name
+        if 'art_produkt_text' in data:
+            sn.art_produkt_text = (data['art_produkt_text'] or '').strip() or None
+
         if 'herstellungsdatum' in data and data['herstellungsdatum']:
             try:
                 sn.herstellungsdatum = datetime.strptime(data['herstellungsdatum'], '%Y-%m-%d').date()
@@ -485,10 +495,11 @@ def stuecknachweis_pdf(sn_id):
 
     if ist_steuerung:
         typbezeichnung = config.name or 'Steuerung'
-        produkt_art = 'Steuerung (SHDSL)'
+        # Art des Produkts: Override pro SN, sonst Fallback auf Config-Name
+        sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
     else:
         typbezeichnung = config.whk_typ or config.whk_nummer
-        produkt_art = 'Weichenheizkabine'
+        sn_art_produkt = 'Weichenheizkabine'
 
     schutzgrad = SCHUTZGRAD_MAP.get(config.preset_typ, 'IP55')
 
@@ -509,7 +520,7 @@ def stuecknachweis_pdf(sn_id):
         stuecknachweis=sn,
         projekt=projekt,
         ist_steuerung=ist_steuerung,
-        produkt_art=produkt_art,
+        sn_art_produkt=sn_art_produkt,
         typbezeichnung=typbezeichnung,
         schutzgrad=schutzgrad,
         fi_messungen=fi_messungen,
@@ -551,10 +562,11 @@ def konformitaet_pdf(sn_id):
 
     if ist_steuerung:
         typbezeichnung = config.name or 'Steuerung'
-        produkt_art = 'Steuerung (SHDSL)'
+        # Art des Produkts: Override pro SN, sonst Fallback auf Config-Name
+        sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
     else:
         typbezeichnung = config.whk_typ or config.whk_nummer
-        produkt_art = 'Weichenheizkabine'
+        sn_art_produkt = 'Weichenheizkabine'
 
     # Weicher Hinweis (kein harter Block, O-4a): WHK-Stücknachweis ohne FI-Messung.
     # Der Hinweis erscheint beim nächsten Seitenaufruf (Download rendert kein Flash).
@@ -572,7 +584,7 @@ def konformitaet_pdf(sn_id):
         stuecknachweis=sn,
         projekt=projekt,
         ist_steuerung=ist_steuerung,
-        produkt_art=produkt_art,
+        sn_art_produkt=sn_art_produkt,
         typbezeichnung=typbezeichnung,
         achermann_logo_base64=_logo_base64(),
         sn_norm=effektive_norm
