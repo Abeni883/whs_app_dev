@@ -199,13 +199,30 @@ Text hier
 
 ## Umgebungsvariablen (.env)
 
+`app.py` lädt beim Start eine `.env` via **python-dotenv** (`load_dotenv()`). So läuft
+**derselbe Code** in beiden Instanzen — die Unterschiede stehen ausschliesslich in der
+`.env` (bzw. im NSSM-Environment des Dienstes). `.env` ist in `.gitignore`; die Vorlage
+liegt als **`.env.example`** im Repo.
+
+**DEV-`.env`:**
 ```
-FLASK_ENV=development
-FLASK_DEBUG=1
 FLASK_PORT=5002
+FLASK_DEBUG=1
+DATABASE_URL=sqlite:///database/whs_dev.db
 SECRET_KEY=dev-secret-key-change-me
-DATABASE_URL=sqlite:///whs_dev.db
 ```
+
+**PROD** (`.env` bzw. NSSM-Environment des Dienstes `WHSApp`):
+```
+FLASK_PORT=5001
+FLASK_DEBUG=0
+DATABASE_URL=sqlite:///database/whs.db
+SECRET_KEY=<eigener geheimer Wert>
+```
+
+Weitere von `config.py` unterstützte Variablen: `LOG_LEVEL`, `MAX_CONTENT_LENGTH_MB`
+(siehe `.env.example`). **`run_production.py` (Waitress) wurde entfernt** — der Betrieb
+läuft über `app.py` als NSSM-Dienst (siehe „Instanzen & Betrieb").
 
 ---
 
