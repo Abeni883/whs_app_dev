@@ -39,6 +39,7 @@
                             {% for st in steuerung_configs %}
                             <tr>
                                 <td>
+                                    <input type="hidden" class="steuerung-id" name="steuerung_id_{{ loop.index }}" value="{{ st.id }}">
                                     <input type="text" class="whk-input steuerung-name" value="{{ st.name or '' }}" maxlength="100" placeholder="z.B. Steuerung 01">
                                 </td>
                                 <td>
@@ -90,6 +91,7 @@
                             {% for config in whk_configs %}
                             <tr>
                                 <td>
+                                    <input type="hidden" name="whk_id_{{ loop.index }}" class="whk-id" value="{{ config.id }}">
                                     <input type="text" name="whk_nr_{{ loop.index }}" class="whk-input whk-nummer" value="{{ config.whk_nummer }}" required>
                                 </td>
                                 <td>
@@ -120,6 +122,7 @@
                         {% else %}
                             <tr>
                                 <td>
+                                    <input type="hidden" name="whk_id_1" class="whk-id" value="">
                                     <input type="text" name="whk_nr_1" class="whk-input whk-nummer" value="WHK 01" required>
                                 </td>
                                 <td>
@@ -312,6 +315,7 @@ function addWHKRow() {
 
     newRow.innerHTML = `
         <td>
+            <input type="hidden" name="whk_id_${nextNumber}" class="whk-id" value="">
             <input type="text" name="whk_nr_${nextNumber}" class="whk-input whk-nummer" value="${whkLabel}" required>
         </td>
         <td>
@@ -408,6 +412,7 @@ function addSteuerungRow() {
     const newRow = document.createElement('tr');
     newRow.innerHTML = `
         <td>
+            <input type="hidden" class="steuerung-id" value="">
             <input type="text" class="whk-input steuerung-name" value="" maxlength="100" placeholder="z.B. Steuerung 01">
         </td>
         <td>
@@ -642,6 +647,7 @@ function performAutoSave() {
     const whkData = [];
 
     whkRows.forEach((row) => {
+        const whkId = row.querySelector('.whk-id')?.value;
         const whkNr = row.querySelector('.whk-nummer')?.value;
         const whkTyp = row.querySelector('.whk-typ')?.value;
         const abgaenge = row.querySelector('select[name^="abgaenge"]')?.value;
@@ -650,6 +656,7 @@ function performAutoSave() {
 
         if (whkNr && whkNr.trim() !== '') {
             whkData.push({
+                id: whkId || null,
                 whk_nummer: whkNr.trim(),
                 whk_typ: (whkTyp || '').trim(),
                 anzahl_abgaenge: parseInt(abgaenge) || 1,
@@ -678,10 +685,11 @@ function performAutoSave() {
     const steuerungData = [];
 
     steuerungRows.forEach((row) => {
+        const stId = row.querySelector('.steuerung-id')?.value;
         const name = (row.querySelector('.steuerung-name')?.value || '').trim();
         const typ = (row.querySelector('.steuerung-typ')?.value || '').trim();
         if (name || typ) {
-            steuerungData.push({ name: name, typ: typ });
+            steuerungData.push({ id: stId || null, name: name, typ: typ });
         }
     });
 

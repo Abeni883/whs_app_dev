@@ -7,9 +7,106 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 
-from models import db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation, EWHMeteostation, SteuerungConfig
+from models import (db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation,
+                    EWHMeteostation, SteuerungConfig, Stuecknachweis)
 
 konfiguration_bp = Blueprint('konfiguration', __name__)
+
+
+class KonfigLoeschSchutz(Exception):
+    """Wird ausgelöst, wenn eine Config mit zugeordnetem Stücknachweis gelöscht
+    werden müsste. Bricht das Speichern ab (kein Kaskaden-Löschen, kein Verwaisen)."""
+    pass
+
+
+def _int_or_none(value):
+    try:
+        v = int(value)
+        return v if v > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def reconcile_whk_configs(projekt_id, rows):
+    """Upsert statt delete-all-recreate für WHK-Configs (stabile Ids).
+
+    rows: Liste von Dicts {id?, whk_nummer, whk_typ, preset_typ, anzahl_abgaenge,
+    anzahl_temperatursonden, hat_antriebsheizung}.
+    - mit id (bestehend): Felder updaten, Id bleibt stabil
+    - ohne id: neu anlegen
+    - im Formular fehlende Configs: löschen — aber nur wenn KEIN Stücknachweis
+      zugeordnet ist; sonst KonfigLoeschSchutz (Speichern wird abgelehnt).
+    Gibt die Anzahl verarbeiteter (nicht gelöschter) Configs zurück.
+    """
+    existing = {c.id: c for c in WHKConfig.query.filter_by(projekt_id=projekt_id).all()}
+    gesendet = set()
+    count = 0
+    for row in rows:
+        nummer = (row.get('whk_nummer') or '').strip()
+        if not nummer:
+            continue
+        cid = _int_or_none(row.get('id'))
+        werte = dict(
+            whk_nummer=nummer,
+            whk_typ=(row.get('whk_typ') or '').strip() or None,
+            preset_typ=row.get('preset_typ', 'kabine_16hz'),
+            anzahl_abgaenge=int(row.get('anzahl_abgaenge', 1)),
+            anzahl_temperatursonden=int(row.get('anzahl_temperatursonden', 1)),
+            hat_antriebsheizung=bool(row.get('hat_antriebsheizung', False)),
+        )
+        if cid and cid in existing:
+            c = existing[cid]
+            for k, v in werte.items():
+                setattr(c, k, v)
+            gesendet.add(cid)
+        else:
+            db.session.add(WHKConfig(projekt_id=projekt_id, **werte))
+        count += 1
+    for cid, c in existing.items():
+        if cid in gesendet:
+            continue
+        if Stuecknachweis.query.filter_by(whk_config_id=cid).first():
+            raise KonfigLoeschSchutz(
+                f'Konfiguration {c.whk_nummer} hat einen Stücknachweis — '
+                f'zuerst den Stücknachweis löschen.')
+        db.session.delete(c)
+    return count
+
+
+def reconcile_steuerung_configs(projekt_id, rows):
+    """Upsert statt delete-all-recreate für Steuerungs-Configs (stabile Ids).
+
+    rows: Liste von Dicts {id?, name, typ}. reihenfolge wird aus der Position (idx)
+    gepflegt. Lösch-Schutz wie bei WHK (Stücknachweis vorhanden → Abbruch).
+    """
+    existing = {c.id: c for c in SteuerungConfig.query.filter_by(projekt_id=projekt_id).all()}
+    gesendet = set()
+    count = 0
+    for idx, row in enumerate(rows):
+        name = (row.get('name') or '').strip() or None
+        typ = (row.get('typ') or '').strip() or None
+        if not name and not typ:
+            continue  # leere Zeile
+        cid = _int_or_none(row.get('id'))
+        if cid and cid in existing:
+            c = existing[cid]
+            c.name = name
+            c.typ = typ
+            c.reihenfolge = idx + 1
+            gesendet.add(cid)
+        else:
+            db.session.add(SteuerungConfig(projekt_id=projekt_id, name=name, typ=typ,
+                                           reihenfolge=idx + 1))
+        count += 1
+    for cid, c in existing.items():
+        if cid in gesendet:
+            continue
+        if Stuecknachweis.query.filter_by(steuerung_config_id=cid).first():
+            raise KonfigLoeschSchutz(
+                f'Steuerung {c.name or c.typ or cid} hat einen Stücknachweis — '
+                f'zuerst den Stücknachweis löschen.')
+        db.session.delete(c)
+    return count
 
 
 # ==================== EWH KONFIGURATION ====================
@@ -37,59 +134,40 @@ def projekt_konfiguration(projekt_id):
         return redirect(url_for('projekte.projekte'))
 
     if request.method == 'POST':
-        # Lösche alle bestehenden WHK-Konfigurationen für dieses Projekt
-        WHKConfig.query.filter_by(projekt_id=projekt_id).delete()
-
-        # Verarbeite die Formular-Daten
-        # Durchlaufe alle whk_nr_* Felder im Formular
-        whk_count = 0
+        # WHK-Zeilen aus dem Formular sammeln (inkl. stabiler Config-Id)
+        whk_rows = []
         for key in request.form.keys():
             if key.startswith('whk_nr_'):
-                # Extrahiere die Nummer (z.B. whk_nr_1 -> 1)
                 index = key.split('_')[-1]
+                whk_rows.append({
+                    'id': request.form.get(f'whk_id_{index}'),
+                    'whk_nummer': request.form.get(f'whk_nr_{index}'),
+                    'whk_typ': request.form.get(f'whk_typ_{index}', ''),
+                    'preset_typ': request.form.get(f'preset_typ_{index}', 'kabine_16hz'),
+                    'anzahl_abgaenge': request.form.get(f'abgaenge_{index}', 1),
+                    'anzahl_temperatursonden': request.form.get(f'temperatursonden_{index}', 1),
+                    'hat_antriebsheizung': f'antriebsheizung_{index}' in request.form,
+                })
 
-                whk_nummer = request.form.get(f'whk_nr_{index}')
-                whk_typ = request.form.get(f'whk_typ_{index}', '').strip() or None
-                preset_typ = request.form.get(f'preset_typ_{index}', 'kabine_16hz')
-                anzahl_abgaenge = int(request.form.get(f'abgaenge_{index}', 1))
-                anzahl_temperatursonden = int(request.form.get(f'temperatursonden_{index}', 1))
-                hat_antriebsheizung = f'antriebsheizung_{index}' in request.form
-
-                # Erstelle neuen WHKConfig-Eintrag
-                whk_config = WHKConfig(
-                    projekt_id=projekt_id,
-                    whk_nummer=whk_nummer,
-                    whk_typ=whk_typ,
-                    preset_typ=preset_typ,
-                    anzahl_abgaenge=anzahl_abgaenge,
-                    anzahl_temperatursonden=anzahl_temperatursonden,
-                    hat_antriebsheizung=hat_antriebsheizung
-                )
-                db.session.add(whk_config)
-                whk_count += 1
-
-        # ========== Steuerung (SHDSL) verarbeiten ==========
-        # Lösche alle bestehenden Steuerungen und lege sie neu an
-        SteuerungConfig.query.filter_by(projekt_id=projekt_id).delete()
-
-        st_reihenfolge = 0
+        # Steuerungs-Zeilen aus dem Formular sammeln (inkl. stabiler Config-Id)
+        steuerung_rows = []
         for key in request.form.keys():
             if key.startswith('steuerung_name_'):
                 index = key.split('_')[-1]
-                st_name = request.form.get(f'steuerung_name_{index}', '').strip() or None
-                st_typ = request.form.get(f'steuerung_typ_{index}', '').strip() or None
-                if not st_name and not st_typ:
-                    continue  # Leere Zeilen überspringen
-                st_reihenfolge += 1
-                db.session.add(SteuerungConfig(
-                    projekt_id=projekt_id,
-                    name=st_name,
-                    typ=st_typ,
-                    reihenfolge=st_reihenfolge
-                ))
+                steuerung_rows.append({
+                    'id': request.form.get(f'steuerung_id_{index}'),
+                    'name': request.form.get(f'steuerung_name_{index}', ''),
+                    'typ': request.form.get(f'steuerung_typ_{index}', ''),
+                })
 
-        db.session.commit()
-        flash(f'Konfiguration erfolgreich gespeichert! ({whk_count} WHK konfiguriert)', 'success')
+        try:
+            whk_count = reconcile_whk_configs(projekt_id, whk_rows)
+            reconcile_steuerung_configs(projekt_id, steuerung_rows)
+            db.session.commit()
+            flash(f'Konfiguration erfolgreich gespeichert! ({whk_count} WHK konfiguriert)', 'success')
+        except KonfigLoeschSchutz as e:
+            db.session.rollback()
+            flash(str(e), 'error')
         return redirect(url_for('konfiguration.projekt_konfiguration', projekt_id=projekt_id))
 
     # GET-Request: Lade bestehende Konfigurationen
@@ -154,36 +232,9 @@ def konfiguration_auto_save(projekt_id):
         if not projekt:
             return jsonify({'success': False, 'error': 'Projekt nicht gefunden'}), 404
 
-        # ========== WHK-Konfigurationen verarbeiten ==========
-        # Lösche alle bestehenden WHK-Konfigs für dieses Projekt
-        WHKConfig.query.filter_by(projekt_id=projekt_id).delete()
-        db.session.flush()  # Sicherstellen dass Löschung vor Insert ausgeführt wird
-
-        # Erstelle neue WHK-Konfigs aus den übermittelten Daten
-        whk_rows = data.get('whk_rows', [])
-        whk_count = 0
-
-        for row_data in whk_rows:
-            # Validierung: WHK-Nummer muss vorhanden sein
-            whk_nummer = row_data.get('whk_nummer', '').strip()
-            if not whk_nummer:
-                continue  # Überspringe unvollständige Zeilen
-
-            whk_typ = row_data.get('whk_typ', '').strip() or None
-
-            new_config = WHKConfig(
-                projekt_id=projekt_id,
-                whk_nummer=whk_nummer,
-                whk_typ=whk_typ,
-                preset_typ=row_data.get('preset_typ', 'kabine_16hz'),
-                anzahl_abgaenge=int(row_data.get('anzahl_abgaenge', 1)),
-                anzahl_temperatursonden=int(row_data.get('anzahl_temperatursonden', 1)),
-                hat_antriebsheizung=row_data.get('hat_antriebsheizung', False)
-            )
-            db.session.add(new_config)
-            whk_count += 1
-
-        # Flush um WHK IDs zu erhalten (für Meteostation-Zuordnung)
+        # ========== WHK-Konfigurationen (Upsert, stabile Ids) ==========
+        whk_count = reconcile_whk_configs(projekt_id, data.get('whk_rows', []))
+        # Flush um neue WHK-IDs zu erhalten (für Meteostation-Zuordnung)
         db.session.flush()
 
         # ========== EWH-Meteostationen verarbeiten ==========
@@ -231,27 +282,8 @@ def konfiguration_auto_save(projekt_id):
             db.session.add(default_ms)
             ms_count = 1
 
-        # ========== Steuerung (SHDSL) verarbeiten ==========
-        # Lösche alle bestehenden Steuerungen für dieses Projekt
-        SteuerungConfig.query.filter_by(projekt_id=projekt_id).delete()
-        db.session.flush()  # Sicherstellen dass Löschung vor Insert ausgeführt wird
-
-        steuerung_rows = data.get('steuerung_rows', [])
-        steuerung_count = 0
-
-        for idx, st_data in enumerate(steuerung_rows):
-            st_name = (st_data.get('name') or '').strip() or None
-            st_typ = (st_data.get('typ') or '').strip() or None
-            if not st_name and not st_typ:
-                continue  # Leere Zeilen überspringen
-
-            db.session.add(SteuerungConfig(
-                projekt_id=projekt_id,
-                name=st_name,
-                typ=st_typ,
-                reihenfolge=idx + 1
-            ))
-            steuerung_count += 1
+        # ========== Steuerung (SHDSL) (Upsert, stabile Ids) ==========
+        steuerung_count = reconcile_steuerung_configs(projekt_id, data.get('steuerung_rows', []))
 
         db.session.commit()
 
@@ -265,6 +297,10 @@ def konfiguration_auto_save(projekt_id):
                 'steuerung': steuerung_count
             }
         })
+
+    except KonfigLoeschSchutz as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
 
     except Exception as e:
         db.session.rollback()
