@@ -1,12 +1,9 @@
-"""Tests fuer "Art des Produkts (Produktenorm)" bei Steuerungs-SN.
+"""Tests fuer getrennte Rollen bei Steuerungs-SN:
+  - Typbezeichnung / Kennnummer  <- steuerung_configs.typ  (Vorbefuellung)
+  - Art des Produkts (Produktenorm) <- steuerung_configs.name (Fallback) + Override
 
-Muster wie norm_name: Fallback (Config-Name) + Override + Autosave.
-- Steuerung ohne Override: Formular + beide PDFs zeigen den Config-Namen.
-- Override: persistiert, PDFs zeigen Override; Feld geleert -> Fallback.
-- WHK-SN: kein Feld, PDFs unveraendert ('Weichenheizkabine').
-
-render_template wird gepatcht, um den an die Templates uebergebenen Kontext
-(sn_art_produkt / art_produkt_fallback) zu pruefen — ohne echtes PDF-Rendering.
+Muster wie norm_name (Fallback + Override + Autosave). render_template wird
+gepatcht, um den Template-Kontext zu pruefen (kein echtes PDF-Rendering).
 """
 import os
 import unittest
@@ -21,7 +18,6 @@ class ArtProduktTest(unittest.TestCase):
         self.app, self.db_path = make_temp_app(register_blueprints=True)
         self.ctx = self.app.app_context(); self.ctx.push()
         db.create_all()
-        # render_template patchen -> Kontext einfangen
         self._orig = snmod.render_template
         self.cap = {}
         def fake(template, **ctx):
@@ -35,57 +31,76 @@ class ArtProduktTest(unittest.TestCase):
         try: os.remove(self.db_path)
         except OSError: pass
 
-    def _steuerung_sn(self, name='Steuerung ABC', art=None):
+    def _steuerung(self, name='Elektrische Steuerung', typ='ES223'):
         p = Project(energie='EWH', projektname='P'); db.session.add(p); db.session.flush()
-        st = SteuerungConfig(projekt_id=p.id, name=name, reihenfolge=0); db.session.add(st); db.session.flush()
-        sn = Stuecknachweis(project_id=p.id, steuerung_config_id=st.id, art_produkt_text=art)
-        db.session.add(sn); db.session.commit()
-        return p, st, sn
+        st = SteuerungConfig(projekt_id=p.id, name=name, typ=typ, reihenfolge=0)
+        db.session.add(st); db.session.commit()
+        return p, st
 
-    def _whk_sn(self):
+    def _whk(self):
         p = Project(energie='EWH', projektname='P'); db.session.add(p); db.session.flush()
         whk = WHKConfig(projekt_id=p.id, whk_nummer='WHK 01', anzahl_abgaenge=1,
-                        anzahl_temperatursonden=1, preset_typ='kabine_16hz'); db.session.add(whk); db.session.flush()
-        sn = Stuecknachweis(project_id=p.id, whk_config_id=whk.id); db.session.add(sn); db.session.commit()
-        return p, whk, sn
+                        anzahl_temperatursonden=1, preset_typ='kabine_16hz')
+        db.session.add(whk); db.session.commit()
+        return p, whk
 
-    # ---- Steuerung: Fallback ----
-    def test_steuerung_formular_fallback(self):
-        p, st, sn = self._steuerung_sn()
+    # ---- getrennte Rollen: typ -> Typbezeichnung, name -> Art des Produkts ----
+    def test_neuer_sn_getrennte_rollen(self):
+        p, st = self._steuerung(name='Elektrische Steuerung', typ='ES223')
         self.client.get(f'/projekt/{p.id}/steuerung/{st.id}/stuecknachweis')
         ctx = self.cap['ctx']
         self.assertTrue(ctx['ist_steuerung'])
-        self.assertEqual(ctx['art_produkt_fallback'], 'Steuerung ABC')  # Config-Name
+        self.assertEqual(ctx['typbezeichnung'], 'ES223')                 # aus config.typ
+        self.assertEqual(ctx['art_produkt_fallback'], 'Elektrische Steuerung')  # aus config.name
+        # Auto-Init hat Typbezeichnung aus typ gesetzt
+        sn = Stuecknachweis.query.filter_by(steuerung_config_id=st.id).first()
+        self.assertEqual(sn.typbezeichnung, 'ES223')
 
-    def test_steuerung_pdfs_fallback(self):
-        p, st, sn = self._steuerung_sn()
-        self.client.get(f'/stuecknachweis/{sn.id}/pdf')
-        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Steuerung ABC')
-        self.client.get(f'/stuecknachweis/{sn.id}/konformitaet/pdf')
-        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Steuerung ABC')
+    def test_typ_leer_fallback_steuerung(self):
+        p, st = self._steuerung(name='Nur Name', typ=None)
+        self.client.get(f'/projekt/{p.id}/steuerung/{st.id}/stuecknachweis')
+        self.assertEqual(self.cap['ctx']['typbezeichnung'], 'Steuerung')  # Fallback
+        self.assertEqual(self.cap['ctx']['art_produkt_fallback'], 'Nur Name')
 
-    # ---- Steuerung: Override + Leeren ----
-    def test_override_persist_und_leeren(self):
-        p, st, sn = self._steuerung_sn()
-        sn_id = sn.id
-        # Override via Autosave
-        r = self.client.post(f'/stuecknachweis/{sn_id}/autosave', json={'art_produkt_text': 'Sonderprodukt Y'})
-        self.assertTrue(r.get_json()['success'])
+    def test_bestehende_typbezeichnung_bleibt(self):
+        p, st = self._steuerung(typ='ES223')
+        # SN mit bereits gespeicherter Typbezeichnung anlegen
+        sn = Stuecknachweis(project_id=p.id, steuerung_config_id=st.id, typbezeichnung='ALT-TYP-001')
+        db.session.add(sn); db.session.commit(); sn_id = sn.id
+        self.client.get(f'/projekt/{p.id}/steuerung/{st.id}/stuecknachweis')
+        # Formular gibt den Fallback (config.typ) als Kontext, aber der gespeicherte
+        # Wert wird NICHT ueberschrieben.
+        self.assertEqual(Stuecknachweis.query.get(sn_id).typbezeichnung, 'ALT-TYP-001')
+
+    # ---- Art des Produkts: PDFs Fallback + Override ----
+    def test_pdfs_art_produkt_fallback_und_override(self):
+        p, st = self._steuerung(name='Elektrische Steuerung', typ='ES223')
+        self.client.get(f'/projekt/{p.id}/steuerung/{st.id}/stuecknachweis')
+        sn_id = Stuecknachweis.query.filter_by(steuerung_config_id=st.id).first().id
+        # Fallback in beiden PDFs = config.name
+        self.client.get(f'/stuecknachweis/{sn_id}/pdf')
+        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Elektrische Steuerung')
+        self.client.get(f'/stuecknachweis/{sn_id}/konformitaet/pdf')
+        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Elektrische Steuerung')
+        # Override
+        self.client.post(f'/stuecknachweis/{sn_id}/autosave', json={'art_produkt_text': 'Sonderprodukt Y'})
         self.assertEqual(Stuecknachweis.query.get(sn_id).art_produkt_text, 'Sonderprodukt Y')
         self.client.get(f'/stuecknachweis/{sn_id}/pdf')
         self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Sonderprodukt Y')
-        # Feld leeren -> Fallback
-        r = self.client.post(f'/stuecknachweis/{sn_id}/autosave', json={'art_produkt_text': ''})
+        # Leeren -> Fallback
+        self.client.post(f'/stuecknachweis/{sn_id}/autosave', json={'art_produkt_text': ''})
         self.assertIsNone(Stuecknachweis.query.get(sn_id).art_produkt_text)
-        self.client.get(f'/stuecknachweis/{sn_id}/konformitaet/pdf')
-        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Steuerung ABC')
+        self.client.get(f'/stuecknachweis/{sn_id}/pdf')
+        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Elektrische Steuerung')
 
-    # ---- WHK: unveraendert ----
-    def test_whk_kein_feld_und_pdf_unveraendert(self):
-        p, whk, sn = self._whk_sn()
+    # ---- WHK unveraendert ----
+    def test_whk_unveraendert(self):
+        p, whk = self._whk()
         self.client.get(f'/projekt/{p.id}/whk/{whk.id}/stuecknachweis')
         self.assertFalse(self.cap['ctx']['ist_steuerung'])
         self.assertIsNone(self.cap['ctx']['art_produkt_fallback'])
+        self.assertEqual(self.cap['ctx']['typbezeichnung'], 'WHK 01')  # aus whk_nummer
+        sn = Stuecknachweis.query.filter_by(whk_config_id=whk.id).first()
         self.client.get(f'/stuecknachweis/{sn.id}/pdf')
         self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Weichenheizkabine')
 

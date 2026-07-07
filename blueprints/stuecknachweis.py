@@ -142,7 +142,7 @@ def _render_formular(projekt, sn, config, ist_steuerung):
 
     if ist_steuerung:
         objekt_bezeichnung = config.name or 'Steuerung'
-        typbezeichnung = config.name or 'Steuerung'
+        typbezeichnung = config.typ or 'Steuerung'
         # Fallback für "Art des Produkts": Name der zugeordneten Steuerung
         art_produkt_fallback = config.name or 'Steuerung (SHDSL)'
     else:
@@ -320,7 +320,7 @@ def steuerung_stuecknachweis_formular(project_id, steuerung_id):
         sn = Stuecknachweis(
             project_id=project_id,
             steuerung_config_id=steuerung_id,
-            typbezeichnung=st.name or 'Steuerung',
+            typbezeichnung=st.typ or 'Steuerung',
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
             norm_name=get_norm_name(),
@@ -494,7 +494,7 @@ def stuecknachweis_pdf(sn_id):
         stuecknachweis_id=sn.id).order_by(FiMessung.reihenfolge).all()
 
     if ist_steuerung:
-        typbezeichnung = config.name or 'Steuerung'
+        typbezeichnung = config.typ or 'Steuerung'
         # Art des Produkts: Override pro SN, sonst Fallback auf Config-Name
         sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
     else:
@@ -561,7 +561,7 @@ def konformitaet_pdf(sn_id):
     config = sn.steuerung_config if ist_steuerung else sn.whk_config
 
     if ist_steuerung:
-        typbezeichnung = config.name or 'Steuerung'
+        typbezeichnung = config.typ or 'Steuerung'
         # Art des Produkts: Override pro SN, sonst Fallback auf Config-Name
         sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
     else:
