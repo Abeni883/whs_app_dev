@@ -208,7 +208,8 @@ liegt als **`.env.example`** im Repo.
 ```
 FLASK_PORT=5002
 FLASK_DEBUG=1
-DATABASE_URL=sqlite:///database/whs_dev.db
+# DATABASE_URL bewusst NICHT gesetzt -> config.py-Fallback auf DEV-DB
+# (database/whs_dev.db) + einmalige stderr-Warnung. Kein Abbruch.
 SECRET_KEY=dev-secret-key-change-me
 ```
 
@@ -216,9 +217,21 @@ SECRET_KEY=dev-secret-key-change-me
 ```
 FLASK_PORT=5001
 FLASK_DEBUG=0
-DATABASE_URL=sqlite:///database/whs.db
+DATABASE_URL=sqlite:///C:/inetpub/whs_app_prod_neu/database/whs.db
 SECRET_KEY=<eigener geheimer Wert>
 ```
+
+### Konvention: DATABASE_URL immer ABSOLUT
+
+- **PROD** setzt `DATABASE_URL` **zwingend als absoluten Pfad** (`sqlite:///C:/…/whs.db`).
+  Relative URIs werden gegen das cwd aufgelöst; ein anderer Startpfad erzeugt/öffnet
+  sonst eine falsche (oft leere Schatten-)DB neben der echten.
+- **DEV** lässt `DATABASE_URL` **absichtlich weg** und nutzt den `config.py`-Fallback
+  (`basedir/database/whs_dev.db`, absolut aufgelöst). Beim Import ohne `DATABASE_URL`
+  gibt `config.py` **einmalig eine stderr-Warnung** aus (Test-Isolations-Guard) — kein
+  Abbruch, DEV-Start und PROD-Dienst laufen normal weiter.
+- **Tests/Skripte**, die nicht die echte DB berühren dürfen, setzen `DATABASE_URL`
+  explizit auf eine Temp-DB (siehe `tests/_util.py: make_temp_app`).
 
 Weitere von `config.py` unterstützte Variablen: `LOG_LEVEL`, `MAX_CONTENT_LENGTH_MB`
 (siehe `.env.example`). **`run_production.py` (Waitress) wurde entfernt** — der Betrieb
