@@ -8,9 +8,28 @@ Testfragen und Abnahmetest-Ergebnisse der SBB AG.
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy import event
 import secrets
 
 db = SQLAlchemy()
+
+
+def enable_sqlite_foreign_keys(engine):
+    """Aktiviert SQLite-FK-Enforcement (PRAGMA foreign_keys=ON) je Connection.
+
+    NUR für die Laufzeit (App/Tests) registrieren — NICHT in Migrations-/Rebuild-
+    Skripten aufrufen, dort muss FK-Enforcement für Tabellen-Rebuilds aus bleiben.
+    Auf die konkrete Engine gebunden (nicht global), damit fremde Engines
+    (Migrationsskript) unberührt bleiben.
+    """
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_connection, connection_record):
+        try:
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+        except Exception:
+            pass
 
 
 class User(UserMixin, db.Model):
@@ -142,7 +161,8 @@ class Project(db.Model):
     # Relationships
     tests = db.relationship('TestResult', backref='projekt', lazy=True)
     whk_configs = db.relationship('WHKConfig', backref='projekt', lazy=True,
-                                   cascade='all, delete-orphan', order_by='WHKConfig.whk_nummer')
+                                   cascade='all, delete-orphan', passive_deletes=True,
+                                   order_by='WHKConfig.whk_nummer')
     abnahme_results = db.relationship('AbnahmeTestResult', backref='projekt',
                                        lazy=True, cascade='all, delete-orphan')
 
@@ -266,7 +286,7 @@ class SteuerungConfig(db.Model):
     # Relationship
     projekt = db.relationship('Project', backref=db.backref(
         'steuerung_configs', lazy=True, cascade='all, delete-orphan',
-        order_by='SteuerungConfig.reihenfolge'))
+        passive_deletes=True, order_by='SteuerungConfig.reihenfolge'))
 
     def __repr__(self):
         return (f'<SteuerungConfig id={self.id} projekt_id={self.projekt_id} '
@@ -839,9 +859,12 @@ class Stuecknachweis(db.Model):
     # Foreign Keys
     # Ein Stücknachweis gehört ENTWEDER zu einer WHK ODER zu einer Steuerung (SHDSL).
     # Daher sind beide FKs nullable; genau einer ist gesetzt.
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
-    whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id'), nullable=True)
-    steuerung_config_id = db.Column(db.Integer, db.ForeignKey('steuerung_configs.id'), nullable=True)
+    # project_id: CASCADE (Projekt-Löschung entfernt seine Stücknachweise sauber);
+    # whk_config_id / steuerung_config_id: RESTRICT (zweite Verteidigungslinie zum
+    # App-Lösch-Schutz — Config mit zugeordnetem SN kann nicht gelöscht werden).
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False)
+    whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id', ondelete='RESTRICT'), nullable=True)
+    steuerung_config_id = db.Column(db.Integer, db.ForeignKey('steuerung_configs.id', ondelete='RESTRICT'), nullable=True)
 
     # Kopfdaten
     typbezeichnung = db.Column(db.String(100), nullable=True)
@@ -918,11 +941,15 @@ class Stuecknachweis(db.Model):
     geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    project = db.relationship('Project', backref='stuecknachweise')
+    # passive_deletes: Projekt-Löschung wird über DB-CASCADE (project_id) abgewickelt,
+    # damit der ORM nicht versucht, project_id zu nullen (NOT NULL) bzw. Configs mit
+    # RESTRICT einzeln zu löschen.
+    project = db.relationship('Project', backref=db.backref('stuecknachweise', passive_deletes=True))
     whk_config = db.relationship('WHKConfig', backref=db.backref('stuecknachweis', uselist=False))
     steuerung_config = db.relationship('SteuerungConfig', backref=db.backref('stuecknachweis', uselist=False))
     fi_messungen = db.relationship('FiMessung', backref='stuecknachweis',
-                                    cascade='all, delete-orphan', order_by='FiMessung.reihenfolge')
+                                    cascade='all, delete-orphan', passive_deletes=True,
+                                    order_by='FiMessung.reihenfolge')
 
     @property
     def ist_steuerung(self):
@@ -946,8 +973,9 @@ class FiMessung(db.Model):
     # Primary Key
     id = db.Column(db.Integer, primary_key=True)
 
-    # Foreign Key
-    stuecknachweis_id = db.Column(db.Integer, db.ForeignKey('stuecknachweis.id'), nullable=False)
+    # Foreign Key — CASCADE: mit dem Stücknachweis werden auch seine FI-Messungen
+    # gelöscht (deckt sich mit dem ORM-cascade 'all, delete-orphan').
+    stuecknachweis_id = db.Column(db.Integer, db.ForeignKey('stuecknachweis.id', ondelete='CASCADE'), nullable=False)
 
     # Messdaten
     sicherung = db.Column(db.String(20), nullable=False)    # z.B. 'F302.2'

@@ -9,10 +9,38 @@ Diese Konfiguration ist für den Produktivbetrieb optimiert mit:
 """
 
 import os
+import sys
 from datetime import timedelta
 
 # Basis-Verzeichnis der Anwendung
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Standard-Fallback-DB (DEV). PROD setzt DATABASE_URL explizit in der .env.
+_DEFAULT_DB_URI = 'sqlite:///' + os.path.join(basedir, 'database', 'whs_dev.db')
+
+# Test-Isolations-Guard: Wird die App/Config ohne explizite DATABASE_URL
+# importiert, laeuft alles auf der Fallback-DEV-DB. Fuer den regulaeren
+# DEV-Start ist das gewollt; in Tests/Skripten kann es aber unbeabsichtigt die
+# echte DB treffen. Darum EINMALIG eine stderr-Warnung ausgeben — kein Abbruch,
+# damit weder DEV-Start noch der PROD-Dienst gestoert werden (PROD liefert die
+# URI ohnehin via .env, also feuert die Warnung dort nicht).
+_db_guard_warned = False
+
+
+def _warn_default_db_once():
+    global _db_guard_warned
+    if _db_guard_warned or os.environ.get('DATABASE_URL'):
+        return
+    _db_guard_warned = True
+    print(
+        '[config] WARNUNG: DATABASE_URL nicht gesetzt -> Fallback auf DEV-DB '
+        f'{_DEFAULT_DB_URI}. In Tests/Skripten DATABASE_URL explizit setzen, '
+        'um die echte DB nicht zu beruehren.',
+        file=sys.stderr,
+    )
+
+
+_warn_default_db_once()
 
 
 class Config:
@@ -32,8 +60,7 @@ class Config:
 
     # SQLite Datenbank (PRODUCTION)
     # Pfad: C:\inetpub\whs_app\database\whs.db
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(basedir, 'database', 'whs_dev.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or _DEFAULT_DB_URI
 
     # Deaktiviert Tracking von Objektänderungen (Performance-Optimierung)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
