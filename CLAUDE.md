@@ -21,7 +21,7 @@
 | PDF-Export | xhtml2pdf (kein WeasyPrint, kein GTK) |
 | Frontend | HTML5, CSS3, JavaScript ES6+ |
 | Server (Dev) | Flask built-in (debug=True) |
-| Server (Prod) | Waitress |
+| Server (Prod) | Flask built-in + TLS via `app.py` (HTTPS), als NSSM-Dienst `WHSApp` |
 
 ---
 
@@ -199,13 +199,30 @@ Text hier
 
 ## Umgebungsvariablen (.env)
 
+`app.py` lädt beim Start eine `.env` via **python-dotenv** (`load_dotenv()`). So läuft
+**derselbe Code** in beiden Instanzen — die Unterschiede stehen ausschliesslich in der
+`.env` (bzw. im NSSM-Environment des Dienstes). `.env` ist in `.gitignore`; die Vorlage
+liegt als **`.env.example`** im Repo.
+
+**DEV-`.env`:**
 ```
-FLASK_ENV=development
-FLASK_DEBUG=1
 FLASK_PORT=5002
+FLASK_DEBUG=1
+DATABASE_URL=sqlite:///database/whs_dev.db
 SECRET_KEY=dev-secret-key-change-me
-DATABASE_URL=sqlite:///whs_dev.db
 ```
+
+**PROD** (`.env` bzw. NSSM-Environment des Dienstes `WHSApp`):
+```
+FLASK_PORT=5001
+FLASK_DEBUG=0
+DATABASE_URL=sqlite:///database/whs.db
+SECRET_KEY=<eigener geheimer Wert>
+```
+
+Weitere von `config.py` unterstützte Variablen: `LOG_LEVEL`, `MAX_CONTENT_LENGTH_MB`
+(siehe `.env.example`). **`run_production.py` (Waitress) wurde entfernt** — der Betrieb
+läuft über `app.py` als NSSM-Dienst (siehe „Instanzen & Betrieb").
 
 ---
 
@@ -222,24 +239,17 @@ venv\Scripts\python.exe scripts\generate_cert.py
 ```
 Zertifikat: CN `192.168.1.202`, SAN `IP:192.168.1.202, DNS:localhost, IP:127.0.0.1`, 3 Jahre gültig.
 
-Das Script liegt original in `C:\inetpub\whs_app_prod_neu\scripts\generate_cert.py` — bei Bedarf in Dev synchronisieren.
+Das Script liegt in beiden Repos unter `scripts/generate_cert.py` (aus PROD übernommen).
 
 ### Browser-Warnung beim ersten Aufruf
 „Erweitert" → „Weiter zu 192.168.1.202". Danach erscheint die Warnung nicht mehr für diese Adresse.
 
 ### Server-Management (WICHTIG)
 
-- **Nie** `taskkill /F /IM python.exe` verwenden — das tötet Prod **und** Dev gleichzeitig.
-- Port-spezifisch killen:
-  ```cmd
-  for /f "tokens=5" %a in ('netstat -ano ^| findstr :5002 ^| findstr LISTENING') do taskkill /F /PID %a
-  ```
-- Server **immer** aus dem App-Verzeichnis starten (sonst werden `cert.pem`/`key.pem` nicht gefunden → Fallback auf HTTP):
-  ```cmd
-  cd /d C:\inetpub\whs_app_dev
-  start "WHS DEV 5002" cmd /k "venv\Scripts\python.exe app.py"
-  ```
-- SSL wird automatisch aktiviert, wenn `cert.pem` + `key.pem` im cwd existieren. Fehlen sie, startet die App auf HTTP.
+Der Betrieb läuft über NSSM-Dienste — siehe Abschnitt **„Instanzen & Betrieb (NSSM-Dienste)"** oben. Kurzfassung:
+
+- Neu starten: `Restart-Service WHSAppDev` (DEV) bzw. `Restart-Service WHSApp` (PROD). **Nie** `taskkill /F /IM python.exe` (killt beide; NSSM startet ohnehin neu).
+- SSL wird automatisch aktiviert, wenn `cert.pem` + `key.pem` im cwd (`AppDirectory`) liegen; sonst HTTP-Fallback.
 
 ---
 
@@ -252,7 +262,38 @@ Das Script liegt original in `C:\inetpub\whs_app_prod_neu\scripts\generate_cert.
 | Git Repo | `sbb-weichenheizung` | `sbb-weichenheizung-dev` |
 | Datenbank | `whs.db` | `whs_dev.db` |
 | Debug | False | True |
-| Server | Waitress | Flask built-in |
+| Server | Flask built-in + TLS (`app.py`) | Flask built-in + TLS (`app.py`) |
+| NSSM-Dienst | `WHSApp` | `WHSAppDev` |
+
+---
+
+## Instanzen & Betrieb (NSSM-Dienste)
+
+**Beide Instanzen laufen im Normalbetrieb als NSSM-Windows-Dienste** (Auto-Start beim Boot, kein manueller Start/Login nötig). Beide nutzen `app.py` mit `ssl_context` (HTTPS) — **nicht** `run_production.py` (Waitress, nur HTTP; wurde entfernt).
+
+| | PROD-Instanz | DEV-Instanz |
+|---|---|---|
+| Dienst | `WHSApp` | `WHSAppDev` |
+| AppDirectory | `C:\inetpub\whs_app_prod_neu` | `C:\inetpub\whs_app_dev` |
+| AppParameters | `app.py` | `app.py` |
+| Port (`FLASK_PORT`) | `5001` | `5002` |
+| `FLASK_DEBUG` | `0` | `1` |
+| DB | `whs.db` | `whs_dev.db` |
+| StartMode | `Auto` | `Auto` |
+
+**Dienst-Verwaltung (Standard, Prod-sicher — jeder Dienst getrennt):**
+```powershell
+Restart-Service WHSApp        # PROD nach Code-/Template-Änderung
+Restart-Service WHSAppDev     # DEV nach Code-/Template-Änderung
+Get-Service WHSApp, WHSAppDev # Status
+```
+- **Nie** `taskkill /F /IM python.exe` verwenden — das killt beide Instanzen; NSSM startet ausserdem sofort neu (Auto-Restart). Immer den jeweiligen Dienst neu starten.
+- Ports authoritativ prüfen: `Get-NetTCPConnection -State Listen -LocalPort 5001,5002`.
+- `AppDirectory` muss stimmen, damit `cert.pem`/`key.pem` im cwd gefunden werden (sonst HTTP-Fallback).
+
+**PROD-URL:** `https://192.168.1.202:5001` · **DEV-URL:** `https://192.168.1.202:5002` (**http:// funktioniert nicht** — Server hört nur TLS).
+
+Manuelles Starten (nur Test/Debug, vorher Dienst stoppen): `Stop-Service <Dienst>` → aus dem App-Verzeichnis `venv\Scripts\python.exe app.py` (Werkzeug meldet „development server" — erwartet).
 
 ---
 

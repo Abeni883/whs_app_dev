@@ -41,76 +41,105 @@ def calculate_all_projects_test_progress():
     """
     Berechnet den Testfortschritt für alle Projekte effizient.
 
-    Logik:
-    - Total = THEORETISCH (Testfragen × Komponenten basierend auf Projektkonfiguration)
-    - Beantwortet = DB-Einträge mit mindestens einem gültigen Wert (ODER-Logik)
-    - Ein Wert ist gültig wenn: NOT NULL, != 'None', != ''
+    KANONISCHE Logik (Phase 2b / O-3): identisch zur EWH-Detailseite
+    (blueprints/ewh.py calc_component_percent) und zu blueprints/gwh.py, damit
+    Übersicht und Detailseite konsistent sind. Uebernommen aus dem PROD-Repo
+    (sbb-weichenheizung, HEAD fd609f7); ersetzt die frühere DEV-Version, die
+    ueberzaehlte (ODER-Logik + stale Results + keine Deckelung pro Komponente).
+
+    - Pro Komponente: Total = Anzahl Fragen × Anzahl konfigurierter Spalten/Instanzen.
+    - Beantwortet zählt nur Results, deren komponente_index zur AKTUELLEN
+      Projektkonfiguration passt (stale Results gelöschter WHKs/ZSKs/MS werden
+      ignoriert) UND deren beide System-Spalten (lss_ch_result, wh_lts_result)
+      einen gültigen Wert in ['richtig','falsch','nicht_testbar'] haben (UND-Logik).
+    - Beantwortet wird pro Komponente auf das jeweilige Total gedeckelt
+      (entspricht dem `min(..., 100)` in der Detail-Logik).
+
+    Keine Adaption gegenüber PROD nötig: die Funktion nutzt nur Modelle, die auch
+    in DEV existieren; Steuerungen haben keine Abnahmetests und gehen nicht ein.
 
     Returns:
         dict: {projekt_id: progress_percent (0-100)}
     """
     progress_dict = {}
 
-    # 1. Alle Projekte laden
     projekte = Project.query.all()
     if not projekte:
         return progress_dict
 
     projekt_ids = [p.id for p in projekte]
 
-    # 2. Alle Konfigurationen laden (EWH und GWH)
     all_whk_configs = WHKConfig.query.filter(WHKConfig.projekt_id.in_(projekt_ids)).all()
     all_zsk_configs = ZSKConfig.query.filter(ZSKConfig.projekt_id.in_(projekt_ids)).all()
     all_hgls_configs = HGLSConfig.query.filter(HGLSConfig.projekt_id.in_(projekt_ids)).all()
     all_gwh_meteostations = GWHMeteostation.query.filter(GWHMeteostation.projekt_id.in_(projekt_ids)).all()
     all_ewh_meteostations = EWHMeteostation.query.filter(EWHMeteostation.projekt_id.in_(projekt_ids)).all()
 
-    # Gruppiere nach projekt_id
     whk_configs_by_projekt = {}
     for whk in all_whk_configs:
         whk_configs_by_projekt.setdefault(whk.projekt_id, []).append(whk)
-
     zsk_configs_by_projekt = {}
     for zsk in all_zsk_configs:
         zsk_configs_by_projekt.setdefault(zsk.projekt_id, []).append(zsk)
-
     hgls_configs_by_projekt = {}
     for hgls in all_hgls_configs:
         hgls_configs_by_projekt.setdefault(hgls.projekt_id, []).append(hgls)
-
     gwh_ms_by_projekt = {}
     for ms in all_gwh_meteostations:
         gwh_ms_by_projekt.setdefault(ms.projekt_id, []).append(ms)
-
     ewh_ms_by_projekt = {}
     for ms in all_ewh_meteostations:
         ewh_ms_by_projekt.setdefault(ms.projekt_id, []).append(ms)
 
-    # 3. Alle TestQuestions laden und nach Komponente gruppieren
     all_test_questions = TestQuestion.query.all()
     questions_by_type = {}
     for frage in all_test_questions:
         questions_by_type.setdefault(frage.komponente_typ, []).append(frage)
+    fragen_by_id = {f.id: f for f in all_test_questions}
 
-    # 4. Alle AbnahmeTestResults laden
     all_results = AbnahmeTestResult.query.filter(
         AbnahmeTestResult.projekt_id.in_(projekt_ids)
     ).all()
-
     results_by_projekt = {}
     for result in all_results:
         results_by_projekt.setdefault(result.projekt_id, []).append(result)
 
-    # Hilfsfunktion: Prüft ob ein Wert gültig ist (nicht NULL, nicht 'None', nicht leer)
-    def ist_gueltig(wert):
-        return wert is not None and wert != 'None' and wert != ''
+    valid_values = ('richtig', 'falsch', 'nicht_testbar')
 
-    # 5. Berechne Fortschritt für jedes Projekt
+    def is_completed(r):
+        return r.lss_ch_result in valid_values and r.wh_lts_result in valid_values
+
     for projekt in projekte:
         results = results_by_projekt.get(projekt.id, [])
+        expected_tests = 0
+        completed_tests = 0
+
+        def add_component(komp_typ, anzahl_spalten, index_match):
+            """
+            Addiert Total und Beantwortet für eine Komponente.
+
+            komp_typ: TestQuestion.komponente_typ (z.B. 'Anlage', 'WHK', 'Abgang')
+            anzahl_spalten: Erwartete Anzahl Spalten/Instanzen (z.B. Anzahl WHKs,
+                            Anzahl Abgänge pro WHK; 0 = Komponente nicht vorhanden)
+            index_match: callable(komponente_index) -> bool
+                         True wenn der Result-Index zur aktuellen Konfig passt.
+            """
+            nonlocal expected_tests, completed_tests
+            n_fragen = len(questions_by_type.get(komp_typ, []))
+            if n_fragen == 0 or anzahl_spalten <= 0:
+                return
+            total_comp = n_fragen * anzahl_spalten
+            done_comp = sum(
+                1 for r in results
+                if fragen_by_id.get(r.test_question_id) is not None
+                and fragen_by_id[r.test_question_id].komponente_typ == komp_typ
+                and index_match(r.komponente_index)
+                and is_completed(r)
+            )
+            expected_tests += total_comp
+            completed_tests += min(done_comp, total_comp)
 
         if projekt.energie == 'EWH':
-            # EWH-Projekt: WHKConfigs verwenden
             whk_configs = whk_configs_by_projekt.get(projekt.id, [])
             ewh_meteostations = ewh_ms_by_projekt.get(projekt.id, [])
 
@@ -118,34 +147,26 @@ def calculate_all_projects_test_progress():
                 progress_dict[projekt.id] = 0
                 continue
 
-            # TOTAL = Theoretische Anzahl (Testfragen × Komponenten)
-            expected_tests = 0
+            whk_nummern = {w.whk_nummer for w in whk_configs}
+            ah_whk_nummern = {w.whk_nummer for w in whk_configs if w.hat_antriebsheizung}
+            ms_nummern = {ms.ms_nummer for ms in ewh_meteostations}
 
-            # Anlage: 1 Test pro Frage
-            expected_tests += len(questions_by_type.get('Anlage', []))
-
-            # WHK: 1 Test pro WHK pro Frage
-            expected_tests += len(questions_by_type.get('WHK', [])) * len(whk_configs)
-
-            # Abgang: pro WHK pro Abgang pro Frage
+            add_component('Anlage', 1, lambda ki: True)
+            add_component('WHK', len(whk_configs), lambda ki: ki in whk_nummern)
             for whk in whk_configs:
                 if whk.anzahl_abgaenge:
-                    expected_tests += len(questions_by_type.get('Abgang', [])) * whk.anzahl_abgaenge
-
-            # Temperatursonde: pro WHK pro Sonde pro Frage
+                    add_component('Abgang', whk.anzahl_abgaenge,
+                                  lambda ki, n=whk.whk_nummer: ki == n)
             for whk in whk_configs:
                 if whk.anzahl_temperatursonden:
-                    expected_tests += len(questions_by_type.get('Temperatursonde', [])) * whk.anzahl_temperatursonden
-
-            # Antriebsheizung: pro WHK mit AH pro Frage
-            ah_count = sum(1 for whk in whk_configs if whk.hat_antriebsheizung)
-            expected_tests += len(questions_by_type.get('Antriebsheizung', [])) * ah_count
-
-            # Meteostation: pro EWH-Meteostation pro Frage
-            expected_tests += len(questions_by_type.get('Meteostation', [])) * len(ewh_meteostations)
+                    add_component('Temperatursonde', whk.anzahl_temperatursonden,
+                                  lambda ki, n=whk.whk_nummer: ki == n)
+            add_component('Antriebsheizung', len(ah_whk_nummern),
+                          lambda ki: ki in ah_whk_nummern)
+            add_component('Meteostation', len(ewh_meteostations),
+                          lambda ki: ki in ms_nummern)
 
         else:
-            # GWH-Projekt: ZSKConfigs verwenden
             zsk_configs = zsk_configs_by_projekt.get(projekt.id, [])
             hgls_configs = hgls_configs_by_projekt.get(projekt.id, [])
             gwh_meteostations = gwh_ms_by_projekt.get(projekt.id, [])
@@ -154,48 +175,29 @@ def calculate_all_projects_test_progress():
                 progress_dict[projekt.id] = 0
                 continue
 
-            # TOTAL = Theoretische Anzahl (Testfragen × Komponenten)
-            expected_tests = 0
+            zsk_nummern = {z.zsk_nummer for z in zsk_configs}
+            ts_zsk_nummern = {z.zsk_nummer for z in zsk_configs if z.hat_temperatursonde}
+            gwh_ms_nummern = {ms.ms_nummer for ms in gwh_meteostations}
 
-            # GWH_Anlage: 1 Test pro Frage
-            expected_tests += len(questions_by_type.get('GWH_Anlage', []))
-
-            # HGLS: 1 Test pro Frage (wenn HGLS konfiguriert)
+            add_component('GWH_Anlage', 1, lambda ki: True)
             if hgls_configs:
-                expected_tests += len(questions_by_type.get('HGLS', []))
-
-            # ZSK: 1 Test pro ZSK pro Frage
-            expected_tests += len(questions_by_type.get('ZSK', [])) * len(zsk_configs)
-
-            # GWH_Teile: pro ZSK pro Teil pro Frage
+                add_component('HGLS', 1, lambda ki: True)
+            add_component('ZSK', len(zsk_configs), lambda ki: ki in zsk_nummern)
             for zsk in zsk_configs:
                 if zsk.anzahl_teile:
-                    expected_tests += len(questions_by_type.get('GWH_Teile', [])) * zsk.anzahl_teile
+                    add_component('GWH_Teile', zsk.anzahl_teile,
+                                  lambda ki, n=zsk.zsk_nummer: ki == n)
+            add_component('GWH_Temperatursonde', len(ts_zsk_nummern),
+                          lambda ki: ki in ts_zsk_nummern)
+            add_component('GWH_Meteostation', len(gwh_meteostations),
+                          lambda ki: ki in gwh_ms_nummern)
 
-            # GWH_Temperatursonde: pro ZSK mit TS pro Frage
-            ts_count = sum(1 for zsk in zsk_configs if zsk.hat_temperatursonde)
-            expected_tests += len(questions_by_type.get('GWH_Temperatursonde', [])) * ts_count
-
-            # GWH_Meteostation: pro Meteostation pro Frage
-            expected_tests += len(questions_by_type.get('GWH_Meteostation', [])) * len(gwh_meteostations)
-
-        # Keine erwarteten Tests = 0%
         if expected_tests == 0:
             progress_dict[projekt.id] = 0
             continue
 
-        # BEANTWORTET = DB-Einträge mit mindestens einem gültigen Wert (ODER-Logik)
-        completed_tests = sum(1 for r in results if ist_gueltig(r.lss_ch_result) or ist_gueltig(r.wh_lts_result))
-
-        # Berechne Prozentsatz (int statt round, damit 99.5% → 99% wird)
-        # 100% nur wenn wirklich ALLE Tests beantwortet sind
         progress = int((completed_tests / expected_tests) * 100)
         progress_dict[projekt.id] = min(100, max(0, progress))
-
-        # Debug: Zeige Berechnung
-        print(f"[PROGRESS] Projekt {projekt.id} ({projekt.energie}): "
-              f"Erwartet={expected_tests}, Beantwortet={completed_tests}, "
-              f"Progress={progress}%")
 
     return progress_dict
 

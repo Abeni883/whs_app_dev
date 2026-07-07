@@ -343,10 +343,31 @@ def projekt_abnahmetest(projekt_id):
                     'percent': calc_component_percent('Meteostation', komponente_index=normalized_ms)
                 }
 
+    # Nicht zugeordnete Meteostationen (zugeordnete_whk_id IS NULL bzw. nicht in der
+    # WHK-Zuordnung): zaehlen wie in der Projektuebersicht in den Nenner (O-3/AP6) und
+    # werden separat sichtbar gemacht. Ohne diesen Block wuerde die Detailseite eine
+    # unzugeordnete MS verstecken und faelschlich 100% zeigen.
+    zugeordnete_ms_ids = {ms.id for ms in whk_meteostation_map.values()}
+    unassigned_meteostationen = []
+    for ms in ewh_meteostationen:
+        if ms.id in zugeordnete_ms_ids:
+            continue
+        normalized_ms = normalize_ms_nummer(ms.ms_nummer)
+        percent = calc_component_percent('Meteostation', komponente_index=normalized_ms)
+        # In die Fortschritts-Aggregation aufnehmen (falls Nummer noch nicht vorhanden)
+        if normalized_ms not in fortschritt['meteostationen']:
+            fortschritt['meteostationen'][normalized_ms] = {'percent': percent}
+        unassigned_meteostationen.append({
+            'ms_nummer': ms.ms_nummer,
+            'normalized': normalized_ms,
+            'percent': percent,
+        })
+
     return render_template('abnahmetest.html',
                          projekt=projekt,
                          whk_configs=whk_configs,
                          whk_meteostation_map=whk_meteostation_map,
+                         unassigned_meteostationen=unassigned_meteostationen,
                          fortschritt=fortschritt)
 
 @ewh_bp.route('/projekt/abnahmetest/save-answer', methods=['POST'])

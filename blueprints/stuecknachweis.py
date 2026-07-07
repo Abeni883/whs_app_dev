@@ -367,16 +367,26 @@ def fi_hinzufuegen(sn_id):
 @stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/fi/<int:fi_id>/delete', methods=['POST'])
 @login_required
 def fi_loeschen(sn_id, fi_id):
-    """FI-Messung löschen.
+    """FI-Messung löschen — typabhängige Regel (O-4a).
 
-    Es gibt KEINE Mindestanzahl mehr — der Benutzer entscheidet selbst
-    (Steuerungen können ohne FI sein).
+    - WHK-Stücknachweis (whk_config_id): die LETZTE FI-Messung darf NICHT
+      gelöscht werden (mind. 1 FI erforderlich).
+    - Steuerungs-Stücknachweis (steuerung_config_id): 0 FI erlaubt.
     """
     sn = Stuecknachweis.query.get_or_404(sn_id)
     fi = FiMessung.query.get_or_404(fi_id)
 
     if fi.stuecknachweis_id != sn.id:
         return jsonify({'success': False}), 403
+
+    # WHK-Stücknachweise brauchen immer mindestens 1 FI-Messung
+    if not sn.ist_steuerung:
+        anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
+        if anzahl <= 1:
+            return jsonify({
+                'success': False,
+                'error': 'Ein WHK-Stücknachweis benötigt mindestens eine FI-Messung.'
+            }), 400
 
     db.session.delete(fi)
     db.session.commit()
@@ -545,6 +555,14 @@ def konformitaet_pdf(sn_id):
     else:
         typbezeichnung = config.whk_typ or config.whk_nummer
         produkt_art = 'Weichenheizkabine'
+
+    # Weicher Hinweis (kein harter Block, O-4a): WHK-Stücknachweis ohne FI-Messung.
+    # Der Hinweis erscheint beim nächsten Seitenaufruf (Download rendert kein Flash).
+    if not ist_steuerung:
+        fi_anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
+        if fi_anzahl == 0:
+            flash('Hinweis: Dieser WHK-Stücknachweis enthält keine FI-Messung. '
+                  'Für WHK-Stücknachweise sollte mindestens eine FI-Messung erfasst sein.', 'warning')
 
     # Effektiver Norm-Name: SN-Wert oder Fallback auf globales Setting
     effektive_norm = sn.norm_name or get_norm_name()
