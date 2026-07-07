@@ -115,6 +115,17 @@ def main(target_db):
         print(f'M4 herstellungsdatum_text: {m4} Datensaetze befuellt '
               f'({"nichts offen" if m4 == 0 else "ok"})')
 
+        # ---- M5: stuecknachweis.art_produkt_text (Steuerungs-Art-des-Produkts) ----
+        # Bei frischer Migration legt M3 (Rebuild aus Modell) die Spalte bereits an;
+        # bei zuvor migrierten DBs (M3 uebersprungen) wird sie hier ergaenzt.
+        if 'art_produkt_text' in columns('stuecknachweis'):
+            print('M5 stuecknachweis.art_produkt_text: existiert bereits -> uebersprungen')
+        else:
+            db.session.execute(text(
+                'ALTER TABLE stuecknachweis ADD COLUMN art_produkt_text VARCHAR(100)'))
+            db.session.commit()
+            print('M5 stuecknachweis.art_produkt_text: hinzugefuegt (nullable, NULL = Fallback)')
+
         print('Migration abgeschlossen.')
     return 0
 

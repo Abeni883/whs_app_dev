@@ -30,6 +30,15 @@
                    placeholder="{{ norm_name }}" maxlength="100">
         </div>
 
+        {% if ist_steuerung %}
+        <div class="form-group">
+            <label for="art_produkt_text">Art des Produktes (Produktenorm)</label>
+            <input type="text" id="art_produkt_text" name="art_produkt_text"
+                   value="{{ sn.art_produkt_text or art_produkt_fallback }}"
+                   placeholder="{{ art_produkt_fallback }}" maxlength="100">
+        </div>
+        {% endif %}
+
         <div class="form-group">
             <label for="typbezeichnung">Typbezeichnung / Kennnummer</label>
             <input type="text" id="typbezeichnung" name="typbezeichnung" value="{{ sn.typbezeichnung or typbezeichnung }}" maxlength="100">
@@ -604,8 +613,8 @@ console.log('>>> Punkt B: vor sammleFormularDaten');
 function sammleFormularDaten() {
     var sn = {};
 
-    // Text/Datum/Number Felder (herstellungsdatum_text nur bei Steuerungen vorhanden)
-    ['norm_name','typbezeichnung','auftraggeber','hersteller','herstellungsdatum','herstellungsdatum_text',
+    // Text/Datum/Number Felder (herstellungsdatum_text + art_produkt_text nur bei Steuerungen vorhanden)
+    ['norm_name','art_produkt_text','typbezeichnung','auftraggeber','hersteller','herstellungsdatum','herstellungsdatum_text',
      'herstellungsjahr','messgeraet_messung','messgeraet_fi','schutzgrad'].forEach(function(f) {
         var el = document.querySelector('[name="' + f + '"]');
         if (el) sn[f] = el.value;
