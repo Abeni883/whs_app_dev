@@ -310,6 +310,91 @@ Manuelles Starten (nur Test/Debug, vorher Dienst stoppen): `Stop-Service <Dienst
 
 ---
 
+## Deployment-Regeln (Stand 2026-07-16)
+
+### PROD läuft im Detached HEAD auf einem Git-Tag
+
+Deployment ist ein **Tag-Checkout** — **niemals `git pull` in PROD**:
+
+```powershell
+git -C C:\inetpub\whs_app_prod_neu fetch origin --tags
+git -C C:\inetpub\whs_app_prod_neu checkout <tag>
+git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
+```
+
+Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
+Modell brechen. Aktueller Stand: `v2026.07.3-hotfix` (`5af6b45`).
+PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
+
+### Dienstnamen
+
+PROD = **`WHSApp`** (**nicht** `WHSAppProd` — den Dienst gibt es nicht!) · DEV = **`WHSAppDev`**
+
+### DB-Backup immer erst NACH dem Dienst-Stop
+
+Eine rohe Kopie (`Copy-Item`) einer **laufenden** SQLite-DB kann zerrissen sein. Nach dem Stop
+prüfen: kein `-wal`/`-shm` vorhanden, danach **MD5 Quelle == Backup** vergleichen.
+
+*Ausnahme ohne Downtime* (z. B. DEV im Betrieb): konsistenter Snapshot über die SQLite-Backup-API:
+
+```python
+src = sqlite3.connect(f"file:{LIVE}?mode=ro", uri=True)
+dst = sqlite3.connect(ziel)
+src.backup(dst)          # transaktionskonsistent, auch bei laufendem Dienst
+```
+
+Verifikation dann über `PRAGMA integrity_check` + Zeilenzahl-Vergleich — **nicht** über MD5: Die
+Backup-API schreibt die Seiten neu, die Datei ist logisch identisch, aber byteweise verschieden.
+
+### Downtime minimieren — Reihenfolge
+
+1. **Vor** dem Stop alles Prüfbare erledigen: `git fetch`, `HEAD..origin/main` prüfen,
+   Diff-Umfang ansehen, Tag setzen + pushen, Log-Analyse, Smoke-Test vorbereiten.
+2. Dann kompakt: **Stop → Backup → Checkout → Start**.
+3. Verifikation erst **nach** dem Start.
+
+**Ziel: unter 2 Minuten.** Referenz: Deploy 07.07. = 2 min. Negativbeispiel Hotfix 16.07. =
+**~20 min**, weil Verifikationsschritte zwischen Stop und Start lagen.
+
+### Rollback bei reinem Code-Fix
+
+Keine DB-Wiederherstellung nötig — nur Code zurück:
+
+```powershell
+Stop-Service WHSApp
+git -C C:\inetpub\whs_app_prod_neu checkout <vorheriger-tag>
+Start-Service WHSApp
+```
+
+Das DB-Backup **nur** bei echten Datenproblemen zurückspielen.
+
+### Nach dem Deployment: Live-Log auf Fehlermuster prüfen
+
+Vorher/Nachher im `logs\service.log` ist der beste Wirksamkeitsbeleg. Der Neustart-Marker
+(„HTTPS aktiv auf Port 5001") trennt die Zeiträume:
+
+```powershell
+$p = "C:\inetpub\whs_app_prod_neu\logs\service.log"
+$start = ((Select-String -Path $p -Pattern "HTTPS aktiv auf Port 5001").LineNumber)[-1]
+(Select-String -Path $p -Pattern "<Fehlermuster>").LineNumber | Where-Object { $_ -gt $start }
+```
+
+Leeres Ergebnis = seit dem Deploy nicht mehr aufgetreten. (So belegt beim Hotfix 16.07.:
+62 × `UNIQUE constraint failed` — alle **vor** dem Neustart, **keiner** danach.)
+
+### Doku-Änderungen (CLAUDE.md & Co.)
+
+CLAUDE.md liegt im selben Repo und erreicht PROD daher ebenfalls nur per Tag-Checkout. Ablauf:
+auf `main` (DEV) committen und pushen → **Doku-Tag** setzen → in PROD auschecken. Da kein Code
+betroffen ist, **ohne Dienst-Neustart und ohne Downtime**. Vorher verifizieren, dass der Diff zum
+laufenden Tag wirklich nur Doku enthält:
+
+```powershell
+git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
+```
+
+---
+
 ## Implementierter Stand — Stücknachweis Feature ✅
 
 ### Datenbank (neue Tabellen)
@@ -357,4 +442,4 @@ Manuelles Starten (nur Test/Debug, vorher Dienst stoppen): `Stop-Service <Dienst
 
 Entwickler: Nicolas  
 Auftraggeber: SBB AG  
-Letzte Aktualisierung: April 2026
+Letzte Aktualisierung: Juli 2026
