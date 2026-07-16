@@ -100,7 +100,98 @@ class ConfigUpsertTest(unittest.TestCase):
                 db.session.query(SteuerungConfig.id))).count()
         self.assertEqual(waisen, 0)
 
+    # ---------- Id-Rückschreibung / Save ohne Id (UNIQUE-Symptom) ----------
+    def test_zweiter_save_ohne_id_kein_unique_fehler_id_stabil(self):
+        """Symptom: 'UNIQUE constraint failed: whk_configs.projekt_id, whk_configs.whk_nummer'.
+
+        Trat auf, weil die Antwort keine Ids lieferte -> die neue Zeile sendete
+        weiter id=null -> INSERT eines Duplikats (vor dem DELETE, via Autoflush).
+        """
+        reconcile_whk_configs(self.p.id, [{'whk_nummer': 'WHK 01'}]); db.session.commit()
+        wid = WHKConfig.query.one().id
+        # Zweiter Save derselben Zeile, immer noch ohne Id
+        ids = reconcile_whk_configs(self.p.id, [{'whk_nummer': 'WHK 01', 'anzahl_abgaenge': 3}])
+        db.session.commit()
+        self.assertEqual(ids, [wid])                  # gematcht statt neu angelegt
+        self.assertEqual(WHKConfig.query.count(), 1)  # kein Duplikat, kein Churn
+        self.assertEqual(WHKConfig.query.one().anzahl_abgaenge, 3)
+
+    def test_save_ohne_id_loest_keinen_loeschschutz_aus_und_haelt_sn(self):
+        """Ohne Fix hätte der id=null-Save die Config gelöscht -> Schutz-400 mitten
+        im normalen Bearbeiten, bzw. eine verwaiste SN."""
+        reconcile_whk_configs(self.p.id, [{'whk_nummer': 'WHK 01'}]); db.session.commit()
+        wid = WHKConfig.query.one().id
+        db.session.add(Stuecknachweis(project_id=self.p.id, whk_config_id=wid, typbezeichnung='SN'))
+        db.session.commit()
+        reconcile_whk_configs(self.p.id, [{'whk_nummer': 'WHK 01'}]); db.session.commit()
+        self.assertIsNotNone(WHKConfig.query.get(wid))
+        self.assertEqual(Stuecknachweis.query.filter_by(whk_config_id=wid).count(), 1)
+
+    def test_umbenennen_gibt_nummer_frei_fuer_neue_zeile(self):
+        """Update muss vor Insert flushen, sonst kollidiert die freigewordene Nummer."""
+        reconcile_whk_configs(self.p.id, [{'whk_nummer': 'WHK 01'}]); db.session.commit()
+        wid = WHKConfig.query.one().id
+        ids = reconcile_whk_configs(self.p.id, [{'id': wid, 'whk_nummer': 'WHK 02'},
+                                                {'whk_nummer': 'WHK 01'}])
+        db.session.commit()
+        self.assertEqual(ids[0], wid)
+        self.assertNotEqual(ids[1], wid)
+        self.assertEqual(WHKConfig.query.count(), 2)
+
+    def test_steuerung_zweiter_save_ohne_id_kein_churn(self):
+        ids1 = reconcile_steuerung_configs(self.p.id, [{'name': 'A', 'typ': 'TA'}])
+        db.session.commit()
+        ids2 = reconcile_steuerung_configs(self.p.id, [{'name': 'A', 'typ': 'TA'}])
+        db.session.commit()
+        self.assertEqual(ids1, ids2)                      # Id stabil
+        self.assertEqual(SteuerungConfig.query.count(), 1)
+
+    def test_ids_sind_positionsgleich_zu_den_zeilen(self):
+        """Leere Zeile -> None an ihrer Position. Das Frontend mappt über den Index;
+        eine Verschiebung würde die Id in die falsche Zeile schreiben."""
+        ids = reconcile_whk_configs(self.p.id, [{'whk_nummer': ''},
+                                                {'whk_nummer': 'WHK 01'},
+                                                {'whk_nummer': '   '}])
+        db.session.commit()
+        self.assertEqual(len(ids), 3)
+        self.assertIsNone(ids[0])
+        self.assertIsNone(ids[2])
+        self.assertEqual(ids[1], WHKConfig.query.one().id)
+
     # ---------- Auto-Save-Endpunkt (End-to-End) ----------
+    def test_autosave_endpoint_liefert_ids_und_bleibt_stabil(self):
+        r = self.client.post(f'/projekt/konfiguration/auto-save/{self.p.id}',
+                             json={'whk_rows': [{'whk_nummer': 'WHK 01'}],
+                                   'meteostationen': [],
+                                   'steuerung_rows': [{'name': 'A', 'typ': 'TA'}]})
+        self.assertEqual(r.status_code, 200)
+        d = r.get_json()
+        self.assertEqual(d['whk_ids'], [WHKConfig.query.one().id])
+        self.assertEqual(d['steuerung_ids'], [SteuerungConfig.query.one().id])
+
+        # Zweiter Save — Frontend sendet die zurückgeschriebenen Ids
+        r2 = self.client.post(f'/projekt/konfiguration/auto-save/{self.p.id}',
+                              json={'whk_rows': [{'id': d['whk_ids'][0], 'whk_nummer': 'WHK 01'}],
+                                    'meteostationen': [],
+                                    'steuerung_rows': [{'id': d['steuerung_ids'][0],
+                                                        'name': 'A', 'typ': 'TA'}]})
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(r2.get_json()['whk_ids'], d['whk_ids'])
+        self.assertEqual(WHKConfig.query.count(), 1)
+        self.assertEqual(SteuerungConfig.query.count(), 1)
+
+    def test_autosave_endpoint_doppelter_post_ohne_id_kein_500(self):
+        """Doppel-POST (verlorene Antwort / überlappender Save) muss idempotent sein."""
+        body = {'whk_rows': [{'whk_nummer': 'WHK 01'}], 'meteostationen': [],
+                'steuerung_rows': [{'name': 'A', 'typ': 'TA'}]}
+        r1 = self.client.post(f'/projekt/konfiguration/auto-save/{self.p.id}', json=body)
+        r2 = self.client.post(f'/projekt/konfiguration/auto-save/{self.p.id}', json=body)
+        self.assertEqual(r1.status_code, 200)
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(r1.get_json()['whk_ids'], r2.get_json()['whk_ids'])
+        self.assertEqual(WHKConfig.query.count(), 1)
+        self.assertEqual(SteuerungConfig.query.count(), 1)
+
     def test_autosave_endpoint_loeschschutz_400(self):
         reconcile_steuerung_configs(self.p.id, [{'name': 'A', 'typ': 'TA'}]); db.session.commit()
         sid = SteuerungConfig.query.one().id

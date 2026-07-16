@@ -27,25 +27,63 @@ def _int_or_none(value):
         return None
 
 
+def _anwenden(zuordnung, neu_factory):
+    """Gemeinsame Schreibphase für beide reconcile-Funktionen.
+
+    zuordnung: Liste von (config|None, werte|None) — positionsgleich zu den Zeilen.
+    Erst alle Updates flushen, dann die Inserts: ein Umbenennen gibt seine alte
+    Nummer frei, bevor eine neue Zeile sie belegt (sonst uq_projekt_whk).
+
+    Gibt die Ids positionsgleich zur Zuordnung zurück (None für leere Zeilen).
+    """
+    for treffer, werte in zuordnung:
+        if treffer is not None and werte is not None:
+            for k, v in werte.items():
+                setattr(treffer, k, v)
+    db.session.flush()
+
+    ergebnis = []
+    for treffer, werte in zuordnung:
+        if werte is None:
+            ergebnis.append(None)
+        elif treffer is not None:
+            ergebnis.append(treffer)
+        else:
+            neu = neu_factory(werte)
+            db.session.add(neu)
+            ergebnis.append(neu)
+    db.session.flush()
+    return [c.id if c is not None else None for c in ergebnis]
+
+
 def reconcile_whk_configs(projekt_id, rows):
     """Upsert statt delete-all-recreate für WHK-Configs (stabile Ids).
 
     rows: Liste von Dicts {id?, whk_nummer, whk_typ, preset_typ, anzahl_abgaenge,
     anzahl_temperatursonden, hat_antriebsheizung}.
     - mit id (bestehend): Felder updaten, Id bleibt stabil
-    - ohne id: neu anlegen
+    - ohne id, aber whk_nummer trifft eine bestehende Config: ebenfalls Update.
+      Macht den Save idempotent, falls eine Zeile ihre Id nie zurückbekommen hat
+      (verlorene Antwort, doppelter POST) — sonst INSERT eines Duplikats, das an
+      uq_projekt_whk scheitert.
+    - sonst: neu anlegen
     - im Formular fehlende Configs: löschen — aber nur wenn KEIN Stücknachweis
       zugeordnet ist; sonst KonfigLoeschSchutz (Speichern wird abgelehnt).
-    Gibt die Anzahl verarbeiteter (nicht gelöschter) Configs zurück.
+
+    Gibt die Ids positionsgleich zu `rows` zurück (None für Zeilen ohne whk_nummer).
+    Das Frontend schreibt sie in die Zeilen zurück, damit der nächste Save die
+    bestehende Config trifft statt sie neu anzulegen.
     """
     existing = {c.id: c for c in WHKConfig.query.filter_by(projekt_id=projekt_id).all()}
+    nach_nummer = {c.whk_nummer: c for c in existing.values()}
     gesendet = set()
-    count = 0
+    zuordnung = []
+
     for row in rows:
         nummer = (row.get('whk_nummer') or '').strip()
         if not nummer:
+            zuordnung.append((None, None))
             continue
-        cid = _int_or_none(row.get('id'))
         werte = dict(
             whk_nummer=nummer,
             whk_typ=(row.get('whk_typ') or '').strip() or None,
@@ -54,23 +92,32 @@ def reconcile_whk_configs(projekt_id, rows):
             anzahl_temperatursonden=int(row.get('anzahl_temperatursonden', 1)),
             hat_antriebsheizung=bool(row.get('hat_antriebsheizung', False)),
         )
-        if cid and cid in existing:
-            c = existing[cid]
-            for k, v in werte.items():
-                setattr(c, k, v)
-            gesendet.add(cid)
-        else:
-            db.session.add(WHKConfig(projekt_id=projekt_id, **werte))
-        count += 1
-    for cid, c in existing.items():
-        if cid in gesendet:
-            continue
-        if Stuecknachweis.query.filter_by(whk_config_id=cid).first():
-            raise KonfigLoeschSchutz(
-                f'Konfiguration {c.whk_nummer} hat einen Stücknachweis — '
-                f'zuerst den Stücknachweis löschen.')
+        cid = _int_or_none(row.get('id'))
+        treffer = existing.get(cid) if cid else None
+        if treffer is None:
+            kandidat = nach_nummer.get(nummer)
+            if kandidat is not None and kandidat.id not in gesendet:
+                treffer = kandidat
+        if treffer is not None:
+            gesendet.add(treffer.id)
+        zuordnung.append((treffer, werte))
+
+    # Löschen zuerst (inkl. Schutz) und flushen: gibt belegte Nummern frei, bevor
+    # unten eingefügt wird. Der Lösch-Schutz-Query darf dabei nichts vorzeitig
+    # flushen (no_autoflush) — sonst liefe der INSERT vor dem DELETE.
+    zu_loeschen = [c for cid, c in existing.items() if cid not in gesendet]
+    with db.session.no_autoflush:
+        for c in zu_loeschen:
+            if Stuecknachweis.query.filter_by(whk_config_id=c.id).first():
+                raise KonfigLoeschSchutz(
+                    f'Konfiguration {c.whk_nummer} hat einen Stücknachweis — '
+                    f'zuerst den Stücknachweis löschen.')
+    for c in zu_loeschen:
         db.session.delete(c)
-    return count
+    if zu_loeschen:
+        db.session.flush()
+
+    return _anwenden(zuordnung, lambda w: WHKConfig(projekt_id=projekt_id, **w))
 
 
 def reconcile_steuerung_configs(projekt_id, rows):
@@ -78,35 +125,48 @@ def reconcile_steuerung_configs(projekt_id, rows):
 
     rows: Liste von Dicts {id?, name, typ}. reihenfolge wird aus der Position (idx)
     gepflegt. Lösch-Schutz wie bei WHK (Stücknachweis vorhanden → Abbruch).
+
+    Fällt die id, wird über (name, typ) gematcht — analog zur whk_nummer bei WHK.
+    ACHTUNG: steuerung_configs hat KEINEN Unique-Constraint. Zwei bewusst
+    identische Zeilen (gleicher name UND typ) im selben Projekt würden dadurch
+    zu einer verschmelzen. Das ist der Preis für die Idempotenz bei fehlender id;
+    in der Praxis hat ein Projekt eine Steuerung.
+
+    Gibt die Ids positionsgleich zu `rows` zurück (None für leere Zeilen).
     """
     existing = {c.id: c for c in SteuerungConfig.query.filter_by(projekt_id=projekt_id).all()}
     gesendet = set()
-    count = 0
+    zuordnung = []
+
     for idx, row in enumerate(rows):
         name = (row.get('name') or '').strip() or None
         typ = (row.get('typ') or '').strip() or None
         if not name and not typ:
-            continue  # leere Zeile
-        cid = _int_or_none(row.get('id'))
-        if cid and cid in existing:
-            c = existing[cid]
-            c.name = name
-            c.typ = typ
-            c.reihenfolge = idx + 1
-            gesendet.add(cid)
-        else:
-            db.session.add(SteuerungConfig(projekt_id=projekt_id, name=name, typ=typ,
-                                           reihenfolge=idx + 1))
-        count += 1
-    for cid, c in existing.items():
-        if cid in gesendet:
+            zuordnung.append((None, None))  # leere Zeile
             continue
-        if Stuecknachweis.query.filter_by(steuerung_config_id=cid).first():
-            raise KonfigLoeschSchutz(
-                f'Steuerung {c.name or c.typ or cid} hat einen Stücknachweis — '
-                f'zuerst den Stücknachweis löschen.')
+        werte = dict(name=name, typ=typ, reihenfolge=idx + 1)
+        cid = _int_or_none(row.get('id'))
+        treffer = existing.get(cid) if cid else None
+        if treffer is None:
+            treffer = next((c for c in existing.values()
+                            if c.id not in gesendet and c.name == name and c.typ == typ), None)
+        if treffer is not None:
+            gesendet.add(treffer.id)
+        zuordnung.append((treffer, werte))
+
+    zu_loeschen = [c for cid, c in existing.items() if cid not in gesendet]
+    with db.session.no_autoflush:
+        for c in zu_loeschen:
+            if Stuecknachweis.query.filter_by(steuerung_config_id=c.id).first():
+                raise KonfigLoeschSchutz(
+                    f'Steuerung {c.name or c.typ or c.id} hat einen Stücknachweis — '
+                    f'zuerst den Stücknachweis löschen.')
+    for c in zu_loeschen:
         db.session.delete(c)
-    return count
+    if zu_loeschen:
+        db.session.flush()
+
+    return _anwenden(zuordnung, lambda w: SteuerungConfig(projekt_id=projekt_id, **w))
 
 
 # ==================== EWH KONFIGURATION ====================
@@ -161,9 +221,10 @@ def projekt_konfiguration(projekt_id):
                 })
 
         try:
-            whk_count = reconcile_whk_configs(projekt_id, whk_rows)
+            whk_ids = reconcile_whk_configs(projekt_id, whk_rows)
             reconcile_steuerung_configs(projekt_id, steuerung_rows)
             db.session.commit()
+            whk_count = len([i for i in whk_ids if i is not None])
             flash(f'Konfiguration erfolgreich gespeichert! ({whk_count} WHK konfiguriert)', 'success')
         except KonfigLoeschSchutz as e:
             db.session.rollback()
@@ -233,9 +294,10 @@ def konfiguration_auto_save(projekt_id):
             return jsonify({'success': False, 'error': 'Projekt nicht gefunden'}), 404
 
         # ========== WHK-Konfigurationen (Upsert, stabile Ids) ==========
-        whk_count = reconcile_whk_configs(projekt_id, data.get('whk_rows', []))
-        # Flush um neue WHK-IDs zu erhalten (für Meteostation-Zuordnung)
-        db.session.flush()
+        # reconcile flusht selbst; die Ids stehen danach fest (auch für die
+        # Meteostation-Zuordnung weiter unten) und gehen an das Frontend zurück.
+        whk_ids = reconcile_whk_configs(projekt_id, data.get('whk_rows', []))
+        whk_count = len([i for i in whk_ids if i is not None])
 
         # ========== EWH-Meteostationen verarbeiten ==========
         # Lösche alle bestehenden EWH-Meteostationen für dieses Projekt
@@ -283,10 +345,14 @@ def konfiguration_auto_save(projekt_id):
             ms_count = 1
 
         # ========== Steuerung (SHDSL) (Upsert, stabile Ids) ==========
-        steuerung_count = reconcile_steuerung_configs(projekt_id, data.get('steuerung_rows', []))
+        steuerung_ids = reconcile_steuerung_configs(projekt_id, data.get('steuerung_rows', []))
+        steuerung_count = len([i for i in steuerung_ids if i is not None])
 
         db.session.commit()
 
+        # whk_ids/steuerung_ids sind positionsgleich zu den gesendeten Zeilen.
+        # Das Frontend schreibt sie zurück — ohne das bliebe die Id neuer Zeilen
+        # leer und jeder weitere Save legte die Config erneut an.
         return jsonify({
             'success': True,
             'message': 'Konfiguration gespeichert',
@@ -295,7 +361,9 @@ def konfiguration_auto_save(projekt_id):
                 'whk': whk_count,
                 'meteostationen': ms_count,
                 'steuerung': steuerung_count
-            }
+            },
+            'whk_ids': whk_ids,
+            'steuerung_ids': steuerung_ids
         })
 
     except KonfigLoeschSchutz as e:

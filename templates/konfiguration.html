@@ -641,10 +641,34 @@ function triggerAutoSave() {
     }, AUTO_SAVE_DELAY);
 }
 
+// In-Flight-Guard: verhindert überlappende POSTs. Ein Save, der während eines
+// laufenden Requests ausgelöst wird, wird gemerkt und danach EINMAL nachgeholt.
+let isSaving = false;
+let savePending = false;
+
+// Schreibt die vom Server vergebenen Ids in die Zeilen zurück. Ohne das bliebe
+// das id-Feld neuer Zeilen leer und der nächste Save legte die Config erneut an.
+// rowEls ist positionsgleich zu den GESENDETEN Zeilen (nicht zu allen DOM-Zeilen).
+function uebernehmeIds(rowEls, ids, selektor) {
+    if (!Array.isArray(ids)) return;
+    rowEls.forEach((row, i) => {
+        const feld = row.querySelector(selektor);
+        if (feld && ids[i] !== null && ids[i] !== undefined) {
+            feld.value = ids[i];
+        }
+    });
+}
+
 function performAutoSave() {
+    if (isSaving) {
+        savePending = true;
+        return;
+    }
+
     // Sammle WHK-Daten
     const whkRows = document.querySelectorAll('#ewh-config-tbody tr');
     const whkData = [];
+    const whkRowEls = [];   // parallel zu whkData -> exakte Id-Rückschreibung
 
     whkRows.forEach((row) => {
         const whkId = row.querySelector('.whk-id')?.value;
@@ -663,6 +687,7 @@ function performAutoSave() {
                 anzahl_temperatursonden: parseInt(temperatursonden) || 1,
                 hat_antriebsheizung: antriebsheizung || false
             });
+            whkRowEls.push(row);
         }
     });
 
@@ -683,6 +708,7 @@ function performAutoSave() {
     // Sammle Steuerung (SHDSL)-Daten
     const steuerungRows = document.querySelectorAll('#steuerung-tbody tr');
     const steuerungData = [];
+    const steuerungRowEls = [];   // parallel zu steuerungData
 
     steuerungRows.forEach((row) => {
         const stId = row.querySelector('.steuerung-id')?.value;
@@ -690,10 +716,12 @@ function performAutoSave() {
         const typ = (row.querySelector('.steuerung-typ')?.value || '').trim();
         if (name || typ) {
             steuerungData.push({ id: stId || null, name: name, typ: typ });
+            steuerungRowEls.push(row);
         }
     });
 
     // Sende Daten an Server
+    isSaving = true;
     fetch(`/projekt/konfiguration/auto-save/${projektId}`, {
         method: 'POST',
         headers: {
@@ -708,6 +736,8 @@ function performAutoSave() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            uebernehmeIds(whkRowEls, data.whk_ids, '.whk-id');
+            uebernehmeIds(steuerungRowEls, data.steuerung_ids, '.steuerung-id');
             const counts = data.counts || {};
             const message = `WHK: ${counts.whk || data.count || 0}, MS: ${counts.meteostationen || 0}`;
             showSaveStatus('saved', message);
@@ -719,6 +749,13 @@ function performAutoSave() {
     .catch(error => {
         showSaveStatus('error', 'Netzwerkfehler');
         console.error('Fehler beim Speichern:', error);
+    })
+    .finally(() => {
+        isSaving = false;
+        if (savePending) {
+            savePending = false;
+            performAutoSave();
+        }
     });
 }
 
