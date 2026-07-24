@@ -323,7 +323,7 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.3-hotfix` (`5af6b45`).
+Modell brechen. Aktueller Stand: `v2026.07.4` (`a45c4c2`) — Prüfdatum Freitext (Mehrfachdaten).
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
 
 ### Dienstnamen
@@ -435,6 +435,10 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
 - Produktiv-Übernahme (DB-Migrationen beachten!)
 - GWH-Abnahmetest: Parameter-Prüfung (ZSK/HGLS) noch nicht vollständig
 - Zeiterfassung: API-Endpunkte vorhanden, UI-Integration laufend
+- **GWH-PDF-Export einmalig end-to-end prüfen, sobald das erste GWH-Projekt in PROD
+  existiert.** PROD enthält aktuell nur EWH-Projekte; der GWH-PDF-Pfad (Prüfdatum-Freitext,
+  `pdf_gwh_abnahmetest.html`) wurde bisher nur per Template-Render verifiziert, nicht
+  end-to-end (Stand Deploy v2026.07.4, 2026-07-24).
 
 ---
 
