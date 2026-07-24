@@ -435,10 +435,11 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
 - Produktiv-Übernahme (DB-Migrationen beachten!)
 - GWH-Abnahmetest: Parameter-Prüfung (ZSK/HGLS) noch nicht vollständig
 - Zeiterfassung: API-Endpunkte vorhanden, UI-Integration laufend
-- **GWH-PDF-Export einmalig end-to-end prüfen, sobald das erste GWH-Projekt in PROD
-  existiert.** PROD enthält aktuell nur EWH-Projekte; der GWH-PDF-Pfad (Prüfdatum-Freitext,
-  `pdf_gwh_abnahmetest.html`) wurde bisher nur per Template-Render verifiziert, nicht
-  end-to-end (Stand Deploy v2026.07.4, 2026-07-24).
+- ✅ **ERLEDIGT (2026-07-24): GWH-PDF-Export end-to-end auf PROD verifiziert.** Read-mostly
+  Smoke-Test (temporäres GWH-Projekt „ZZ-Test-GWH-PDF" + 1 ZSK angelegt, GWH-Abnahmetest-PDF
+  exportiert, danach vollständig gelöscht): HTTP 200, gültiges PDF, Prüfdatum-Freitext
+  (`16.05.2026 / 20.05.2026`) korrekt in den Kopfdaten von `pdf_gwh_abnahmetest.html`, kein
+  Layout-Crash. Baseline danach exakt wiederhergestellt, `foreign_key_check` sauber.
 
 ---
 
