@@ -6,13 +6,14 @@
 <div class="container">
     <h2>{% if edit_mode %}Projekt bearbeiten{% else %}Neues Weichenheizungsprojekt anlegen{% endif %}</h2>
 
-    <form method="POST" action="{% if edit_mode %}{{ url_for('projekte.projekt_bearbeiten', projekt_id=projekt.id) }}{% else %}{{ url_for('projekte.neues_projekt') }}{% endif %}">
+    <form id="projekt-form" method="POST" action="{% if edit_mode %}{{ url_for('projekte.projekt_bearbeiten', projekt_id=projekt.id) }}{% else %}{{ url_for('projekte.neues_projekt') }}{% endif %}">
         <div class="form-group">
             <label for="energie">Energie: <span class="required">*</span></label>
-            <select id="energie" name="energie" required>
+            <select id="energie" name="energie" required {% if edit_mode %}disabled title="Energieart kann nach dem Anlegen nicht mehr geändert werden"{% endif %}>
                 <option value="EWH" {% if projekt and projekt.energie == 'EWH' %}selected{% endif %}>EWH</option>
                 <option value="GWH" {% if projekt and projekt.energie == 'GWH' %}selected{% endif %}>GWH</option>
             </select>
+            {% if edit_mode %}<small class="field-hint">Energieart ist nach dem Anlegen fixiert.</small>{% endif %}
         </div>
 
         <div class="form-group">
@@ -56,10 +57,109 @@
             <textarea id="bemerkung" name="bemerkung" rows="6" placeholder="Zusätzliche Informationen zum Projekt...">{% if projekt %}{{ projekt.bemerkung or '' }}{% endif %}</textarea>
         </div>
 
+        {% if edit_mode %}
+        <!-- Auto-Save Status Anzeige (gleiche Optik wie Konfiguration, via shared.js) -->
+        <div id="save-status" class="save-status" style="display: none;"></div>
+        <div class="auto-save-info" style="margin-top: 1rem;">
+            <p class="auto-save-hint">💾 Alle Änderungen werden automatisch gespeichert</p>
+        </div>
         <div class="form-group form-actions">
-            <button type="submit" class="btn-primary">{% if edit_mode %}Änderungen speichern{% else %}Projekt speichern{% endif %}</button>
+            <a href="{{ url_for('projekte.projekte') }}" class="btn-primary">Zurück zur Übersicht</a>
+        </div>
+        {% else %}
+        <div class="form-group form-actions">
+            <button type="submit" class="btn-primary">Projekt speichern</button>
             <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Abbrechen</a>
         </div>
+        {% endif %}
     </form>
 </div>
+
+{% if edit_mode %}
+<script>
+// ===== Auto-Save Projekt-Bearbeiten (nur im Bearbeiten-Modus) =====
+// Muster wie Konfiguration: Debounce 1.5s + In-Flight-Guard (isSaving/savePending).
+// showSaveStatus() stammt aus shared.js und schreibt in #save-status.
+const projektId = {{ projekt.id }};
+const AUTO_SAVE_DELAY = 1500;
+let autoSaveTimeout = null;
+let isSaving = false;
+let savePending = false;
+
+// energie ist im Bearbeiten-Modus gesperrt und NICHT Teil des Auto-Save.
+const AUTOSAVE_FELDER = [
+    'projektname', 'didok_betriebspunkt', 'baumappenversion',
+    'projektleiter_sbb', 'pruefer_achermann', 'pruefdatum_text',
+    'ibn_inbetriebnahme_jahre', 'bemerkung'
+];
+
+function collectProjektData() {
+    const data = {};
+    AUTOSAVE_FELDER.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) data[id] = el.value;
+    });
+    return data;
+}
+
+function triggerAutoSave() {
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    showSaveStatus('saving');
+    autoSaveTimeout = setTimeout(performAutoSave, AUTO_SAVE_DELAY);
+}
+
+function performAutoSave() {
+    // In-Flight-Guard: laufenden POST nicht ueberholen, danach EINMAL nachholen.
+    if (isSaving) {
+        savePending = true;
+        return;
+    }
+    isSaving = true;
+    fetch(`/projekt/${projektId}/autosave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(collectProjektData())
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSaveStatus('saved', 'Gespeichert');
+        } else {
+            showSaveStatus('error', data.error || 'Unbekannter Fehler');
+            console.error('Fehler beim Speichern:', data.error);
+        }
+    })
+    .catch(error => {
+        showSaveStatus('error', 'Netzwerkfehler');
+        console.error('Fehler beim Speichern:', error);
+    })
+    .finally(() => {
+        isSaving = false;
+        if (savePending) {
+            savePending = false;
+            performAutoSave();
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    AUTOSAVE_FELDER.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', triggerAutoSave);
+        el.addEventListener('change', triggerAutoSave);
+    });
+    // Standard-Submit verhindern; Auto-Save ist der primaere Weg.
+    // (Der serverseitige POST-Fallback bleibt dennoch funktionsfaehig.)
+    const form = document.getElementById('projekt-form');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+            performAutoSave();
+        });
+    }
+});
+</script>
+{% endif %}
 {% endblock %}

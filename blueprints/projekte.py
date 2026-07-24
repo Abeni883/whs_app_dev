@@ -4,7 +4,7 @@ Projekt-Verwaltung (CRUD) und Übersicht
 """
 from datetime import datetime
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 
 from models import db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation, EWHMeteostation, TestQuestion, AbnahmeTestResult
@@ -295,7 +295,9 @@ def projekt_bearbeiten(projekt_id):
         baumappenversion = parse_date_from_form(request.form.get('baumappenversion'), '%d.%m.%Y')
 
         # Bestehende Projekt-Werte aktualisieren
-        projekt.energie = request.form['energie']
+        # energie ist im Bearbeiten-Modus gesperrt (disabled) -> wird nicht mitgesendet;
+        # Fallback behaelt den bestehenden Wert (get statt [] verhindert KeyError).
+        projekt.energie = request.form.get('energie', projekt.energie)
         projekt.projektname = request.form['projektname']
         projekt.didok_betriebspunkt = request.form.get('didok_betriebspunkt', '')
         projekt.baumappenversion = baumappenversion
@@ -311,6 +313,45 @@ def projekt_bearbeiten(projekt_id):
         return redirect(url_for('projekte.projekte'))
 
     return render_template('projekt_form.html', projekt=projekt, edit_mode=True)
+
+
+@projekte_bp.route('/projekt/<int:projekt_id>/autosave', methods=['POST'])
+@login_required
+def projekt_autosave(projekt_id):
+    """
+    Auto-Save fuer die Projekt-Bearbeiten-Seite (JSON, Debounce clientseitig).
+
+    Aktualisiert nur editierbare Kopf-Felder. energie (EWH/GWH) ist bewusst
+    NICHT enthalten: im Bearbeiten-Modus gesperrt, da strukturell und nur
+    per Neu-Anlegen sinnvoll setzbar. Jedes Feld ist einzeln geschuetzt
+    (nur aktualisieren, wenn im Payload vorhanden).
+    """
+    projekt = Project.query.get_or_404(projekt_id)
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'success': False, 'error': 'Keine Daten'}), 400
+
+    try:
+        # Einfache Textfelder
+        for feld in ['projektname', 'didok_betriebspunkt', 'projektleiter_sbb',
+                     'pruefer_achermann', 'pruefdatum_text', 'bemerkung']:
+            if feld in data:
+                setattr(projekt, feld, (data.get(feld) or '').strip())
+
+        # IBN-Jahre: leer -> None (wie im vollen Submit)
+        if 'ibn_inbetriebnahme_jahre' in data:
+            projekt.ibn_inbetriebnahme_jahre = (data.get('ibn_inbetriebnahme_jahre') or '').strip() or None
+
+        # baumappenversion ist eine Date-Spalte -> parsen statt String setzen
+        if 'baumappenversion' in data:
+            projekt.baumappenversion = parse_date_from_form(
+                (data.get('baumappenversion') or '').strip(), '%d.%m.%Y')
+
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @projekte_bp.route('/projekt/loeschen/<int:projekt_id>')
