@@ -41,8 +41,8 @@
         </div>
 
         <div class="form-group">
-            <label for="pruefdatum">Prüfdatum:</label>
-            <input type="date" id="pruefdatum" name="pruefdatum" value="{% if projekt and projekt.pruefdatum %}{{ projekt.pruefdatum.strftime('%Y-%m-%d') }}{% endif %}">
+            <label for="pruefdatum_text">Prüfdatum:</label>
+            <input type="text" id="pruefdatum_text" name="pruefdatum_text" maxlength="100" value="{% if projekt %}{{ projekt.pruefdatum_text or '' }}{% endif %}" placeholder="z.B. 16.05.2026 oder 16.05.2026 / 20.05.2026">
         </div>
 
         <div class="form-group">

@@ -239,7 +239,8 @@ def neues_projekt():
     if request.method == 'POST':
         # Datums-Felder konvertieren
         baumappenversion = parse_date_from_form(request.form.get('baumappenversion'), '%d.%m.%Y')
-        pruefdatum = parse_date_from_form(request.form.get('pruefdatum'), '%Y-%m-%d')
+        # Pruefdatum ist Freitext (Mehrfachdaten moeglich), kein Date-Parsing mehr
+        pruefdatum_text = request.form.get('pruefdatum_text', '').strip() or None
 
         projekt = Project(
             energie=request.form['energie'],
@@ -248,7 +249,7 @@ def neues_projekt():
             baumappenversion=baumappenversion,
             projektleiter_sbb=request.form.get('projektleiter_sbb', ''),
             pruefer_achermann=request.form.get('pruefer_achermann', ''),
-            pruefdatum=pruefdatum,
+            pruefdatum_text=pruefdatum_text,
             ibn_inbetriebnahme_jahre=request.form.get('ibn_inbetriebnahme_jahre', '').strip() or None,
             bemerkung=request.form.get('bemerkung', '')
         )
@@ -292,7 +293,6 @@ def projekt_bearbeiten(projekt_id):
     if request.method == 'POST':
         # Datums-Felder konvertieren
         baumappenversion = parse_date_from_form(request.form.get('baumappenversion'), '%d.%m.%Y')
-        pruefdatum = parse_date_from_form(request.form.get('pruefdatum'), '%Y-%m-%d')
 
         # Bestehende Projekt-Werte aktualisieren
         projekt.energie = request.form['energie']
@@ -301,7 +301,8 @@ def projekt_bearbeiten(projekt_id):
         projekt.baumappenversion = baumappenversion
         projekt.projektleiter_sbb = request.form.get('projektleiter_sbb', '')
         projekt.pruefer_achermann = request.form.get('pruefer_achermann', '')
-        projekt.pruefdatum = pruefdatum
+        # Pruefdatum ist Freitext (Mehrfachdaten moeglich), kein Date-Parsing mehr
+        projekt.pruefdatum_text = request.form.get('pruefdatum_text', '').strip() or None
         projekt.ibn_inbetriebnahme_jahre = request.form.get('ibn_inbetriebnahme_jahre', '').strip() or None
         projekt.bemerkung = request.form.get('bemerkung', '')
 

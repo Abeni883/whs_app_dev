@@ -150,7 +150,8 @@ class Project(db.Model):
     baumappenversion = db.Column(db.Date)
     projektleiter_sbb = db.Column(db.String(150))
     pruefer_achermann = db.Column(db.String(150))
-    pruefdatum = db.Column(db.Date)
+    pruefdatum = db.Column(db.Date)  # DEPRECATED: Alt-Daten, wird nicht mehr aktiv geschrieben
+    pruefdatum_text = db.Column(db.String(100), nullable=True)  # Freitext, Mehrfachdaten moeglich (z.B. "16.05.2026 / 20.05.2026")
     ibn_inbetriebnahme_jahre = db.Column(db.String(200), nullable=True)  # Kommaseparierte Jahre, z.B. "2024, 2025"
     bemerkung = db.Column(db.Text)
 
