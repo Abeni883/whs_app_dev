@@ -480,8 +480,8 @@ def stuecknachweis_autosave(sn_id):
 # Spacer-Kalibrierung Seite 3 (siehe berechne_spacer_mm)
 SPACER_VERFUEGBAR_PT = 600     # nutzbare Frame-Höhe Seite 3
 SPACER_UNTEN_PT = 240          # Bemerkung (1 Zeile) + Vorbehalt + Unterschrift
-SPACER_ZEICHEN_PRO_ZEILE = 85  # Bemerkung-Zelle: ~80% Breite bei 9pt
-SPACER_ZEILENHOEHE_PT = 11
+SPACER_ZEICHEN_PRO_ZEILE = 85  # Bemerkung-Zelle bei 8pt: real ~90, bewusst konservativ
+SPACER_ZEILENHOEHE_PT = 12     # gemessener Zeilenabstand im PDF (8pt Schrift)
 
 
 def berechne_spacer_mm(fi_anzahl, bemerkung):

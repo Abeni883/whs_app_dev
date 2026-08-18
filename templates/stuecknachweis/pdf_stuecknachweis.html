@@ -430,10 +430,10 @@
      KeepInFrame(mode="shrink") — bei fixer Hoehe wird der Text passend
      kleingerechnet statt die Zelle wachsen zu lassen (2 Zeilen -> ~3pt).
      Mindesthoehe daher ueber einen Spacer nur bei kurzer Bemerkung. -->
-<table style="width: 100%; border: 1px solid #999; border-collapse: collapse; margin-top: 8px;">
+<table style="width: 100%; border: 1px solid #999; border-collapse: collapse; margin-top: 8px; font-size: 8pt;">
     <tr>
-        <td style="width: 20%; padding: 6px 8px; font-weight: bold; border-right: 1px solid #ccc; vertical-align: top;">Bemerkung:</td>
-        <td style="padding: 6px 8px; vertical-align: top; font-size: 9pt;">{{ stuecknachweis.bemerkung or '-' }}{% if (stuecknachweis.bemerkung or '')|length < 80 %}<br><span style="font-size: 6pt;">&nbsp;</span>{% endif %}</td>
+        <td style="width: 20%; padding: 6px 8px; font-weight: bold; border-right: 1px solid #ccc; vertical-align: top; font-size: 8pt;">Bemerkung:</td>
+        <td style="padding: 6px 8px; vertical-align: top; font-size: 8pt;">{{ stuecknachweis.bemerkung or '-' }}{% if (stuecknachweis.bemerkung or '')|length < 80 %}<br><span style="font-size: 6pt;">&nbsp;</span>{% endif %}</td>
     </tr>
 </table>
 
