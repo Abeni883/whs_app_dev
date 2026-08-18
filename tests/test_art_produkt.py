@@ -93,15 +93,36 @@ class ArtProduktTest(unittest.TestCase):
         self.client.get(f'/stuecknachweis/{sn_id}/pdf')
         self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Elektrische Steuerung')
 
-    # ---- WHK unveraendert ----
-    def test_whk_unveraendert(self):
+    # ---- WHK: Feld ebenfalls vorhanden, Default 'Weichenheizkabine' ----
+    def test_whk_auto_init_und_fallback(self):
         p, whk = self._whk()
         self.client.get(f'/projekt/{p.id}/whk/{whk.id}/stuecknachweis')
         self.assertFalse(self.cap['ctx']['ist_steuerung'])
-        self.assertIsNone(self.cap['ctx']['art_produkt_fallback'])
+        self.assertEqual(self.cap['ctx']['art_produkt_fallback'], 'Weichenheizkabine')
         self.assertEqual(self.cap['ctx']['typbezeichnung'], 'WHK 01')  # aus whk_nummer
+        # Auto-Init schreibt den Default in die DB (anders als bei Steuerung)
         sn = Stuecknachweis.query.filter_by(whk_config_id=whk.id).first()
+        self.assertEqual(sn.art_produkt_text, 'Weichenheizkabine')
         self.client.get(f'/stuecknachweis/{sn.id}/pdf')
+        self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Weichenheizkabine')
+
+    def test_whk_override_und_leeren(self):
+        p, whk = self._whk()
+        self.client.get(f'/projekt/{p.id}/whk/{whk.id}/stuecknachweis')
+        sn_id = Stuecknachweis.query.filter_by(whk_config_id=whk.id).first().id
+        # Override via Autosave
+        self.client.post(f'/stuecknachweis/{sn_id}/autosave',
+                         json={'art_produkt_text': 'Weichenheizkabine Spezial'})
+        self.assertEqual(Stuecknachweis.query.get(sn_id).art_produkt_text,
+                         'Weichenheizkabine Spezial')
+        for url in (f'/stuecknachweis/{sn_id}/pdf',
+                    f'/stuecknachweis/{sn_id}/konformitaet/pdf'):
+            self.client.get(url)
+            self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Weichenheizkabine Spezial')
+        # Leeren -> NULL -> Fallback
+        self.client.post(f'/stuecknachweis/{sn_id}/autosave', json={'art_produkt_text': ''})
+        self.assertIsNone(Stuecknachweis.query.get(sn_id).art_produkt_text)
+        self.client.get(f'/stuecknachweis/{sn_id}/pdf')
         self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Weichenheizkabine')
 
 

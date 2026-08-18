@@ -23,6 +23,11 @@ stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
 
 # ==================== KONSTANTEN ====================
 
+# "Art des Produkts (Produktenorm)" bei WHK-Stücknachweisen:
+# Vorbelegung beim Anlegen und Fallback, wenn das Feld geleert wird.
+# (Steuerung nutzt stattdessen den Namen der Steuerungs-Konfiguration.)
+ART_PRODUKT_WHK = 'Weichenheizkabine'
+
 # Schutzgrad-Ableitung aus Preset (WHK + Steuerung)
 SCHUTZGRAD_MAP = {
     # WHK Presets
@@ -93,7 +98,8 @@ def _speichere_form(sn, config, ist_steuerung):
     sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
     # Norm: leeres Feld → Fallback auf globalen Settings-Wert
     sn.norm_name = request.form.get('norm_name', '').strip() or get_norm_name()
-    # Art des Produkts (nur Steuerungs-SN): leeres Feld → NULL = Fallback auf Config-Name
+    # Art des Produkts (WHK + Steuerung): leeres Feld → NULL = Fallback
+    # (Steuerung: Config-Name, WHK: ART_PRODUKT_WHK)
     sn.art_produkt_text = request.form.get('art_produkt_text', '').strip() or None
 
     # Preset-Typ auf die Konfiguration (WHK oder Steuerung) speichern
@@ -148,7 +154,7 @@ def _render_formular(projekt, sn, config, ist_steuerung):
     else:
         objekt_bezeichnung = config.whk_nummer
         typbezeichnung = config.whk_typ or config.whk_nummer
-        art_produkt_fallback = None
+        art_produkt_fallback = ART_PRODUKT_WHK
 
     return render_template(
         'stuecknachweis/formular.html',
@@ -256,6 +262,7 @@ def stuecknachweis_formular(project_id, whk_id):
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
             norm_name=get_norm_name(),
+            art_produkt_text=ART_PRODUKT_WHK,
             herstellungsdatum=date.today(),
             herstellungsdatum_text=datetime.now().strftime('%d.%m.%Y'),
             herstellungsjahr=datetime.now().year,
@@ -524,7 +531,8 @@ def stuecknachweis_pdf(sn_id):
         sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
     else:
         typbezeichnung = config.whk_typ or config.whk_nummer
-        sn_art_produkt = 'Weichenheizkabine'
+        # Art des Produkts: Override pro SN, sonst Fallback 'Weichenheizkabine'
+        sn_art_produkt = sn.art_produkt_text or ART_PRODUKT_WHK
 
     schutzgrad = SCHUTZGRAD_MAP.get(config.preset_typ, 'IP55')
 
@@ -586,7 +594,8 @@ def konformitaet_pdf(sn_id):
         sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
     else:
         typbezeichnung = config.whk_typ or config.whk_nummer
-        sn_art_produkt = 'Weichenheizkabine'
+        # Art des Produkts: Override pro SN, sonst Fallback 'Weichenheizkabine'
+        sn_art_produkt = sn.art_produkt_text or ART_PRODUKT_WHK
 
     # Weicher Hinweis (kein harter Block, O-4a): WHK-Stücknachweis ohne FI-Messung.
     # Der Hinweis erscheint beim nächsten Seitenaufruf (Download rendert kein Flash).
