@@ -323,7 +323,8 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.5` (`d245416`) — Auto-Save Projekt-Bearbeiten.
+Modell brechen. Aktueller Stand: `v2026.07.6` (Code bis `b836418`) — Bemerkung-PDF-Fixes
+(Schriftgrösse/Ausrichtung) + „Art des Produkts" auch bei WHK editierbar.
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
 
 ### Dienstnamen
