@@ -477,6 +477,31 @@ def stuecknachweis_autosave(sn_id):
 
 # ==================== PDF: STÜCKNACHWEIS (sn_id-basiert) ====================
 
+# Spacer-Kalibrierung Seite 3 (siehe berechne_spacer_mm)
+SPACER_VERFUEGBAR_PT = 600     # nutzbare Frame-Höhe Seite 3
+SPACER_UNTEN_PT = 240          # Bemerkung (1 Zeile) + Vorbehalt + Unterschrift
+SPACER_ZEICHEN_PRO_ZEILE = 85  # Bemerkung-Zelle: ~80% Breite bei 9pt
+SPACER_ZEILENHOEHE_PT = 11
+
+
+def berechne_spacer_mm(fi_anzahl, bemerkung):
+    """Höhe des Spacers zwischen FI-Tabelle und Bemerkung (Seite 3).
+
+    Der Spacer füllt den Platz so auf, dass der Block Bemerkung/Vorbehalt/
+    Unterschrift unten auf Seite 3 sitzt. Da die Bemerkung-Box mit langem Text
+    wächst (keine fixe Höhe mehr — sonst schrumpft xhtml2pdf die Schrift),
+    wird die geschätzte Zusatzhöhe der Bemerkung vom Spacer abgezogen.
+    Sonst rutschen Vorbehalt/Unterschrift auf Seite 4.
+    """
+    fi_hoehe_pt = (45 + fi_anzahl * 21) if fi_anzahl > 0 else 0
+    zeichen = len((bemerkung or '').strip())
+    zeilen = max(1, -(-zeichen // SPACER_ZEICHEN_PRO_ZEILE))  # aufrunden
+    bemerkung_extra_pt = (zeilen - 1) * SPACER_ZEILENHOEHE_PT
+    spacer_pt = max(0, SPACER_VERFUEGBAR_PT - fi_hoehe_pt
+                    - SPACER_UNTEN_PT - bemerkung_extra_pt)
+    return round(spacer_pt * 25.4 / 72)
+
+
 @stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/pdf')
 @login_required
 def stuecknachweis_pdf(sn_id):
@@ -505,12 +530,7 @@ def stuecknachweis_pdf(sn_id):
 
     # Spacer-Höhe: Platz zwischen FI-Tabelle und Bemerkung.
     # Bei 0 FI-Messungen wird die FI-Tabelle NICHT gerendert → Höhe 0.
-    fi_anzahl = len(fi_messungen)
-    fi_hoehe_pt = (45 + fi_anzahl * 21) if fi_anzahl > 0 else 0
-    unten_pt = 240
-    verfuegbar_pt = 600
-    spacer_pt = max(0, verfuegbar_pt - fi_hoehe_pt - unten_pt)
-    spacer_mm = round(spacer_pt * 25.4 / 72)
+    spacer_mm = berechne_spacer_mm(len(fi_messungen), sn.bemerkung)
 
     # Effektiver Norm-Name: SN-Wert oder Fallback auf globales Setting
     effektive_norm = sn.norm_name or get_norm_name()
