@@ -173,6 +173,29 @@ Text hier
 - Test-PDFs direkt via Python-Script generieren (`pisa.CreatePDF`)
 - `taskkill //F //IM python.exe` falls Server-Prozesse hängen
 
+### PDF-/Render-Smoke-Tests NIE gegen die Live-DB
+
+Smoke-Tests, die Daten **mutieren** (Werte setzen, Zeilen löschen, um ein PDF zu erzeugen),
+laufen immer auf einer **Kopie** der DB — nie gegen `whs.db` oder `whs_dev.db`. Kopie via
+SQLite-Backup-API ziehen (auch bei laufendem Dienst konsistent), dann `DATABASE_URL` explizit
+auf die Kopie setzen:
+
+```powershell
+$env:DATABASE_URL = "sqlite:///C:/inetpub/whs_app_dev/database/tmp/smoke.db"
+```
+
+**Vorfall 2026-08-25:** Ein Smoke-Test lief gegen die Live-DEV-DB. Ein `print()` mit dem
+Zeichen `∆` brach unter **cp1252** ab (`UnicodeEncodeError`) und riss die `finally`-Restore-
+Logik mit — 6 FI-Zeilen waren temporär weg und mussten aus dem Backup zurückgeholt werden.
+Drei Lehren:
+
+- Test-Daten **immer auf einer DB-Kopie** mutieren, nie in der Live-DB.
+- Restore-Logik nur auf vorab gesicherten **Plain-Tupeln** aufbauen, nie auf ORM-Objekten,
+  deren Zeilen zwischenzeitlich gelöscht wurden (sonst `ObjectDeletedError` beim Restore).
+- In Skripten mit Sonderzeichen zuerst
+  `sys.stdout.reconfigure(encoding='utf-8', errors='replace')` setzen.
+
+
 **Bekannte nicht-unterstützte CSS:**
 - `position: fixed / absolute`
 - `@page` margin-box
@@ -323,8 +346,11 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.6` (Code bis `b836418`) — Bemerkung-PDF-Fixes
-(Schriftgrösse/Ausrichtung) + „Art des Produkts" auch bei WHK editierbar.
+Modell brechen. Aktueller Stand: `v2026.07.7` (Code bis `22089fd`) — FI-Messungen vollständig
+löschbar (auch die letzte, ohne Regeneration durch den Abgangs-Sync) + Freitext-Werte in
+∆I/∆t (z. B. „-“) inkl. PDF-Ausgabe ohne Einheit. **DB-Migration nötig**
+(`scripts/migrate_fi_freitext.py`: `fi_messungen`-Rebuild FLOAT → VARCHAR(20) +
+`stuecknachweis.fi_manuell_verwaltet`).
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
 
 ### Dienstnamen
