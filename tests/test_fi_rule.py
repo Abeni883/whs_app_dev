@@ -1,8 +1,15 @@
-"""Tests fuer die typabhaengige FI-Loeschregel (AP2 / O-4a).
+"""Tests fuer das FI-Loeschverhalten (AP2 / O-4a, erweitert 08/2026).
 
-- WHK-Stuecknachweis: letzte FI darf NICHT geloescht werden (HTTP 400).
+Seit 08/2026 gilt fuer WHK und Steuerung dieselbe Regel: ALLE FI-Messungen sind
+loeschbar (auch die letzte), damit eine nicht durchfuehrbare FI-Messung abgebildet
+werden kann. Das Loeschen einer auto-generierten Zeile setzt
+Stuecknachweis.fi_manuell_verwaltet=True und schaltet damit den Abgangs-Sync ab.
+
+- WHK-Stuecknachweis: letzte FI loeschen ist OK (frueher HTTP 400).
 - WHK-Stuecknachweis mit mehreren FI: eine loeschen ist OK.
-- Steuerungs-Stuecknachweis: alle FI loeschen (auch die letzte) ist OK.
+- Steuerungs-Stuecknachweis: alle FI loeschen ist OK.
+- Loeschen einer auto-Zeile (manuell=False) setzt das Flag, manuelle Zeile nicht.
+- Fremder Stuecknachweis: 403.
 """
 import os
 import unittest
@@ -69,12 +76,39 @@ class FiRuleTest(unittest.TestCase):
     def _delete(self, sn_id, fi_id):
         return self.client.post(f'/stuecknachweis/{sn_id}/fi/{fi_id}/delete')
 
-    def test_whk_letzte_fi_loeschen_400(self):
+    def test_whk_letzte_fi_loeschen_ok(self):
+        """Auch die letzte FI eines WHK-SN ist loeschbar (Regelaenderung 08/2026)."""
         sn, fis = self._sn_whk(1)
         r = self._delete(sn.id, fis[0].id)
-        self.assertEqual(r.status_code, 400)
-        self.assertFalse(r.get_json()['success'])
-        self.assertEqual(FiMessung.query.filter_by(stuecknachweis_id=sn.id).count(), 1)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.get_json()['success'])
+        self.assertEqual(FiMessung.query.filter_by(stuecknachweis_id=sn.id).count(), 0)
+
+    def test_loeschen_auto_zeile_setzt_flag(self):
+        """auto-generierte Zeile (manuell=False) geloescht -> Sync wird abgeschaltet."""
+        sn, fis = self._sn_whk(2)
+        self.assertFalse(bool(sn.fi_manuell_verwaltet))
+        r = self._delete(sn.id, fis[0].id)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(bool(Stuecknachweis.query.get(sn.id).fi_manuell_verwaltet))
+
+    def test_loeschen_manueller_zeile_setzt_flag_nicht(self):
+        """Nur manuell hinzugefuegte Zeile geloescht -> Sync bleibt aktiv."""
+        sn, fis = self._sn_whk(2)
+        manuell = FiMessung(stuecknachweis_id=sn.id, sicherung='F-manuell',
+                            reihenfolge=99, manuell=True)
+        db.session.add(manuell)
+        db.session.commit()
+        r = self._delete(sn.id, manuell.id)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(bool(Stuecknachweis.query.get(sn.id).fi_manuell_verwaltet))
+
+    def test_fremder_stuecknachweis_403(self):
+        sn_a, fis_a = self._sn_whk(2)
+        sn_b, _ = self._sn_whk(2)
+        r = self._delete(sn_b.id, fis_a[0].id)
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(FiMessung.query.filter_by(stuecknachweis_id=sn_a.id).count(), 2)
 
     def test_whk_eine_von_mehreren_loeschen_ok(self):
         sn, fis = self._sn_whk(3)

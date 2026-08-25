@@ -68,21 +68,16 @@ def _sn_status(sn):
     return 'nicht_erstellt'
 
 
-def _parse_num(value):
-    """Parst einen mA/ms-Wert robust.
+def _parse_fi_wert(value):
+    """Normalisiert einen ∆I/∆t-Wert (Freitext).
 
-    Gibt float oder None zurück und wirft niemals — verhindert HTTP 500
-    bei Dezimal-, Komma- oder ungültigen Eingaben.
+    Seit 08/2026 sind neben Messwerten auch Platzhalter wie "-" erlaubt, wenn die
+    FI-Messung nicht durchgeführt werden konnte. Gespeichert wird der getrimmte
+    Text; leere Eingaben werden zu None (Zelle bleibt im PDF leer).
     """
     if value is None:
         return None
-    s = str(value).strip().replace(',', '.')
-    if not s:
-        return None
-    try:
-        return float(s)
-    except (ValueError, TypeError):
-        return None
+    return str(value).strip() or None
 
 
 # ==================== SHARED HELPERS ====================
@@ -133,8 +128,8 @@ def _speichere_form(sn, config, ist_steuerung):
         fi.sicherung = request.form.get(f'{prefix}_sicherung', fi.sicherung)
         fi.fehlerstrom_30 = f'fi_fehlerstrom_30_{fi.id}' in request.form
         fi.fehlerstrom_300 = f'fi_fehlerstrom_300_{fi.id}' in request.form
-        fi.delta_i_ma = _parse_num(request.form.get(f'{prefix}_delta_i', ''))
-        fi.delta_t_ms = _parse_num(request.form.get(f'{prefix}_delta_t', ''))
+        fi.delta_i_ma = _parse_fi_wert(request.form.get(f'{prefix}_delta_i', ''))
+        fi.delta_t_ms = _parse_fi_wert(request.form.get(f'{prefix}_delta_t', ''))
         fi.status = f'{prefix}_status' in request.form
 
     # Schutzgrad + Bemerkung
@@ -275,10 +270,12 @@ def stuecknachweis_formular(project_id, whk_id):
                 stuecknachweis_id=sn.id, sicherung=sicherung, status=True, reihenfolge=idx))
         db.session.commit()
 
-    # FI-Messungen aktualisieren wenn Abgang-Anzahl geändert wurde (nur WHK, nur auto-generierte)
+    # FI-Messungen aktualisieren wenn Abgang-Anzahl geändert wurde (nur WHK, nur auto-generierte).
+    # Sobald der User selbst eine auto-generierte Zeile gelöscht hat (fi_manuell_verwaltet),
+    # bleibt die Liste unangetastet — sonst würde der Sync Gelöschtes wiederbeleben.
     auto_fi_anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id, manuell=False).count()
     soll_anzahl = len(generiere_fi_sicherungen(whk.anzahl_abgaenge))
-    if auto_fi_anzahl != soll_anzahl:
+    if not sn.fi_manuell_verwaltet and auto_fi_anzahl != soll_anzahl:
         FiMessung.query.filter_by(stuecknachweis_id=sn.id, manuell=False).delete()
         for idx, sicherung in enumerate(generiere_fi_sicherungen(whk.anzahl_abgaenge)):
             db.session.add(FiMessung(
@@ -380,11 +377,13 @@ def fi_hinzufuegen(sn_id):
 @stuecknachweis_bp.route('/stuecknachweis/<int:sn_id>/fi/<int:fi_id>/delete', methods=['POST'])
 @login_required
 def fi_loeschen(sn_id, fi_id):
-    """FI-Messung löschen — typabhängige Regel (O-4a).
+    """FI-Messung löschen — für WHK und Steuerung ohne Mindestanzahl.
 
-    - WHK-Stücknachweis (whk_config_id): die LETZTE FI-Messung darf NICHT
-      gelöscht werden (mind. 1 FI erforderlich).
-    - Steuerungs-Stücknachweis (steuerung_config_id): 0 FI erlaubt.
+    Kann eine FI-Messung nicht durchgeführt werden, dürfen ALLE Zeilen gelöscht
+    werden (auch die letzte). Betrifft der Löschvorgang eine auto-generierte Zeile
+    (manuell=False), übernimmt der User damit die Hoheit über die FI-Liste:
+    fi_manuell_verwaltet=True schaltet den Abgangs-Sync für diesen Stücknachweis ab,
+    damit Gelöschtes beim nächsten Seitenaufruf nicht wieder auftaucht.
     """
     sn = Stuecknachweis.query.get_or_404(sn_id)
     fi = FiMessung.query.get_or_404(fi_id)
@@ -392,14 +391,8 @@ def fi_loeschen(sn_id, fi_id):
     if fi.stuecknachweis_id != sn.id:
         return jsonify({'success': False}), 403
 
-    # WHK-Stücknachweise brauchen immer mindestens 1 FI-Messung
-    if not sn.ist_steuerung:
-        anzahl = FiMessung.query.filter_by(stuecknachweis_id=sn.id).count()
-        if anzahl <= 1:
-            return jsonify({
-                'success': False,
-                'error': 'Ein WHK-Stücknachweis benötigt mindestens eine FI-Messung.'
-            }), 400
+    if not fi.manuell:
+        sn.fi_manuell_verwaltet = True
 
     db.session.delete(fi)
     db.session.commit()
@@ -468,8 +461,8 @@ def stuecknachweis_autosave(sn_id):
                 if fi and fi.stuecknachweis_id == sn.id:
                     if 'sicherung' in fi_data:
                         fi.sicherung = fi_data['sicherung']
-                    fi.delta_i_ma = _parse_num(fi_data.get('delta_i_ma'))
-                    fi.delta_t_ms = _parse_num(fi_data.get('delta_t_ms'))
+                    fi.delta_i_ma = _parse_fi_wert(fi_data.get('delta_i_ma'))
+                    fi.delta_t_ms = _parse_fi_wert(fi_data.get('delta_t_ms'))
                     fi.fehlerstrom_30 = fi_data.get('fehlerstrom_30', False)
                     fi.fehlerstrom_300 = fi_data.get('fehlerstrom_300', False)
                     fi.status = fi_data.get('status', True)

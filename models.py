@@ -930,6 +930,10 @@ class Stuecknachweis(db.Model):
     isolation_ergebnis = db.Column(db.String(50), nullable=True)
     isolation_status = db.Column(db.Boolean, default=True)
 
+    # FI-Verwaltung: sobald der User eine auto-generierte FI-Zeile loescht, uebernimmt
+    # er die Hoheit ueber die FI-Liste — der Abgangs-Sync regeneriert dann nicht mehr.
+    fi_manuell_verwaltet = db.Column(db.Boolean, default=False)
+
     # Bemerkung
     bemerkung = db.Column(db.Text, nullable=True)
 
@@ -982,11 +986,34 @@ class FiMessung(db.Model):
     sicherung = db.Column(db.String(20), nullable=False)    # z.B. 'F302.2'
     fehlerstrom_30 = db.Column(db.Boolean, default=False)    # 30mA
     fehlerstrom_300 = db.Column(db.Boolean, default=True)    # 300mA
-    delta_i_ma = db.Column(db.Float, nullable=True)          # ∆I FI [mA] (Dezimalwerte erlaubt)
-    delta_t_ms = db.Column(db.Float, nullable=True)          # ∆t FI [ms] (Dezimalwerte erlaubt)
+    # Freitext statt Zahl: erlaubt neben Messwerten auch Platzhalter wie "-",
+    # wenn die FI-Messung nicht durchgefuehrt werden konnte.
+    delta_i_ma = db.Column(db.String(20), nullable=True)     # ∆I FI [mA]
+    delta_t_ms = db.Column(db.String(20), nullable=True)     # ∆t FI [ms]
     status = db.Column(db.Boolean, default=True)
     reihenfolge = db.Column(db.Integer, default=0)
     manuell = db.Column(db.Boolean, default=False)
+
+    @staticmethod
+    def _ist_zahl(wert):
+        """True, wenn der Freitext-Wert als Zahl lesbar ist (auch mit Komma)."""
+        if wert is None:
+            return False
+        try:
+            float(str(wert).strip().replace(',', '.'))
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    @property
+    def delta_i_einheit(self):
+        """'mA' bei numerischem Wert, sonst '' (Freitext wie "-" bleibt einheitenlos)."""
+        return 'mA' if self._ist_zahl(self.delta_i_ma) else ''
+
+    @property
+    def delta_t_einheit(self):
+        """'ms' bei numerischem Wert, sonst '' (Freitext wie "-" bleibt einheitenlos)."""
+        return 'ms' if self._ist_zahl(self.delta_t_ms) else ''
 
     def __repr__(self):
         return (f'<FiMessung id={self.id} stuecknachweis_id={self.stuecknachweis_id} '

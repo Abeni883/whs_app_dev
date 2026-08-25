@@ -346,10 +346,10 @@
                             <label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-300" name="fi_fehlerstrom_300_{{ fi.id }}" {% if fi.fehlerstrom_300 %}checked{% endif %}> 300mA</label>
                         </td>
                         <td style="padding: 4px 8px;">
-                            <input type="number" step="any" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma | numfmt }}" placeholder="mA" style="width: 100%;">
+                            <input type="text" name="fi_{{ fi.id }}_delta_i" value="{{ fi.delta_i_ma or '' }}" placeholder="mA" style="width: 100%;">
                         </td>
                         <td style="padding: 4px 8px;">
-                            <input type="number" step="any" name="fi_{{ fi.id }}_delta_t" value="{{ fi.delta_t_ms | numfmt }}" placeholder="ms" style="width: 100%;">
+                            <input type="text" name="fi_{{ fi.id }}_delta_t" value="{{ fi.delta_t_ms or '' }}" placeholder="ms" style="width: 100%;">
                         </td>
                         <td class="sn-toggle-cell">
                             <input type="hidden" name="fi_{{ fi.id }}_status" value="">
@@ -521,8 +521,8 @@ if (btnFi) {
                     '<label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-30" name="fi_fehlerstrom_30_' + id + '"> 30mA</label>' +
                     '<label class="checkbox-label"><input type="checkbox" class="fi-fehlerstrom-300" name="fi_fehlerstrom_300_' + id + '"> 300mA</label>' +
                     '</td>' +
-                    '<td><input type="number" step="any" name="fi_' + id + '_delta_i" placeholder="mA"></td>' +
-                    '<td><input type="number" step="any" name="fi_' + id + '_delta_t" placeholder="ms"></td>' +
+                    '<td><input type="text" name="fi_' + id + '_delta_i" placeholder="mA"></td>' +
+                    '<td><input type="text" name="fi_' + id + '_delta_t" placeholder="ms"></td>' +
                     '<td class="sn-toggle-cell">' +
                     '<input type="hidden" name="fi_' + id + '_status" value="on">' +
                     '<button type="button" class="sn-toggle sn-toggle-ok" onclick="toggleStatus(this, \'fi_' + id + '_status\')">Richtig</button>' +
@@ -553,8 +553,11 @@ document.addEventListener('click', function(e) {
             .then(function(data) {
                 if (data.success) {
                     document.getElementById('fi-row-' + fiId).remove();
+                } else {
+                    alert('FI-Messung konnte nicht gelöscht werden' + (data.error ? ': ' + data.error : '.'));
                 }
-            });
+            })
+            .catch(function(err) { console.error('FI löschen Fehler:', err); });
         }
     }
 });
