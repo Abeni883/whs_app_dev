@@ -346,11 +346,11 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.7` (Code bis `22089fd`) — FI-Messungen vollständig
-löschbar (auch die letzte, ohne Regeneration durch den Abgangs-Sync) + Freitext-Werte in
-∆I/∆t (z. B. „-“) inkl. PDF-Ausgabe ohne Einheit. **DB-Migration nötig**
-(`scripts/migrate_fi_freitext.py`: `fi_messungen`-Rebuild FLOAT → VARCHAR(20) +
-`stuecknachweis.fi_manuell_verwaltet`).
+Modell brechen. Aktueller Stand: `v2026.07.8` (Code bis `9e5f4ae`) — „Alle setzen“-Buttons
+pro Ergebniszeile in Mehrspalten-Testtabellen (LSS-CH + WH-LTS, EWH- und GWH-Testseiten;
+nur bei > 1 Spalte gerendert). Reines Template-Deployment, **kein DB-Schritt**.
+Vorheriger Stand: `v2026.07.7` (FI löschbar, Freitext ∆I/∆t; DB-Migration
+`scripts/migrate_fi_freitext.py` — in PROD bereits ausgeführt).
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
 
 ### Dienstnamen
