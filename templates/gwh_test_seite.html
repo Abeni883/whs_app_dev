@@ -64,6 +64,9 @@
                             {% for spalte in spalten %}
                             <th class="whk-column">{{ spalte }}</th>
                             {% endfor %}
+                            {% if spalten|length > 1 %}
+                            <th class="alle-column"></th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody id="lss-ch-tbody">
@@ -94,6 +97,9 @@
                             {% for spalte in spalten %}
                             <th class="whk-column">{{ spalte }}</th>
                             {% endfor %}
+                            {% if spalten|length > 1 %}
+                            <th class="alle-column"></th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody id="wh-lts-tbody">
@@ -358,6 +364,55 @@
     vertical-align: middle;
 }
 
+/* "Alle setzen"-Spalte (nur Mehrspalten-Tests) */
+.alle-column {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.alle-setzen-cell {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.btn-alle-setzen {
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    border: 1px solid var(--border-color, #d1d5db);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.btn-alle-setzen:hover {
+    background: var(--bg-tertiary, #f3f4f6);
+    border-color: var(--text-secondary, #9ca3af);
+}
+
+.btn-alle-setzen.alle-richtig {
+    color: var(--accent-green, #10b981);
+    border-color: var(--accent-green, #10b981);
+}
+
+.btn-alle-setzen.alle-richtig:hover {
+    background: var(--accent-green, #10b981);
+    color: #ffffff;
+}
+
+.btn-alle-setzen.alle-falsch {
+    color: var(--accent-red, #ef4444);
+    border-color: var(--accent-red, #ef4444);
+}
+
+.btn-alle-setzen.alle-falsch:hover {
+    background: var(--accent-red, #ef4444);
+    color: #ffffff;
+}
+
 /* Zurück-Button für Dark Theme optimieren */
 [data-theme="dark"] .page-header .btn-secondary {
     background-color: #4b5563;
@@ -605,11 +660,17 @@ function updateTable(system, frage) {
         th.textContent = spalte;
         header.appendChild(th);
     });
+    if (spalten.length > 1) {
+        const thAlle = document.createElement('th');
+        thAlle.className = 'alle-column';
+        header.appendChild(thAlle);
+    }
 
     // Body aktualisieren (4 Zeilen: Richtig, Falsch, Nicht Testbar, Bemerkung)
     const ergebnisTypen = ['richtig', 'falsch', 'nicht_testbar'];
     const rowClasses = ['result-row-richtig', 'result-row-falsch', 'result-row-nicht-testbar'];
     const labels = ['Richtig', 'Falsch', 'Nicht Testbar'];
+    const alleLabels = ['Alle ✓', 'Alle ✗', 'Alle —'];
 
     ergebnisTypen.forEach((ergebnis, rowIndex) => {
         const row = body.rows[rowIndex];
@@ -644,6 +705,26 @@ function updateTable(system, frage) {
             td.appendChild(checkbox);
             row.appendChild(td);
         });
+
+        // "Alle setzen"-Button (nur bei Mehrspalten-Tests)
+        if (spalten.length > 1) {
+            const alleTd = document.createElement('td');
+            alleTd.className = 'alle-setzen-cell';
+
+            const alleBtn = document.createElement('button');
+            alleBtn.type = 'button';
+            alleBtn.className = 'btn-alle-setzen alle-' + ergebnis.replace('_', '-');
+            alleBtn.dataset.system = system;
+            alleBtn.dataset.wert = ergebnis;
+            alleBtn.title = 'Alle Spalten auf "' + labels[rowIndex] + '" setzen';
+            alleBtn.textContent = alleLabels[rowIndex];
+            alleBtn.addEventListener('click', function() {
+                alleSpaltenSetzen(system, ergebnis);
+            });
+
+            alleTd.appendChild(alleBtn);
+            row.appendChild(alleTd);
+        }
     });
 
     // Bemerkung-Zeile aktualisieren (4. Zeile)
@@ -682,7 +763,27 @@ function updateTable(system, frage) {
             td.appendChild(button);
             bemerkungRow.appendChild(td);
         });
+
+        // Leere Zelle unter der "Alle setzen"-Spalte (kein Button in der Bemerkung-Zeile)
+        if (spalten.length > 1) {
+            const td = document.createElement('td');
+            td.className = 'alle-setzen-cell';
+            bemerkungRow.appendChild(td);
+        }
     }
+}
+
+// Setzt in allen Spalten der Tabelle das gewählte Ergebnis (Zeile "Alle setzen")
+function alleSpaltenSetzen(system, ergebnis) {
+    const tbody = document.getElementById(system + '-tbody');
+    tbody.querySelectorAll('input[type="checkbox"][data-ergebnis="' + ergebnis + '"]').forEach(checkbox => {
+        if (!checkbox.checked) {
+            checkbox.checked = true;
+            // change-Event durchläuft die bestehende Logik (Exklusivität, ergebnisse, Progress);
+            // debouncedSave kollabiert die Trigger zu einem einzigen Save
+            checkbox.dispatchEvent(new Event('change'));
+        }
+    });
 }
 
 function handleCheckboxChange(event) {
