@@ -17,6 +17,8 @@ Wert nie eine bewusste Abweichung war, d. h. exakt einem dieser Werte entspricht
     T2  Steuerung: steuerung.name  (Alt-Init vor 07.07.2026 kopierte name statt typ ->
         "ueber Kreuz"; siehe Commit d267e59)
     T3  leerer String
+    T4  WHK: whk_nummer (Alt-Init kopierte whk_nummer, weil whk_typ damals leer war und
+        erst spaeter in der Konfiguration ergaenzt wurde)
   Art des Produkts:
     A1  aktueller Config-Fallback (steuerung.name / 'Steuerung (SHDSL)' bzw. 'Weichenheizkabine')
     A2  Steuerung: steuerung.typ   (vertauschter Altwert -> "ueber Kreuz")
@@ -104,6 +106,10 @@ def analysiere(rows):
             elif typ_vertauscht and v == typ_vertauscht:
                 aenderungen.append((sn_id, 'typbezeichnung', typ_sn,
                                     'T2 = steuerung.name (Alt-Init/ueber Kreuz)'))
+            elif not ist_steuerung and v == whk_nummer:
+                # Alt-Init kopierte whk_nummer, weil whk_typ damals noch leer war
+                aenderungen.append((sn_id, 'typbezeichnung', typ_sn,
+                                    'T4 = whk_nummer (Init-Default vor whk_typ)'))
             else:
                 offen.append((sn_id, kontext, 'typbezeichnung', typ_sn, typ_fb))
 

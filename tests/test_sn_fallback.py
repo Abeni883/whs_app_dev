@@ -211,7 +211,9 @@ class SnFallbackTest(unittest.TestCase):
                         anzahl_temperatursonden=1, preset_typ='kabine_16hz')
         whk2 = WHKConfig(projekt_id=p.id, whk_nummer='WHK 02', whk_typ=None, anzahl_abgaenge=1,
                          anzahl_temperatursonden=1, preset_typ='kabine_16hz')
-        db.session.add_all([st2, whk, whk2]); db.session.commit()
+        whk3 = WHKConfig(projekt_id=p.id, whk_nummer='WHK 03', whk_typ='WHK_00UP_WE_03_16', anzahl_abgaenge=1,
+                         anzahl_temperatursonden=1, preset_typ='kabine_16hz')
+        db.session.add_all([st2, whk, whk2, whk3]); db.session.commit()
         rows = [
             # realer Fall: ueber Kreuz (Art = config.typ, Typ = config.name) -> beide NULL
             Stuecknachweis(project_id=p.id, steuerung_config_id=st.id,
@@ -224,6 +226,8 @@ class SnFallbackTest(unittest.TestCase):
             # WHK ohne whk_typ, bewusste Abweichung bei Art -> Typ NULL, Art bleibt
             Stuecknachweis(project_id=p.id, whk_config_id=whk2.id,
                            typbezeichnung='WHK 02', art_produkt_text='Weichenheizkabine Spezial'),
+            # WHK mit spaeter ergaenztem whk_typ: Alt-Init hat whk_nummer kopiert (T4) -> NULL
+            Stuecknachweis(project_id=p.id, whk_config_id=whk3.id, typbezeichnung='WHK 03'),
         ]
         db.session.add_all(rows); db.session.commit()
         ids = [r.id for r in rows]
@@ -233,7 +237,7 @@ class SnFallbackTest(unittest.TestCase):
         self.assertEqual(mig.dry_run(self.db_path), 0)
         con = sqlite3.connect(self.db_path)
         self.assertEqual(con.execute(
-            'SELECT COUNT(*) FROM stuecknachweis WHERE typbezeichnung IS NOT NULL').fetchone()[0], 4)
+            'SELECT COUNT(*) FROM stuecknachweis WHERE typbezeichnung IS NOT NULL').fetchone()[0], 5)
         con.close()
 
         self.assertEqual(mig.migrate(self.db_path), 0)
@@ -245,6 +249,7 @@ class SnFallbackTest(unittest.TestCase):
         self.assertEqual(got[ids[1]], (None, None))
         self.assertEqual(got[ids[2]], (None, None))
         self.assertEqual(got[ids[3]], (None, 'Weichenheizkabine Spezial'))
+        self.assertEqual(got[ids[4]], (None, None))   # T4: whk_nummer-Altwert
 
         # Idempotent: zweiter Lauf findet nichts, Abweichung bleibt
         self.assertEqual(mig.migrate(self.db_path), 0)
