@@ -52,9 +52,10 @@ class ArtProduktTest(unittest.TestCase):
         self.assertTrue(ctx['ist_steuerung'])
         self.assertEqual(ctx['typbezeichnung'], 'ES223')                 # aus config.typ
         self.assertEqual(ctx['art_produkt_fallback'], 'Elektrische Steuerung')  # aus config.name
-        # Auto-Init hat Typbezeichnung aus typ gesetzt
+        # Auto-Init kopiert NICHT mehr physisch: NULL = folgt der Konfiguration
         sn = Stuecknachweis.query.filter_by(steuerung_config_id=st.id).first()
-        self.assertEqual(sn.typbezeichnung, 'ES223')
+        self.assertIsNone(sn.typbezeichnung)
+        self.assertEqual(sn.effektive_typbezeichnung, 'ES223')
 
     def test_typ_leer_fallback_steuerung(self):
         p, st = self._steuerung(name='Nur Name', typ=None)
@@ -100,9 +101,10 @@ class ArtProduktTest(unittest.TestCase):
         self.assertFalse(self.cap['ctx']['ist_steuerung'])
         self.assertEqual(self.cap['ctx']['art_produkt_fallback'], 'Weichenheizkabine')
         self.assertEqual(self.cap['ctx']['typbezeichnung'], 'WHK 01')  # aus whk_nummer
-        # Auto-Init schreibt den Default in die DB (anders als bei Steuerung)
+        # Auto-Init kopiert NICHT mehr physisch: NULL = folgt der Konfiguration
         sn = Stuecknachweis.query.filter_by(whk_config_id=whk.id).first()
-        self.assertEqual(sn.art_produkt_text, 'Weichenheizkabine')
+        self.assertIsNone(sn.art_produkt_text)
+        self.assertEqual(sn.effektive_art_produkt, 'Weichenheizkabine')
         self.client.get(f'/stuecknachweis/{sn.id}/pdf')
         self.assertEqual(self.cap['ctx']['sn_art_produkt'], 'Weichenheizkabine')
 

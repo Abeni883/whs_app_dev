@@ -868,13 +868,17 @@ class Stuecknachweis(db.Model):
     steuerung_config_id = db.Column(db.Integer, db.ForeignKey('steuerung_configs.id', ondelete='RESTRICT'), nullable=True)
 
     # Kopfdaten
+    # Typbezeichnung / Kennnummer: Override pro SN; NULL = Fallback auf die Konfiguration
+    # (Steuerung: steuerung_configs.typ, WHK: whk_configs.whk_typ bzw. whk_nummer).
+    # Siehe effektive_typbezeichnung / config_typbezeichnung.
     typbezeichnung = db.Column(db.String(100), nullable=True)
     auftraggeber = db.Column(db.String(100), default='SBB AG')
     hersteller = db.Column(db.String(100), default='Achermann & Co. AG')
     # Norm-Bezeichnung pro SN (überschreibt globalen Settings-Wert; NULL = Fallback auf Setting)
     norm_name = db.Column(db.String(100), nullable=True)
-    # Art des Produkts (nur Steuerungs-SN): Override pro SN;
-    # NULL = Fallback auf steuerung_configs.name der zugeordneten Steuerung
+    # Art des Produkts (Produktenorm): Override pro SN; NULL = Fallback auf die Konfiguration
+    # (Steuerung: steuerung_configs.name, WHK: ART_PRODUKT_WHK).
+    # Siehe effektive_art_produkt / config_art_produkt.
     art_produkt_text = db.Column(db.String(100), nullable=True)
 
     # Herstellung
@@ -961,9 +965,89 @@ class Stuecknachweis(db.Model):
         """True, wenn dieser Stücknachweis zu einer Steuerung (SHDSL) gehört."""
         return self.steuerung_config_id is not None
 
+    @property
+    def config(self):
+        """Zugeordnete Konfiguration (SteuerungConfig oder WHKConfig)."""
+        return self.steuerung_config if self.ist_steuerung else self.whk_config
+
+    # ---- Fallback-Kette Konfiguration -> SN (Muster wie norm_name) ----
+    # Die Konfiguration bleibt führend, solange der User das Feld im SN nicht
+    # selbst überschrieben hat (Spalte NULL). Das Speichern normalisiert Werte,
+    # die exakt dem Config-Fallback entsprechen, wieder auf NULL (siehe
+    # normalisiere_override), damit spätere Config-Änderungen durchschlagen.
+
+    @property
+    def config_typbezeichnung(self):
+        """Typbezeichnung laut Konfiguration (Fallback, wenn sn.typbezeichnung NULL)."""
+        return config_typbezeichnung(self.config, self.ist_steuerung)
+
+    @property
+    def config_art_produkt(self):
+        """Art des Produkts laut Konfiguration (Fallback, wenn sn.art_produkt_text NULL)."""
+        return config_art_produkt(self.config, self.ist_steuerung)
+
+    @property
+    def effektive_typbezeichnung(self):
+        """SN-Override oder Config-Fallback."""
+        return self.typbezeichnung or self.config_typbezeichnung
+
+    @property
+    def effektive_art_produkt(self):
+        """SN-Override oder Config-Fallback."""
+        return self.art_produkt_text or self.config_art_produkt
+
+    @staticmethod
+    def normalisiere_override(wert, fallback):
+        """Eingabewert -> zu speichernder Override.
+
+        Leer oder exakt gleich dem aktuellen Config-Fallback -> None (Feld folgt
+        weiter der Konfiguration). Nur echte Abweichungen werden persistiert.
+        """
+        wert = (wert or '').strip()
+        if not wert or wert == fallback:
+            return None
+        return wert
+
     def __repr__(self):
         return (f'<Stuecknachweis id={self.id} project_id={self.project_id} '
                 f'whk_config_id={self.whk_config_id}>')
+
+
+# "Art des Produkts (Produktenorm)" bei WHK-Stücknachweisen (Fallback, nicht persistiert).
+# Steuerungen nutzen stattdessen den Namen der Steuerungs-Konfiguration.
+ART_PRODUKT_WHK = 'Weichenheizkabine'
+# Fallbacks für Steuerungs-SN, wenn die Konfiguration kein typ / name hat
+TYP_FALLBACK_STEUERUNG = 'Steuerung'
+ART_PRODUKT_FALLBACK_STEUERUNG = 'Steuerung (SHDSL)'
+
+
+def config_typbezeichnung(config, ist_steuerung):
+    """Typbezeichnung aus der Konfiguration (ohne SN-Override).
+
+    Steuerung: steuerung_configs.typ (Fallback 'Steuerung')
+    WHK:       whk_configs.whk_typ (Fallback whk_nummer)
+    Funktioniert auch ohne ORM-Objekt (config=None) und wird vom Migrationsskript
+    scripts/migrate_sn_fallback.py mit Plain-Tupeln nachgebildet — bei Änderungen
+    beide Stellen anpassen.
+    """
+    if config is None:
+        return TYP_FALLBACK_STEUERUNG if ist_steuerung else None
+    if ist_steuerung:
+        return config.typ or TYP_FALLBACK_STEUERUNG
+    return config.whk_typ or config.whk_nummer
+
+
+def config_art_produkt(config, ist_steuerung):
+    """Art des Produkts aus der Konfiguration (ohne SN-Override).
+
+    Steuerung: steuerung_configs.name (Fallback 'Steuerung (SHDSL)')
+    WHK:       ART_PRODUKT_WHK
+    """
+    if not ist_steuerung:
+        return ART_PRODUKT_WHK
+    if config is None:
+        return ART_PRODUKT_FALLBACK_STEUERUNG
+    return config.name or ART_PRODUKT_FALLBACK_STEUERUNG
 
 
 class FiMessung(db.Model):

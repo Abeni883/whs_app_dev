@@ -48,7 +48,7 @@
                 <tr>
                     <td>
                         <strong>{{ item.whk.whk_nummer }}</strong>
-                        {% if item.whk.whk_typ %}<span style="color: var(--text-secondary);"> — {{ item.whk.whk_typ }}</span>{% endif %}
+                        {% if item.typ_anzeige %}<span style="color: var(--text-secondary);"> — {{ item.typ_anzeige }}</span>{% endif %}
                     </td>
                     <td>
                         <span class="preset-badge">{{ item.preset_label }}</span>
@@ -64,8 +64,8 @@
                 {% for item in steuerung_data %}
                 <tr>
                     <td>
-                        <strong>{{ item.st.name or 'Steuerung' }}</strong>
-                        {% if item.st.typ %}<span style="color: var(--text-secondary);"> — {{ item.st.typ }}</span>{% endif %}
+                        <strong>{{ item.art_anzeige }}</strong>
+                        {% if item.typ_anzeige %}<span style="color: var(--text-secondary);"> — {{ item.typ_anzeige }}</span>{% endif %}
                     </td>
                     <td>
                         <span class="preset-badge preset-badge-steuerung">Steuerung SHDSL</span>

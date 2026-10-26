@@ -15,7 +15,8 @@ from datetime import datetime, date
 
 from models import (
     db, Project, WHKConfig, Stuecknachweis, FiMessung,
-    SteuerungConfig, generiere_fi_sicherungen, get_norm_name
+    SteuerungConfig, generiere_fi_sicherungen, get_norm_name,
+    ART_PRODUKT_WHK, config_typbezeichnung, config_art_produkt
 )
 
 stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
@@ -23,10 +24,11 @@ stuecknachweis_bp = Blueprint('stuecknachweis', __name__)
 
 # ==================== KONSTANTEN ====================
 
-# "Art des Produkts (Produktenorm)" bei WHK-Stücknachweisen:
-# Vorbelegung beim Anlegen und Fallback, wenn das Feld geleert wird.
-# (Steuerung nutzt stattdessen den Namen der Steuerungs-Konfiguration.)
-ART_PRODUKT_WHK = 'Weichenheizkabine'
+# Typbezeichnung und "Art des Produkts (Produktenorm)" folgen der Konfiguration
+# (Fallback-Muster wie norm_name): sn.typbezeichnung / sn.art_produkt_text sind NULL,
+# solange der User im SN nichts Abweichendes eingibt. Konstanten + Fallback-Kette
+# liegen im Modell (ART_PRODUKT_WHK, config_typbezeichnung, config_art_produkt,
+# Stuecknachweis.effektive_*). ART_PRODUKT_WHK wird hier re-exportiert (Tests/Skripte).
 
 # Schutzgrad-Ableitung aus Preset (WHK + Steuerung)
 SCHUTZGRAD_MAP = {
@@ -88,14 +90,16 @@ def _speichere_form(sn, config, ist_steuerung):
     Gemeinsam für WHK- und Steuerung-Stücknachweis.
     """
     # Kopfdaten
-    sn.typbezeichnung = request.form.get('typbezeichnung', '').strip() or None
+    # Typbezeichnung + Art des Produkts: leer ODER gleich dem Config-Fallback → NULL
+    # (Feld folgt weiter der Konfiguration); nur echte Abweichungen werden gespeichert.
+    sn.typbezeichnung = Stuecknachweis.normalisiere_override(
+        request.form.get('typbezeichnung'), config_typbezeichnung(config, ist_steuerung))
+    sn.art_produkt_text = Stuecknachweis.normalisiere_override(
+        request.form.get('art_produkt_text'), config_art_produkt(config, ist_steuerung))
     sn.auftraggeber = request.form.get('auftraggeber', '').strip() or 'SBB AG'
     sn.hersteller = request.form.get('hersteller', '').strip() or 'Achermann & Co. AG'
     # Norm: leeres Feld → Fallback auf globalen Settings-Wert
     sn.norm_name = request.form.get('norm_name', '').strip() or get_norm_name()
-    # Art des Produkts (WHK + Steuerung): leeres Feld → NULL = Fallback
-    # (Steuerung: Config-Name, WHK: ART_PRODUKT_WHK)
-    sn.art_produkt_text = request.form.get('art_produkt_text', '').strip() or None
 
     # Preset-Typ auf die Konfiguration (WHK oder Steuerung) speichern
     preset_typ = request.form.get('preset_typ', config.preset_typ)
@@ -141,16 +145,9 @@ def _render_formular(projekt, sn, config, ist_steuerung):
     """Rendert das Stücknachweis-Formular (gemeinsam für WHK/Steuerung)."""
     schutzgrad = SCHUTZGRAD_MAP.get(config.preset_typ, 'IP55')
 
-    if ist_steuerung:
-        objekt_bezeichnung = config.name or 'Steuerung'
-        typbezeichnung = config.typ or 'Steuerung'
-        # Fallback für "Art des Produkts": Name der zugeordneten Steuerung
-        art_produkt_fallback = config.name or 'Steuerung (SHDSL)'
-    else:
-        objekt_bezeichnung = config.whk_nummer
-        typbezeichnung = config.whk_typ or config.whk_nummer
-        art_produkt_fallback = ART_PRODUKT_WHK
+    objekt_bezeichnung = (config.name or 'Steuerung') if ist_steuerung else config.whk_nummer
 
+    # Fallback-Kette: SN-Override oder Config-Wert (value), Config-Wert als placeholder
     return render_template(
         'stuecknachweis/formular.html',
         projekt=projekt,
@@ -158,8 +155,10 @@ def _render_formular(projekt, sn, config, ist_steuerung):
         ist_steuerung=ist_steuerung,
         preset_typ_aktuell=config.preset_typ,
         objekt_bezeichnung=objekt_bezeichnung,
-        typbezeichnung=typbezeichnung,
-        art_produkt_fallback=art_produkt_fallback,
+        typbezeichnung=sn.effektive_typbezeichnung,
+        typbezeichnung_fallback=config_typbezeichnung(config, ist_steuerung),
+        art_produkt=sn.effektive_art_produkt,
+        art_produkt_fallback=config_art_produkt(config, ist_steuerung),
         schutzgrad=schutzgrad,
         autosave_url=url_for('stuecknachweis.stuecknachweis_autosave', sn_id=sn.id),
         fi_add_url=url_for('stuecknachweis.fi_hinzufuegen', sn_id=sn.id),
@@ -210,6 +209,8 @@ def whk_auswahl(project_id):
             'whk': whk,
             'preset_label': preset_labels.get(whk.preset_typ, whk.preset_typ),
             'status': _sn_status(sn),
+            # Anzeige-Typ: SN-Override, sonst whk_typ (None → nur whk_nummer anzeigen)
+            'typ_anzeige': sn.typbezeichnung if (sn and sn.typbezeichnung) else whk.whk_typ,
         })
 
     # Steuerungen (SHDSL) laden — werden unter den WHKs angezeigt
@@ -223,6 +224,9 @@ def whk_auswahl(project_id):
         steuerung_data.append({
             'st': st,
             'status': _sn_status(sn),
+            # Anzeige: SN-Override, sonst Config-Werte (name / typ)
+            'art_anzeige': sn.art_produkt_text if (sn and sn.art_produkt_text) else (st.name or 'Steuerung'),
+            'typ_anzeige': sn.typbezeichnung if (sn and sn.typbezeichnung) else st.typ,
         })
 
     return render_template('stuecknachweis/whk_auswahl.html',
@@ -250,14 +254,14 @@ def stuecknachweis_formular(project_id, whk_id):
     # Stücknachweis laden oder erstellen (inkl. FI-Auto-Generierung)
     sn = Stuecknachweis.query.filter_by(project_id=project_id, whk_config_id=whk_id).first()
     if not sn:
+        # typbezeichnung / art_produkt_text bewusst NULL: folgen der Konfiguration
+        # (whk_typ bzw. ART_PRODUKT_WHK) bis der User sie im SN überschreibt.
         sn = Stuecknachweis(
             project_id=project_id,
             whk_config_id=whk_id,
-            typbezeichnung=whk.whk_typ or whk.whk_nummer,
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
             norm_name=get_norm_name(),
-            art_produkt_text=ART_PRODUKT_WHK,
             herstellungsdatum=date.today(),
             herstellungsdatum_text=datetime.now().strftime('%d.%m.%Y'),
             herstellungsjahr=datetime.now().year,
@@ -321,10 +325,11 @@ def steuerung_stuecknachweis_formular(project_id, steuerung_id):
     # Stücknachweis laden oder erstellen — OHNE FI-Auto-Generierung
     sn = Stuecknachweis.query.filter_by(project_id=project_id, steuerung_config_id=steuerung_id).first()
     if not sn:
+        # typbezeichnung / art_produkt_text bewusst NULL: folgen der Konfiguration
+        # (st.typ bzw. st.name) bis der User sie im SN überschreibt.
         sn = Stuecknachweis(
             project_id=project_id,
             steuerung_config_id=steuerung_id,
-            typbezeichnung=st.typ or 'Steuerung',
             auftraggeber='SBB AG',
             hersteller='Achermann & Co. AG',
             norm_name=get_norm_name(),
@@ -413,7 +418,7 @@ def stuecknachweis_autosave(sn_id):
 
     try:
         # Kopfdaten (inkl. Freitext-Herstellungsdatum für Steuerungen)
-        for f in ['typbezeichnung', 'auftraggeber', 'hersteller', 'schutzgrad',
+        for f in ['auftraggeber', 'hersteller', 'schutzgrad',
                   'messgeraet_messung', 'messgeraet_fi', 'bemerkung', 'herstellungsdatum_text']:
             if f in data:
                 setattr(sn, f, data[f] or None)
@@ -422,9 +427,14 @@ def stuecknachweis_autosave(sn_id):
         if 'norm_name' in data:
             sn.norm_name = (data['norm_name'] or '').strip() or get_norm_name()
 
-        # Art des Produkts (Steuerung): leeres Feld → NULL = Fallback auf Config-Name
+        # Typbezeichnung + Art des Produkts: leer ODER gleich dem Config-Fallback → NULL
+        # (Feld folgt weiter der Konfiguration); nur echte Abweichungen werden gespeichert.
+        if 'typbezeichnung' in data:
+            sn.typbezeichnung = Stuecknachweis.normalisiere_override(
+                data['typbezeichnung'], config_typbezeichnung(config, sn.ist_steuerung))
         if 'art_produkt_text' in data:
-            sn.art_produkt_text = (data['art_produkt_text'] or '').strip() or None
+            sn.art_produkt_text = Stuecknachweis.normalisiere_override(
+                data['art_produkt_text'], config_art_produkt(config, sn.ist_steuerung))
 
         if 'herstellungsdatum' in data and data['herstellungsdatum']:
             try:
@@ -518,14 +528,9 @@ def stuecknachweis_pdf(sn_id):
     fi_messungen = FiMessung.query.filter_by(
         stuecknachweis_id=sn.id).order_by(FiMessung.reihenfolge).all()
 
-    if ist_steuerung:
-        typbezeichnung = config.typ or 'Steuerung'
-        # Art des Produkts: Override pro SN, sonst Fallback auf Config-Name
-        sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
-    else:
-        typbezeichnung = config.whk_typ or config.whk_nummer
-        # Art des Produkts: Override pro SN, sonst Fallback 'Weichenheizkabine'
-        sn_art_produkt = sn.art_produkt_text or ART_PRODUKT_WHK
+    # Typbezeichnung / Art des Produkts: SN-Override, sonst Config-Fallback
+    typbezeichnung = sn.effektive_typbezeichnung
+    sn_art_produkt = sn.effektive_art_produkt
 
     schutzgrad = SCHUTZGRAD_MAP.get(config.preset_typ, 'IP55')
 
@@ -581,14 +586,9 @@ def konformitaet_pdf(sn_id):
     ist_steuerung = sn.ist_steuerung
     config = sn.steuerung_config if ist_steuerung else sn.whk_config
 
-    if ist_steuerung:
-        typbezeichnung = config.typ or 'Steuerung'
-        # Art des Produkts: Override pro SN, sonst Fallback auf Config-Name
-        sn_art_produkt = sn.art_produkt_text or config.name or 'Steuerung (SHDSL)'
-    else:
-        typbezeichnung = config.whk_typ or config.whk_nummer
-        # Art des Produkts: Override pro SN, sonst Fallback 'Weichenheizkabine'
-        sn_art_produkt = sn.art_produkt_text or ART_PRODUKT_WHK
+    # Typbezeichnung / Art des Produkts: SN-Override, sonst Config-Fallback
+    typbezeichnung = sn.effektive_typbezeichnung
+    sn_art_produkt = sn.effektive_art_produkt
 
     # Weicher Hinweis (kein harter Block, O-4a): WHK-Stücknachweis ohne FI-Messung.
     # Der Hinweis erscheint beim nächsten Seitenaufruf (Download rendert kein Flash).

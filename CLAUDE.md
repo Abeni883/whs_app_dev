@@ -449,6 +449,16 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
 - **Konformitätserklärung** — 1 Seite: Firma, Produkt, Norm, CE-Jahr, Unterschrift
 - Beide via xhtml2pdf mit `@frame` Header/Footer, Base64-Logo
 
+### Typbezeichnung / Art des Produkts folgen der Konfiguration (Stand 2026-10-26)
+- `sn.typbezeichnung` / `sn.art_produkt_text` sind **NULL = Fallback auf Config** (Steuerung:
+  `typ` / `name`; WHK: `whk_typ` bzw. `whk_nummer` / `'Weichenheizkabine'`) — Muster wie `norm_name`.
+- Fallback-Kette zentral in `models.py` (`Stuecknachweis.effektive_typbezeichnung`,
+  `effektive_art_produkt`, `config_typbezeichnung()`, `config_art_produkt()`); Formular, beide
+  PDFs, PDF-Dateinamen und WHK-Auswahl nutzen sie.
+- Speichern (Formular + Autosave) normalisiert: leer **oder** gleich dem Config-Fallback → NULL.
+- Altdaten: `scripts/migrate_sn_fallback.py <db> [--dry-run]` (idempotent; in DEV ausgeführt,
+  **in PROD noch offen** — vor dem Deploy Dry-Run read-only, Abweichungen manuell sichten).
+
 ### UI-Änderungen
 - Projektübersicht: EN 61439 Button (blau, eigene `.en61439-link` Klasse)
 - Konfiguration: Spalte "Typ" (`whk_typ`), TS/AH gekürzt, Tabelle zentriert

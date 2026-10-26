@@ -33,13 +33,15 @@
         <div class="form-group">
             <label for="art_produkt_text">Art des Produktes (Produktenorm)</label>
             <input type="text" id="art_produkt_text" name="art_produkt_text"
-                   value="{{ sn.art_produkt_text or art_produkt_fallback }}"
+                   value="{{ art_produkt }}"
                    placeholder="{{ art_produkt_fallback }}" maxlength="100">
         </div>
 
         <div class="form-group">
             <label for="typbezeichnung">Typbezeichnung / Kennnummer</label>
-            <input type="text" id="typbezeichnung" name="typbezeichnung" value="{{ sn.typbezeichnung or typbezeichnung }}" maxlength="100">
+            <input type="text" id="typbezeichnung" name="typbezeichnung"
+                   value="{{ typbezeichnung }}"
+                   placeholder="{{ typbezeichnung_fallback }}" maxlength="100">
         </div>
 
         <div class="form-group">
