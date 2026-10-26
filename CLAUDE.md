@@ -346,11 +346,12 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.8` (Code bis `9e5f4ae`) — „Alle setzen“-Buttons
-pro Ergebniszeile in Mehrspalten-Testtabellen (LSS-CH + WH-LTS, EWH- und GWH-Testseiten;
-nur bei > 1 Spalte gerendert). Reines Template-Deployment, **kein DB-Schritt**.
-Vorheriger Stand: `v2026.07.7` (FI löschbar, Freitext ∆I/∆t; DB-Migration
-`scripts/migrate_fi_freitext.py` — in PROD bereits ausgeführt).
+Modell brechen. Aktueller Stand: `v2026.07.9` (Code bis `9bef61e`) — Stücknachweis folgt der
+Konfiguration (Fallback-Muster für Typbezeichnung + Art des Produkts). Kein Schema-Schritt, aber
+**Datenbereinigung** `scripts/migrate_sn_fallback.py <whs.db>` (idempotent, `--dry-run` read-only)
+— in PROD beim Deploy ausgeführt.
+Vorheriger Stand: `v2026.07.8` (Code bis `9e5f4ae`) — „Alle setzen“-Buttons pro Ergebniszeile
+in Mehrspalten-Testtabellen; reines Template-Deployment ohne DB-Schritt.
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
 
 ### Dienstnamen
@@ -456,8 +457,8 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
   `effektive_art_produkt`, `config_typbezeichnung()`, `config_art_produkt()`); Formular, beide
   PDFs, PDF-Dateinamen und WHK-Auswahl nutzen sie.
 - Speichern (Formular + Autosave) normalisiert: leer **oder** gleich dem Config-Fallback → NULL.
-- Altdaten: `scripts/migrate_sn_fallback.py <db> [--dry-run]` (idempotent; in DEV ausgeführt,
-  **in PROD noch offen** — vor dem Deploy Dry-Run read-only, Abweichungen manuell sichten).
+- Altdaten: `scripts/migrate_sn_fallback.py <db> [--dry-run]` (idempotent; in DEV und PROD
+  ausgeführt — Deploy `v2026.07.9`).
 
 ### UI-Änderungen
 - Projektübersicht: EN 61439 Button (blau, eigene `.en61439-link` Klasse)
