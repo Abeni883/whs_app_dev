@@ -14,13 +14,7 @@
     </nav>
 
     <div class="page-header">
-        <div>
-            <h2>IT-Inventar — SPS pro WHK</h2>
-            <p style="color: var(--text-secondary); margin-top: 4px;">
-                {{ projekt.projektname }}
-                {% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}
-            </p>
-        </div>
+        <h2>IT-Inventar — {{ projekt.projektname }}{% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}</h2>
         <a href="{{ url_for('sps_info.uebersicht') }}" class="btn-cancel">Zurück</a>
     </div>
 

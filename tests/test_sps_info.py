@@ -62,6 +62,8 @@ class SpsInfoTest(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn('WHK 01', r.text)
         self.assertIn('WHK 02', r.text)
+        self.assertIn('<h2>IT-Inventar — P-IT</h2>', r.text)   # Titel = Anlagenname (ohne DIDOK)
+        self.assertNotIn('SPS pro WHK', r.text)
         self.assertNotIn('<th>Typ</th>', r.text)            # Typ-Spalte entfernt
         self.assertNotIn('WHK_20_SEL_01_16', r.text)
         self.assertEqual(r.text.count('Nicht erfasst'), 2)
@@ -74,11 +76,12 @@ class SpsInfoTest(unittest.TestCase):
         self.assertEqual(SpsInfo.query.count(), 0)          # Auswahl legt nichts an
 
     def test_auswahl_ohne_whk_zeigt_hinweis(self):
-        leer = Project(energie='EWH', projektname='Leer')
+        leer = Project(energie='EWH', projektname='Leer', didok_betriebspunkt='BIPO')
         db.session.add(leer); db.session.commit()
         r = self.client.get(f'/projekt/{leer.id}/it-inventar')
         self.assertEqual(r.status_code, 200)
         self.assertIn('Keine WHK-Konfigurationen vorhanden', r.text)
+        self.assertIn('<h2>IT-Inventar — Leer · BIPO</h2>', r.text)   # Titel mit DIDOK
 
     # ---- 2. Auto-Init + Status ----
     def test_formular_auto_init_und_status(self):
