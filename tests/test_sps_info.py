@@ -444,6 +444,38 @@ class SpsMeteoMigrationTest(unittest.TestCase):
         finally:
             con.close()
 
+    def _tabelle_loeschen(self):
+        import sqlite3
+        con = sqlite3.connect(self.db_path)
+        con.execute('DROP TABLE sps_infos'); con.commit(); con.close()
+
+    def test_tabelle_fehlt_dry_run_legt_nichts_an(self):
+        # Erst-Deployment (PROD): sps_infos existiert noch nicht
+        self._tabelle_loeschen()
+        self.assertEqual(self.mig.main([self.db_path, '--dry-run']), 0)
+        self.assertEqual(self._spalten(), [])
+
+    def test_tabelle_fehlt_wird_aus_modell_angelegt(self):
+        self._tabelle_loeschen()
+        self.assertEqual(self.mig.main([self.db_path]), 0)
+        spalten = self._spalten()
+        # Exakt die Modell-Spalten (wie db.create_all), inkl. meteo_*
+        self.assertEqual(spalten, [c.name for c in SpsInfo.__table__.columns])
+        for name, _ in self.mig.NEUE_SPALTEN:
+            self.assertIn(name, spalten)
+        # zweiter Lauf: nichts zu tun
+        self.assertEqual(self.mig.main([self.db_path]), 0)
+        self.assertEqual(self._spalten(), spalten)
+        # FK/UNIQUE wie im Modell: zweite SPS fuer dieselbe WHK scheitert, FK-Check leer
+        import sqlite3
+        con = sqlite3.connect(self.db_path)
+        con.execute('PRAGMA foreign_keys=ON')
+        con.execute("INSERT INTO sps_infos (project_id, whk_config_id, hostname) VALUES (1, 1, 'a')")
+        with self.assertRaises(sqlite3.IntegrityError):
+            con.execute("INSERT INTO sps_infos (project_id, whk_config_id) VALUES (1, 1)")
+        self.assertEqual(con.execute('PRAGMA foreign_key_check').fetchall(), [])
+        con.close()
+
     def test_dry_run_aendert_nichts(self):
         self.assertEqual(self.mig.main([self.db_path, '--dry-run']), 0)
         self.assertNotIn('meteo_baudrate', self._spalten())

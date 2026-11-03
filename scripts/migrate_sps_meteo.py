@@ -12,6 +12,12 @@ Jede Spalte wird nur angelegt, wenn sie noch fehlt (PRAGMA table_info) — IDEMP
 ein zweiter Lauf meldet "nichts zu tun". Kein Rebuild, keine Datenaenderung.
 Danach integrity_check + foreign_key_check.
 
+FEHLT DIE TABELLE sps_infos (Erst-Deployment des IT-Inventars, z. B. PROD): Das Skript
+legt sie selbst aus dem SQLAlchemy-Modell an (SpsInfo.__table__.create — exakt die DDL,
+die db.create_all() beim App-Start erzeugen wuerde, inkl. aller meteo_*-Spalten). Damit
+ist die Reihenfolge im Deploy egal: Checkout -> dieses Skript -> Dienst-Start. Ein
+ALTER ist danach nicht noetig. Kein App-Import (keine Nebenwirkungen, keine .env noetig).
+
 VERWENDUNG (immer explizite Ziel-DB angeben — kein Default, um Unfaelle zu vermeiden):
     python scripts/migrate_sps_meteo.py <pfad-zur-ziel-db.db> --dry-run
     python scripts/migrate_sps_meteo.py <pfad-zur-ziel-db.db>
@@ -20,8 +26,8 @@ VERWENDUNG (immer explizite Ziel-DB angeben — kein Default, um Unfaelle zu ver
 
 WICHTIG: vorher Backup der Ziel-DB anlegen (PROD: Dienst stoppen, Backup, Skript,
 Dienst starten — oder konsistenter Snapshot ueber die SQLite-Backup-API). Hinweis:
-db.create_all() beim App-Start legt NUR neue Tabellen an, keine neuen Spalten — dieses
-Skript ist daher fuer bestehende DBs (PROD) zwingend.
+db.create_all() beim App-Start legt NUR neue Tabellen an, keine neuen Spalten — fuer
+bestehende sps_infos-Tabellen ist dieses Skript daher zwingend.
 """
 import os
 import sqlite3
@@ -37,18 +43,62 @@ NEUE_SPALTEN = [
 TABELLE = 'sps_infos'
 
 
+def _spalten(con):
+    return {row[1] for row in con.execute(f'PRAGMA table_info({TABELLE})')}
+
+
 def fehlende_spalten(con):
-    vorhanden = {row[1] for row in con.execute(f'PRAGMA table_info({TABELLE})')}
-    if not vorhanden:
-        raise SystemExit(f'FEHLER: Tabelle {TABELLE} existiert nicht '
-                         f'(App einmal starten -> db.create_all legt sie an).')
+    vorhanden = _spalten(con)
     return [(n, t) for n, t in NEUE_SPALTEN if n not in vorhanden]
+
+
+def tabelle_anlegen(db_pfad):
+    """Legt sps_infos aus dem Modell an (DDL identisch mit db.create_all)."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from sqlalchemy import create_engine
+    from models import SpsInfo  # noqa: WPS433 — bewusst spaet, nur bei Bedarf
+    engine = create_engine('sqlite:///' + db_pfad)
+    try:
+        SpsInfo.__table__.create(engine)
+    finally:
+        engine.dispose()
+
+
+def _kontrolle(con):
+    integrity = con.execute('PRAGMA integrity_check').fetchone()[0]
+    fk = con.execute('PRAGMA foreign_key_check').fetchall()
+    rest = fehlende_spalten(con)
+    print(f'integrity_check: {integrity} | foreign_key_check: {len(fk)} Verstoesse | '
+          f'Kontrolllauf: {len(rest)} fehlend')
+    if integrity != 'ok' or fk or rest:
+        print('FEHLER: Kontrolle nicht sauber — Backup pruefen!')
+        return 1
+    return 0
 
 
 def migrate(db_pfad, dry_run):
     uri = f'file:{db_pfad}?mode=ro' if dry_run else f'file:{db_pfad}'
     con = sqlite3.connect(uri, uri=True)
     try:
+        if not _spalten(con):
+            # Tabelle fehlt (Erst-Deployment): komplett aus dem Modell anlegen.
+            if dry_run:
+                print(f'  Tabelle {TABELLE} fehlt -> wuerde aus dem Modell angelegt '
+                      f'(inkl. aller {len(NEUE_SPALTEN)} Meteo-Spalten), kein ALTER noetig.')
+                print(f'DRY-RUN: Tabelle wuerde angelegt, DB unveraendert.')
+                return 0
+            con.close()
+            tabelle_anlegen(db_pfad)
+            con = sqlite3.connect(uri, uri=True)
+            print(f'  angelegt: Tabelle {TABELLE} aus dem Modell '
+                  f'({len(_spalten(con))} Spalten)')
+            rc = _kontrolle(con)
+            if rc == 0:
+                print(f'OK: Tabelle {TABELLE} angelegt, Kontrolllauf leer.')
+            return rc
+
         fehlend = fehlende_spalten(con)
         if not fehlend:
             print(f'OK: nichts zu tun — alle {len(NEUE_SPALTEN)} Meteo-Spalten vorhanden.')
@@ -64,17 +114,10 @@ def migrate(db_pfad, dry_run):
             return 0
         con.commit()
 
-        # Kontrolle
-        integrity = con.execute('PRAGMA integrity_check').fetchone()[0]
-        fk = con.execute('PRAGMA foreign_key_check').fetchall()
-        rest = fehlende_spalten(con)
-        print(f'integrity_check: {integrity} | foreign_key_check: {len(fk)} Verstoesse | '
-              f'Kontrolllauf: {len(rest)} fehlend')
-        if integrity != 'ok' or fk or rest:
-            print('FEHLER: Kontrolle nicht sauber — Backup pruefen!')
-            return 1
-        print(f'OK: {len(fehlend)} Spalte(n) angelegt, Kontrolllauf leer.')
-        return 0
+        rc = _kontrolle(con)
+        if rc == 0:
+            print(f'OK: {len(fehlend)} Spalte(n) angelegt, Kontrolllauf leer.')
+        return rc
     finally:
         con.close()
 
