@@ -1944,6 +1944,27 @@ td.normen-gruppe-header {
     color: #ffffff;
 }
 
+/* EN-61439- und IT-Inventar-Button bei 100 %: gruen wie .test-link.test-complete
+   (Light/Dark ueber die accent-green-Variablen; die Dark-Regeln der Basisklassen setzen
+   explizite Farben, daher eigene Dark-Overrides mit hoeherer Spezifitaet). */
+.en61439-link.test-complete,
+.itinventar-link.test-complete,
+[data-theme="dark"] .en61439-link.test-complete,
+[data-theme="dark"] .itinventar-link.test-complete {
+    background-color: var(--accent-green-light);
+    border-color: var(--accent-green);
+    color: var(--accent-green-dark);
+}
+
+.en61439-link.test-complete:hover,
+.itinventar-link.test-complete:hover,
+[data-theme="dark"] .en61439-link.test-complete:hover,
+[data-theme="dark"] .itinventar-link.test-complete:hover {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green-dark);
+    color: #ffffff;
+}
+
 /* IT-Inventar: WHK-Auswahl kompakt (Bezeichnung | MAC | Webvisu | Config | Status | Aktion).
    Ueberschreibt die Spalten-Zentrierung der Projektverwaltungs-Tabelle (nth-child 3/4 sind
    hier Text-Links, linksbuendig); Status/Aktion (5/6) bleiben zentriert. */

@@ -245,7 +245,8 @@ class SpsInfoTest(unittest.TestCase):
         gwh = Project(energie='GWH', projektname='P-GAS')
         db.session.add(gwh); db.session.commit()
         with self.app.test_request_context():
-            html = render_template('projekte.html', projekte=[self.p, gwh], progress_dict={})
+            html = render_template('projekte.html', projekte=[self.p, gwh], progress_dict={},
+                                   en_progress_dict={}, it_progress_dict={})
         self.assertIn('<th>IT-Inventar</th>', html)
         self.assertEqual(html.count('class="itinventar-link"'), 1)
         self.assertIn(f'/projekt/{self.p.id}/it-inventar', html)

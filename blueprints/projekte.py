@@ -7,7 +7,9 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required
 
-from models import db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation, EWHMeteostation, TestQuestion, AbnahmeTestResult
+from models import (db, Project, WHKConfig, ZSKConfig, HGLSConfig, GWHMeteostation, EWHMeteostation,
+                    TestQuestion, AbnahmeTestResult, SteuerungConfig, Stuecknachweis, SpsInfo)
+from blueprints.stuecknachweis import _sn_status
 
 projekte_bp = Blueprint('projekte', __name__)
 
@@ -35,6 +37,70 @@ def parse_date_from_form(date_string, date_format='%d.%m.%Y'):
         return datetime.strptime(date_string, date_format).date()
     except ValueError:
         return None
+
+
+def _prozent(fertig, einheiten):
+    """Gerundeter Prozentwert 0-100; 0 wenn keine Einheiten (keine Division durch 0)."""
+    if not einheiten:
+        return 0
+    return min(100, max(0, round(fertig / einheiten * 100)))
+
+
+def calculate_all_projects_en61439_progress():
+    """EN-61439-Fortschritt pro Projekt (Bulk, keine N+1).
+
+    einheiten = alle WHKs + alle Steuerungen des Projekts
+    fertig    = Einheiten, deren Stuecknachweis den Status 'vorhanden' hat
+                (beide PDF-Exporte erfolgt — exakt _sn_status aus dem SN-Blueprint)
+
+    Returns:
+        dict: {projekt_id: prozent (0-100)}
+    """
+    projekte = Project.query.all()
+    if not projekte:
+        return {}
+    projekt_ids = [p.id for p in projekte]
+
+    einheiten = {}
+    for (pid,) in db.session.query(WHKConfig.projekt_id).filter(WHKConfig.projekt_id.in_(projekt_ids)).all():
+        einheiten[pid] = einheiten.get(pid, 0) + 1
+    for (pid,) in db.session.query(SteuerungConfig.projekt_id).filter(SteuerungConfig.projekt_id.in_(projekt_ids)).all():
+        einheiten[pid] = einheiten.get(pid, 0) + 1
+
+    # Nur SN mit zugeordneter Config zaehlen (Waisen ohne whk/steuerung gehoeren zu keiner Einheit)
+    fertig = {}
+    for sn in Stuecknachweis.query.filter(Stuecknachweis.project_id.in_(projekt_ids)).all():
+        if (sn.whk_config_id or sn.steuerung_config_id) and _sn_status(sn) == 'vorhanden':
+            fertig[sn.project_id] = fertig.get(sn.project_id, 0) + 1
+
+    return {p.id: _prozent(fertig.get(p.id, 0), einheiten.get(p.id, 0)) for p in projekte}
+
+
+def calculate_all_projects_it_progress():
+    """IT-Inventar-Fortschritt pro Projekt (Bulk, keine N+1).
+
+    einheiten = alle WHKs des Projekts
+    fertig    = WHKs mit SpsInfo 'erfasst' (Sys-ID/hostname oder MAC gefuellt —
+                exakt SpsInfo.ist_erfasst, wie Auswahl- und Einstiegsseite)
+
+    Returns:
+        dict: {projekt_id: prozent (0-100)}
+    """
+    projekte = Project.query.all()
+    if not projekte:
+        return {}
+    projekt_ids = [p.id for p in projekte]
+
+    einheiten = {}
+    for (pid,) in db.session.query(WHKConfig.projekt_id).filter(WHKConfig.projekt_id.in_(projekt_ids)).all():
+        einheiten[pid] = einheiten.get(pid, 0) + 1
+
+    fertig = {}
+    for sps in SpsInfo.query.filter(SpsInfo.project_id.in_(projekt_ids)).all():
+        if sps.ist_erfasst:
+            fertig[sps.project_id] = fertig.get(sps.project_id, 0) + 1
+
+    return {p.id: _prozent(fertig.get(p.id, 0), einheiten.get(p.id, 0)) for p in projekte}
 
 
 def calculate_all_projects_test_progress():
@@ -226,10 +292,13 @@ def projekte():
     # Filterung erfolgt komplett clientseitig (JavaScript Live-Filter)
     alle_projekte = Project.query.order_by(Project.erstellt_am.desc()).all()
 
-    # Testfortschritt für alle Projekte berechnen (effizient mit Bulk-Queries)
+    # Fortschritte für alle Projekte berechnen (effizient mit Bulk-Queries)
     progress_dict = calculate_all_projects_test_progress()
+    en_progress_dict = calculate_all_projects_en61439_progress()
+    it_progress_dict = calculate_all_projects_it_progress()
 
-    return render_template('projekte.html', projekte=alle_projekte, progress_dict=progress_dict)
+    return render_template('projekte.html', projekte=alle_projekte, progress_dict=progress_dict,
+                           en_progress_dict=en_progress_dict, it_progress_dict=it_progress_dict)
 
 
 @projekte_bp.route('/projekt/neu', methods=['GET', 'POST'])

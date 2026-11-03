@@ -88,14 +88,20 @@
                     </td>
                     <td>
                         {% if projekt.energie == 'EWH' %}
-                            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="en61439-link">{{ norm_name }}</a>
+                            {% set en_progress = en_progress_dict.get(projekt.id, 0) %}
+                            <a href="{{ url_for('stuecknachweis.whk_auswahl', project_id=projekt.id) }}" class="en61439-link{% if en_progress == 100 %} test-complete{% endif %}">
+                                {{ norm_name }} (<span style="color: {{ progress_color(en_progress) }}; font-weight: bold;">{{ en_progress }}%</span>)
+                            </a>
                         {% else %}
                             <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if projekt.energie == 'EWH' %}
-                            <a href="{{ url_for('sps_info.whk_auswahl', project_id=projekt.id) }}" class="itinventar-link">IT-Inventar</a>
+                            {% set it_progress = it_progress_dict.get(projekt.id, 0) %}
+                            <a href="{{ url_for('sps_info.whk_auswahl', project_id=projekt.id) }}" class="itinventar-link{% if it_progress == 100 %} test-complete{% endif %}">
+                                IT-Inventar (<span style="color: {{ progress_color(it_progress) }}; font-weight: bold;">{{ it_progress }}%</span>)
+                            </a>
                         {% else %}
                             <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
