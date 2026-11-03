@@ -6,6 +6,11 @@ IP-Adresse, SPS-Typ, Seriennummer, TwinCAT-/Image-Version, Bemerkung).
 
 Struktur analog zum Stücknachweis (EN 61439):
     Projektübersicht-Button → WHK-Auswahl (aus Konfiguration) → Formular mit Auto-Save.
+Zusätzlich eine eigene Einstiegsseite /it-inventar (Menüpunkt) mit allen EWH-Projekten
+und Live-Projektsuche.
+
+Hostname = Sys-ID der SBB (z.B. lu-wh-01); daraus werden Webvisu-/Config-Links abgeleitet
+(URL-Muster zentral in models.SpsInfo.URL_MUSTER).
 
 Auto-Init: Beim ersten Öffnen des Formulars wird ein leeres SpsInfo-Objekt angelegt.
 Der Status in der Auswahlliste wechselt erst auf "Erfasst", sobald Hostname oder
@@ -45,6 +50,40 @@ def _normalisiere(wert):
     if wert is None:
         return None
     return str(wert).strip() or None
+
+
+# ==================== EINSTIEGSSEITE (alle EWH-Projekte) ====================
+
+def _projekt_uebersicht_daten():
+    """Liefert pro EWH-Projekt: WHK-Anzahl und Anzahl erfasster SPS (Sys-ID oder MAC).
+
+    Zwei Abfragen statt N+1: alle WHKs der EWH-Projekte + alle SpsInfos, dann in Python
+    gruppiert. ist_erfasst wird auf dem Objekt ausgewertet (eine Definition, s. Modell).
+    """
+    projekte = Project.query.filter_by(energie='EWH').order_by(Project.projektname).all()
+    projekt_ids = [p.id for p in projekte]
+    whk_anzahl = {}
+    erfasst = {}
+    if projekt_ids:
+        for (pid,) in db.session.query(WHKConfig.projekt_id).filter(
+                WHKConfig.projekt_id.in_(projekt_ids)).all():
+            whk_anzahl[pid] = whk_anzahl.get(pid, 0) + 1
+        for sps in SpsInfo.query.filter(SpsInfo.project_id.in_(projekt_ids)).all():
+            if sps.ist_erfasst:
+                erfasst[sps.project_id] = erfasst.get(sps.project_id, 0) + 1
+    return [{
+        'projekt': p,
+        'whk_anzahl': whk_anzahl.get(p.id, 0),
+        'erfasst_anzahl': erfasst.get(p.id, 0),
+    } for p in projekte]
+
+
+@sps_info_bp.route('/it-inventar')
+@login_required
+def uebersicht():
+    """Einstiegsseite IT-Inventar: alle EWH-Projekte mit SPS-Zähler und Projektsuche."""
+    return render_template('sps_info/uebersicht.html',
+                           projekt_data=_projekt_uebersicht_daten())
 
 
 # ==================== AUSWAHLSEITE ====================
@@ -95,6 +134,7 @@ def sps_formular(project_id, whk_id):
         projekt=projekt,
         whk=whk,
         sps=sps,
+        url_muster=SpsInfo.URL_MUSTER,
         autosave_url=url_for('sps_info.sps_autosave', project_id=project_id, whk_id=whk_id),
         auswahl_url=url_for('sps_info.whk_auswahl', project_id=project_id),
     )

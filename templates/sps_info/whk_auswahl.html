@@ -8,9 +8,9 @@
     <nav class="breadcrumb">
         <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
         <span class="breadcrumb-sep">›</span>
-        <span>{{ projekt.projektname }}</span>
+        <a href="{{ url_for('sps_info.uebersicht') }}">IT-Inventar</a>
         <span class="breadcrumb-sep">›</span>
-        <span>IT-Inventar</span>
+        <span>{{ projekt.projektname }}</span>
     </nav>
 
     <div class="page-header">
@@ -21,7 +21,7 @@
                 {% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}
             </p>
         </div>
-        <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück</a>
+        <a href="{{ url_for('sps_info.uebersicht') }}" class="btn-cancel">Zurück</a>
     </div>
 
     {% if whk_data %}
@@ -31,6 +31,8 @@
                     <th>Bezeichnung</th>
                     <th>Typ</th>
                     <th>Status</th>
+                    <th>Webvisu</th>
+                    <th>Config</th>
                     <th>Aktion</th>
                 </tr>
             </thead>
@@ -53,6 +55,20 @@
                             <span class="status-badge status-vorhanden">Erfasst</span>
                         {% else %}
                             <span class="status-badge status-offen">Nicht erfasst</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.sps and item.sps.webvisu_url %}
+                            <a href="{{ item.sps.webvisu_url }}" target="_blank" rel="noopener" class="btn-secondary btn-sm">Webvisu</a>
+                        {% else %}
+                            <span style="color: var(--text-muted, #999);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.sps and item.sps.config_url %}
+                            <a href="{{ item.sps.config_url }}" target="_blank" rel="noopener" class="btn-secondary btn-sm">Config</a>
+                        {% else %}
+                            <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
                     </td>
                     <td>

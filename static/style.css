@@ -1944,6 +1944,30 @@ td.normen-gruppe-header {
     color: #ffffff;
 }
 
+/* IT-Inventar: Live-Links unter dem Sys-ID-Feld */
+.sps-links {
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.sps-links a[href] {
+    color: var(--accent-blue, #3b82f6);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.sps-links a[href]:hover {
+    text-decoration: underline;
+}
+
+.sps-links a:not([href]) {
+    color: var(--text-muted, #999);
+}
+
 /* Test-Übersicht Projekt-Anzeige */
 .project-number {
     color: var(--text-secondary);

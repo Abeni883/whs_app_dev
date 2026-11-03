@@ -1071,6 +1071,9 @@ class SpsInfo(db.Model):
     whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id', ondelete='CASCADE'),
                               nullable=False, unique=True)  # 1 SPS pro WHK
 
+    # hostname = Sys-ID der SBB (z.B. 'lu-wh-01' = Luzern Weichenheizsteuerung 1).
+    # Die Sys-ID dient als Hostname; daraus werden Webvisu-/Config-Links abgeleitet
+    # (siehe URL_MUSTER). Spaltenname bleibt 'hostname' (kein Schema-Change).
     hostname = db.Column(db.String(100))
     mac_adresse = db.Column(db.String(50))
     ip_adresse = db.Column(db.String(50))
@@ -1095,10 +1098,39 @@ class SpsInfo(db.Model):
     DATEN_FELDER = ('hostname', 'mac_adresse', 'ip_adresse', 'sps_typ',
                     'seriennummer', 'twincat_version', 'image_version', 'bemerkung')
 
+    # URL-Muster für die aus der Sys-ID abgeleiteten Links — EINZIGE Definitionsstelle.
+    # '{sysid}' wird durch die getrimmte Sys-ID ersetzt; Backend (Properties unten) und
+    # Frontend (data-Attribute im Formular, gleiche Ersetzung in JS) nutzen dieselben Strings.
+    URL_MUSTER = {
+        'webvisu': 'https://{sysid}/webvisu.htm',
+        'config': 'https://{sysid}/config',
+    }
+
     @property
     def ist_erfasst(self):
-        """True, sobald Hostname oder MAC-Adresse gefüllt ist (Status 'Erfasst')."""
+        """True, sobald Sys-ID (hostname) oder MAC-Adresse gefüllt ist (Status 'Erfasst')."""
         return bool((self.hostname or '').strip() or (self.mac_adresse or '').strip())
+
+    @property
+    def sysid(self):
+        """Getrimmte Sys-ID (hostname) oder None."""
+        return (self.hostname or '').strip() or None
+
+    @classmethod
+    def link_aus_sysid(cls, art, sysid):
+        """Link ('webvisu' | 'config') aus einer Sys-ID; None wenn Sys-ID leer."""
+        sysid = (sysid or '').strip()
+        if not sysid:
+            return None
+        return cls.URL_MUSTER[art].replace('{sysid}', sysid)
+
+    @property
+    def webvisu_url(self):
+        return self.link_aus_sysid('webvisu', self.hostname)
+
+    @property
+    def config_url(self):
+        return self.link_aus_sysid('config', self.hostname)
 
     def __repr__(self):
         return (f'<SpsInfo id={self.id} whk_config_id={self.whk_config_id} '

@@ -8,9 +8,9 @@
     <nav class="breadcrumb">
         <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
         <span class="breadcrumb-sep">›</span>
-        <a href="{{ auswahl_url }}">{{ projekt.projektname }}</a>
+        <a href="{{ url_for('sps_info.uebersicht') }}">IT-Inventar</a>
         <span class="breadcrumb-sep">›</span>
-        <a href="{{ auswahl_url }}">IT-Inventar</a>
+        <a href="{{ auswahl_url }}">{{ projekt.projektname }}</a>
         <span class="breadcrumb-sep">›</span>
         <span>SPS {{ whk.whk_nummer }}</span>
     </nav>
@@ -23,10 +23,15 @@
         <h3 class="sn-section-title">Netzwerk</h3>
 
         <div class="form-group">
-            <label for="hostname">Hostname</label>
+            {# hostname = Sys-ID der SBB (dient als Hostname) — DB-Spalte bleibt 'hostname' #}
+            <label for="hostname">Sys-ID</label>
             <input type="text" id="hostname" name="hostname"
                    value="{{ sps.hostname or '' }}" maxlength="100"
-                   placeholder="z.B. CX-1A2B3C" autocomplete="off">
+                   placeholder="z.B. lu-wh-01" autocomplete="off">
+            <div class="sps-links">
+                <div>Webvisu: <a id="link-webvisu" target="_blank" rel="noopener">—</a></div>
+                <div>Config: <a id="link-config" target="_blank" rel="noopener">—</a></div>
+            </div>
         </div>
 
         <div class="form-group">
@@ -88,6 +93,8 @@
 
 <div id="sps-config"
      data-save-url="{{ autosave_url }}"
+     data-webvisu-muster="{{ url_muster.webvisu }}"
+     data-config-muster="{{ url_muster.config }}"
      style="display:none;">
 </div>
 <script>
@@ -98,8 +105,33 @@
 (function() {
     var SPS_FELDER = ['hostname', 'mac_adresse', 'ip_adresse', 'sps_typ',
                       'seriennummer', 'twincat_version', 'image_version', 'bemerkung'];
-    var AUTOSAVE_URL = document.getElementById('sps-config').dataset.saveUrl;
+    var cfg = document.getElementById('sps-config').dataset;
+    var AUTOSAVE_URL = cfg.saveUrl;
     var formEl = document.getElementById('sps-form');
+
+    // ---- Webvisu-/Config-Links live aus der Sys-ID (Muster aus data-Attributen,
+    //      zentral in models.SpsInfo.URL_MUSTER; '{sysid}' wird ersetzt) ----
+    var sysidEl = document.getElementById('hostname');
+    var LINKS = [
+        { el: document.getElementById('link-webvisu'), muster: cfg.webvisuMuster },
+        { el: document.getElementById('link-config'),  muster: cfg.configMuster }
+    ];
+    function aktualisiereLinks() {
+        var sysid = (sysidEl.value || '').trim();
+        LINKS.forEach(function(l) {
+            if (!l.el) return;
+            if (sysid) {
+                var url = l.muster.replace('{sysid}', sysid);
+                l.el.href = url;
+                l.el.textContent = url;
+            } else {
+                l.el.removeAttribute('href');
+                l.el.textContent = '\u2014';
+            }
+        });
+    }
+    sysidEl.addEventListener('input', aktualisiereLinks);
+    aktualisiereLinks();
 
     var autosaveTimer = null;
     var isSaving = false;

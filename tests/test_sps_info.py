@@ -1,6 +1,9 @@
 """Tests: IT-Inventar — SPS-Daten pro WHK (blueprints/sps_info.py, models.SpsInfo).
 
 Abgedeckt (hermetische Temp-DB, echtes Template-Rendering via make_render_app):
+  8. Sys-ID (hostname) + Webvisu/Config-Links: Modell-Helper, Formular (Label, Muster via
+     data-Attribut), Auswahlseite (Links nur bei Sys-ID)
+  9. Einstiegsseite /it-inventar: nur EWH, Zaehler "erfasst/WHK", DIDOK, Suche, Menuepunkt
   1. Auswahlseite laedt und listet WHKs aus der Konfiguration (Status 'Nicht erfasst')
   2. Formular oeffnen -> Auto-Init (leeres SpsInfo); Status wechselt erst nach
      Dateneingabe (Hostname ODER MAC) auf 'Erfasst'
@@ -230,6 +233,84 @@ class SpsInfoTest(unittest.TestCase):
         r = self.client.post(f'/projekt/{self.p.id}/whk/{self.whk1.id}/sps/autosave',
                              data='', content_type='application/json')
         self.assertEqual(r.status_code, 400)
+
+    # ---- 8. Sys-ID + Webvisu/Config-Links ----
+    def test_links_aus_sysid_modell(self):
+        self.assertIsNone(SpsInfo.link_aus_sysid('webvisu', None))
+        self.assertIsNone(SpsInfo.link_aus_sysid('config', '   '))
+        self.assertEqual(SpsInfo.link_aus_sysid('webvisu', ' lu-wh-01 '), 'https://lu-wh-01/webvisu.htm')
+        self.assertEqual(SpsInfo.link_aus_sysid('config', 'lu-wh-01'), 'https://lu-wh-01/config')
+        sps = SpsInfo(project_id=self.p.id, whk_config_id=self.whk1.id, hostname='lu-wh-01')
+        self.assertEqual(sps.webvisu_url, 'https://lu-wh-01/webvisu.htm')
+        self.assertEqual(sps.config_url, 'https://lu-wh-01/config')
+        self.assertEqual(sps.sysid, 'lu-wh-01')
+        # Muster: genau eine Definitionsstelle, Platzhalter vorhanden
+        for muster in SpsInfo.URL_MUSTER.values():
+            self.assertIn('{sysid}', muster)
+
+    def test_formular_sysid_label_und_link_muster(self):
+        html = self._formular().text
+        self.assertIn('<label for="hostname">Sys-ID</label>', html)
+        self.assertIn('placeholder="z.B. lu-wh-01"', html)
+        self.assertNotIn('>Hostname<', html)
+        self.assertIn('id="link-webvisu"', html)
+        self.assertIn('id="link-config"', html)
+        # Muster kommen aus dem Modell (kein Hardcoding im Template)
+        self.assertIn(f'data-webvisu-muster="{SpsInfo.URL_MUSTER["webvisu"]}"', html)
+        self.assertIn(f'data-config-muster="{SpsInfo.URL_MUSTER["config"]}"', html)
+        self.assertNotIn('webvisu.htm', html.replace(SpsInfo.URL_MUSTER['webvisu'], ''))
+
+    def test_auswahl_links_nur_bei_sysid(self):
+        self._autosave({'hostname': 'lu-wh-01'})                      # WHK 01: Sys-ID
+        self._autosave({'mac_adresse': '00:01:05:1A:2B:3C'}, whk=self.whk2)  # WHK 02: nur MAC
+        html = self._auswahl().text
+        self.assertIn('<th>Webvisu</th>', html)
+        self.assertIn('<th>Config</th>', html)
+        self.assertIn('href="https://lu-wh-01/webvisu.htm" target="_blank" rel="noopener"', html)
+        self.assertIn('href="https://lu-wh-01/config" target="_blank" rel="noopener"', html)
+        # WHK 02 ist 'Erfasst' (MAC), hat aber keine Sys-ID -> keine Links
+        self.assertEqual(html.count('/webvisu.htm'), 1)
+        self.assertEqual(html.count('/config"'), 1)
+        self.assertEqual(html.count('>Erfasst<'), 2)
+
+    # ---- 9. Einstiegsseite /it-inventar ----
+    def test_uebersicht_listet_ewh_mit_zaehler(self):
+        gwh = Project(energie='GWH', projektname='P-GAS')
+        leer = Project(energie='EWH', projektname='P-Leer', didok_betriebspunkt='LZ')
+        db.session.add_all([gwh, leer]); db.session.flush()
+        db.session.add(WHKConfig(projekt_id=self.p.id, whk_nummer='WHK 03'))
+        db.session.commit()
+        self._autosave({'hostname': 'lu-wh-01'})
+        self._autosave({'mac_adresse': 'AA'}, whk=self.whk2)
+        self._formular(WHKConfig.query.filter_by(whk_nummer='WHK 03').one())  # nur Auto-Init
+
+        r = self.client.get('/it-inventar')
+        self.assertEqual(r.status_code, 200)
+        html = r.text
+        self.assertIn('P-IT', html)
+        self.assertIn('P-Leer', html)
+        self.assertNotIn('P-GAS', html)                       # GWH nicht gelistet
+        self.assertIn('>2/3<', html)                          # Sys-ID + MAC erfasst, Auto-Init nicht
+        self.assertIn('<td>LZ</td>', html)                    # DIDOK
+        self.assertIn('id="searchInput"', html)               # Live-Suche
+        self.assertIn(f'/projekt/{self.p.id}/it-inventar', html)   # Klick -> WHK-Auswahl
+        self.assertIn(f'/projekt/{leer.id}/it-inventar', html)
+
+    def test_menuepunkt_in_base_html(self):
+        # Navigation wird nur fuer eingeloggte User gerendert (Test-Client ist anonym):
+        # daher Quelltext-Pruefung, dass der Menuepunkt neben Export haengt.
+        base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            'templates', 'base.html')
+        src = open(base, encoding='utf-8').read()
+        self.assertIn("url_for('sps_info.uebersicht')", src)
+        self.assertLess(src.index("url_for('export.export')"), src.index("url_for('sps_info.uebersicht')"))
+        self.assertLess(src.index("url_for('sps_info.uebersicht')"), src.index('nav-dropdown'))
+
+    def test_uebersicht_ohne_projekte(self):
+        Project.query.delete(); db.session.commit()
+        r = self.client.get('/it-inventar')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Noch keine EWH-Projekte vorhanden', r.text)
 
     def test_formular_fremde_whk_redirect(self):
         anderes = Project(energie='EWH', projektname='Anderes')

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}IT-Inventar{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>IT-Inventar</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h2>IT-Inventar — SPS pro WHK</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px;">Alle EWH-Projekte</p>
+        </div>
+    </div>
+
+    <!-- Suchbereich mit Live-Suche (Mechanik wie Projektverwaltung) -->
+    <div class="search-container">
+        <div class="search-form">
+            <input type="text"
+                   id="searchInput"
+                   placeholder="Suche nach Projektname"
+                   class="search-input">
+            <button type="button" id="resetBtn" class="btn-cancel" style="display: none;">Zurücksetzen</button>
+        </div>
+        <p id="searchInfo" class="search-info" style="display: none;"></p>
+    </div>
+
+    {% if projekt_data %}
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>Projektname</th>
+                    <th>DIDOK</th>
+                    <th>WHK</th>
+                    <th>SPS erfasst</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in projekt_data %}
+                <tr>
+                    <td><strong>{{ item.projekt.projektname }}</strong></td>
+                    <td>{{ item.projekt.didok_betriebspunkt or '—' }}</td>
+                    <td>{{ item.whk_anzahl }}</td>
+                    <td>
+                        {% if item.whk_anzahl == 0 %}
+                            <span style="color: var(--text-muted, #999);">—</span>
+                        {% elif item.erfasst_anzahl == item.whk_anzahl %}
+                            <span class="status-badge status-vorhanden">{{ item.erfasst_anzahl }}/{{ item.whk_anzahl }}</span>
+                        {% elif item.erfasst_anzahl > 0 %}
+                            <span class="status-badge status-in-arbeit">{{ item.erfasst_anzahl }}/{{ item.whk_anzahl }}</span>
+                        {% else %}
+                            <span class="status-badge status-offen">{{ item.erfasst_anzahl }}/{{ item.whk_anzahl }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('sps_info.whk_auswahl', project_id=item.projekt.id) }}" class="btn-primary btn-sm">Öffnen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div id="noResults" class="no-data" style="display: none;">
+            <p>Keine Projekte gefunden.</p>
+        </div>
+    {% else %}
+        <div class="no-data">
+            <p>Noch keine EWH-Projekte vorhanden.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Live-Suche (übernommen von der Projektverwaltung; Spalte 0 = Projektname)
+(function() {
+    const searchInput = document.getElementById('searchInput');
+    const resetBtn = document.getElementById('resetBtn');
+    const searchInfo = document.getElementById('searchInfo');
+    const projectRows = document.querySelectorAll('.project-table tbody tr');
+    const projectTable = document.querySelector('.project-table');
+    const noResults = document.getElementById('noResults');
+    const totalProjects = projectRows.length;
+
+    function filterProjects() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        projectRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const projektname = cells[0]?.textContent.toLowerCase() || '';
+            const matches = projektname.includes(searchTerm);
+            if (matches || searchTerm === '') {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (searchTerm) {
+            resetBtn.style.display = 'inline-block';
+            searchInfo.style.display = 'block';
+            searchInfo.textContent = `Suchergebnisse für "${searchInput.value}" (${visibleCount} Projekt${visibleCount !== 1 ? 'e' : ''} gefunden)`;
+        } else {
+            resetBtn.style.display = 'none';
+            searchInfo.style.display = 'none';
+        }
+
+        if (visibleCount === 0 && searchTerm) {
+            if (noResults) noResults.style.display = 'block';
+            if (projectTable) projectTable.style.display = 'none';
+        } else {
+            if (noResults) noResults.style.display = 'none';
+            if (projectTable) projectTable.style.display = 'table';
+        }
+    }
+
+    function resetSearch() {
+        searchInput.value = '';
+        filterProjects();
+        searchInput.focus();
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterProjects);
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Escape') resetSearch();
+        });
+    }
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetSearch);
+    }
+    if (totalProjects > 0 && searchInput) {
+        searchInput.focus();
+    }
+})();
+</script>
+{% endblock %}
