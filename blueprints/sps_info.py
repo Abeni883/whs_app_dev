@@ -135,6 +135,9 @@ def sps_formular(project_id, whk_id):
         projekt=projekt,
         whk=whk,
         sps=sps,
+        # Meteostation-Sektion nur, wenn die WHK eine MS hat (Zuordnung oder Legacy-String)
+        hat_meteostation=whk.hat_meteostation,
+        meteostation_name=whk.meteostation_name,
         url_muster=SpsInfo.URL_MUSTER,
         autosave_url=url_for('sps_info.sps_autosave', project_id=project_id, whk_id=whk_id),
         auswahl_url=url_for('sps_info.whk_auswahl', project_id=project_id),

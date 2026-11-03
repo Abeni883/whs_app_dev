@@ -489,6 +489,12 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
 - Einstiegsseite `/it-inventar` (Menüpunkt in `base.html`): alle EWH-Projekte, Zähler
   „SPS erfasst x/y", Live-Projektsuche. Bericht:
   `berichte/2026-11-03_it-inventar-sysid-links-uebersicht.md`.
+- **Meteostation-Sektion** (Baudrate, Modbus-Adresse, Seriennummer, Herstellungsjahr) nur
+  wenn `WHKConfig.hat_meteostation` — Quelle: `ewh_meteostations`-Zuordnung bevorzugt,
+  Legacy-String `whk_configs.meteostation` als Fallback (wird vom Save nicht mehr gepflegt).
+  **Schema:** 4 Spalten `sps_infos.meteo_*` — bestehende DBs (PROD!) zwingend via
+  `scripts/migrate_sps_meteo.py <db> [--dry-run]` (idempotent; `create_all` legt keine
+  Spalten nach). Bericht: `berichte/2026-11-03_it-inventar-meteostation.md`.
 
 ## Offene Punkte / Nächste Schritte
 

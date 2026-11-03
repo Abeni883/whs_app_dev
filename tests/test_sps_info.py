@@ -17,7 +17,7 @@ import os
 import unittest
 
 from tests._util import make_render_app
-from models import db, Project, WHKConfig, SpsInfo
+from models import db, Project, WHKConfig, SpsInfo, EWHMeteostation
 from blueprints.konfiguration import reconcile_whk_configs
 
 
@@ -170,7 +170,8 @@ class SpsInfoTest(unittest.TestCase):
             self.assertIn(f'name="{name}"', html)
         self.assertIn('placeholder="z.B. v610a"', html)
         self.assertEqual(SpsInfo.DATEN_FELDER,
-                         ('hostname', 'mac_adresse', 'sps_typ', 'twincat_version', 'image_version', 'bemerkung'))
+                         ('hostname', 'mac_adresse', 'sps_typ', 'twincat_version', 'image_version', 'bemerkung',
+                          'meteo_baudrate', 'meteo_modbus_adresse', 'meteo_seriennummer', 'meteo_herstellungsjahr'))
 
     def test_autosave_ohne_vorheriges_formular_legt_an(self):
         # Autosave direkt (ohne GET) darf nicht crashen -> Auto-Init auch hier
@@ -332,6 +333,71 @@ class SpsInfoTest(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn('Noch keine EWH-Projekte vorhanden', r.text)
 
+    # ---- 10. Meteostation-Sektion ----
+    METEO = {'meteo_baudrate': '19200', 'meteo_modbus_adresse': '1',
+             'meteo_seriennummer': 'MS-SN-77', 'meteo_herstellungsjahr': '2026'}
+
+    def test_meteo_sektion_bei_zugeordneter_ms(self):
+        # Aktueller Konfigurations-Pfad: Zuordnung ueber ewh_meteostations, KEIN Legacy-String
+        db.session.add(EWHMeteostation(projekt_id=self.p.id, ms_nummer='MS 01',
+                                       zugeordnete_whk_id=self.whk1.id, reihenfolge=1))
+        db.session.commit()
+        self.assertTrue(self.whk1.hat_meteostation)
+        self.assertEqual(self.whk1.meteostation_name, 'MS 01')
+
+        html = self._formular().text
+        self.assertIn('Meteostation (MS 01)', html)
+        for name in self.METEO:
+            self.assertIn(f'name="{name}"', html)
+        self.assertIn('placeholder="z.B. 19200"', html)
+        self.assertIn('placeholder="z.B. 1"', html)
+        self.assertIn('placeholder="z.B. 2026"', html)
+
+        # Speichern + Reload
+        r = self._autosave(dict(self.METEO, hostname='lu-wh-01'))
+        self.assertEqual(r.status_code, 200)
+        sps = SpsInfo.query.filter_by(whk_config_id=self.whk1.id).one()
+        for feld, wert in self.METEO.items():
+            self.assertEqual(getattr(sps, feld), wert, feld)
+        html = self._formular().text
+        for wert in self.METEO.values():
+            self.assertIn(f'value="{wert}"', html)
+        for feld in self.METEO:
+            self.assertIn(feld, SpsInfo.DATEN_FELDER)
+
+    def test_meteo_sektion_bei_legacy_string(self):
+        self.whk2.meteostation = 'MS 02'   # Altbestand ohne Zuordnungszeile
+        db.session.commit()
+        self.assertEqual(self.whk2.meteostation_name, 'MS 02')
+        html = self._formular(self.whk2).text
+        self.assertIn('Meteostation (MS 02)', html)
+
+    def test_meteo_name_zuordnung_vor_legacy(self):
+        self.whk1.meteostation = 'ALT'
+        db.session.add(EWHMeteostation(projekt_id=self.p.id, ms_nummer='MS 03',
+                                       zugeordnete_whk_id=self.whk1.id, reihenfolge=2))
+        db.session.add(EWHMeteostation(projekt_id=self.p.id, ms_nummer='MS 01',
+                                       zugeordnete_whk_id=self.whk1.id, reihenfolge=1))
+        db.session.commit()
+        self.assertEqual(self.whk1.meteostation_name, 'MS 01 / MS 03')
+
+    def test_meteo_sektion_fehlt_ohne_ms(self):
+        self.assertFalse(self.whk1.hat_meteostation)
+        self.assertIsNone(self.whk1.meteostation_name)
+        html = self._formular().text
+        self.assertNotIn('Meteostation', html)
+        for name in self.METEO:
+            self.assertNotIn(f'name="{name}"', html)
+        # Autosave unveraendert: Keys werden serverseitig trotzdem akzeptiert (harmlos)
+        r = self._autosave({'hostname': 'H', 'meteo_baudrate': '9600'})
+        self.assertEqual(r.status_code, 200)
+        sps = SpsInfo.query.filter_by(whk_config_id=self.whk1.id).one()
+        self.assertEqual(sps.hostname, 'H')
+        self.assertEqual(sps.meteo_baudrate, '9600')
+        # Status-Logik unveraendert: Meteo-Felder allein machen nicht 'Erfasst'
+        self._autosave({'hostname': '', 'meteo_baudrate': '9600'}, whk=self.whk2)
+        self.assertEqual(self._auswahl().text.count('Nicht erfasst'), 1)   # nur whk2
+
     def test_formular_fremde_whk_redirect(self):
         anderes = Project(energie='EWH', projektname='Anderes')
         db.session.add(anderes); db.session.commit()
@@ -339,6 +405,65 @@ class SpsInfoTest(unittest.TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn(f'/projekt/{anderes.id}/it-inventar', r.headers['Location'])
         self.assertEqual(SpsInfo.query.count(), 0)
+
+
+class SpsMeteoMigrationTest(unittest.TestCase):
+    """scripts/migrate_sps_meteo.py: idempotent, dry-run read-only, Kontrolle sauber."""
+
+    def setUp(self):
+        import sys, tempfile, sqlite3
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.insert(0, os.path.join(root, 'scripts'))
+        import migrate_sps_meteo
+        self.mig = migrate_sps_meteo
+        fd, self.db_path = tempfile.mkstemp(suffix='.db', prefix='whs_mig_')
+        os.close(fd)
+        # Alt-Schema ohne Meteo-Spalten simulieren
+        con = sqlite3.connect(self.db_path)
+        con.execute('CREATE TABLE projects (id INTEGER PRIMARY KEY)')
+        con.execute('CREATE TABLE whk_configs (id INTEGER PRIMARY KEY)')
+        con.execute('''CREATE TABLE sps_infos (id INTEGER PRIMARY KEY,
+            project_id INTEGER NOT NULL REFERENCES projects(id),
+            whk_config_id INTEGER NOT NULL UNIQUE REFERENCES whk_configs(id),
+            hostname VARCHAR(100))''')
+        con.execute('INSERT INTO projects VALUES (1)'); con.execute('INSERT INTO whk_configs VALUES (1)')
+        con.execute("INSERT INTO sps_infos (project_id, whk_config_id, hostname) VALUES (1, 1, 'h')")
+        con.commit(); con.close()
+
+    def tearDown(self):
+        try:
+            os.remove(self.db_path)
+        except OSError:
+            pass
+
+    def _spalten(self):
+        import sqlite3
+        con = sqlite3.connect(self.db_path)
+        try:
+            return [r[1] for r in con.execute('PRAGMA table_info(sps_infos)')]
+        finally:
+            con.close()
+
+    def test_dry_run_aendert_nichts(self):
+        self.assertEqual(self.mig.main([self.db_path, '--dry-run']), 0)
+        self.assertNotIn('meteo_baudrate', self._spalten())
+
+    def test_migration_und_idempotenz(self):
+        self.assertEqual(self.mig.main([self.db_path]), 0)
+        spalten = self._spalten()
+        for name, _ in self.mig.NEUE_SPALTEN:
+            self.assertIn(name, spalten)
+        # Modell und Skript muessen dieselben Spalten kennen
+        self.assertEqual([n for n, _ in self.mig.NEUE_SPALTEN],
+                         [f for f in SpsInfo.DATEN_FELDER if f.startswith('meteo_')])
+        # zweiter Lauf: nichts zu tun, keine Fehler
+        self.assertEqual(self.mig.main([self.db_path]), 0)
+        self.assertEqual(self._spalten(), spalten)
+        # Altdaten unveraendert
+        import sqlite3
+        con = sqlite3.connect(self.db_path)
+        self.assertEqual(con.execute('SELECT hostname, meteo_baudrate FROM sps_infos').fetchone(), ('h', None))
+        con.close()
 
 
 if __name__ == '__main__':

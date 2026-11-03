@@ -252,6 +252,26 @@ class WHKConfig(db.Model):
         db.UniqueConstraint('projekt_id', 'whk_nummer', name='uq_projekt_whk'),
     )
 
+    @property
+    def meteostation_name(self):
+        """Name der zugeordneten Meteostation(en) oder None.
+
+        Zwei Quellen: Der aktuelle Konfigurations-Save schreibt NUR
+        ewh_meteostations.zugeordnete_whk_id (backref `meteostationen`); die Spalte
+        `meteostation` (String) ist ein Altbestand frueherer Importe und wird nicht mehr
+        gepflegt. Daher: Zuordnungstabelle bevorzugt, Legacy-String als Fallback.
+        Mehrere zugeordnete MS werden mit ' / ' verbunden.
+        """
+        namen = [ms.ms_nummer for ms in sorted(self.meteostationen, key=lambda m: m.reihenfolge)
+                 if (ms.ms_nummer or '').strip()]
+        if namen:
+            return ' / '.join(namen)
+        return (self.meteostation or '').strip() or None
+
+    @property
+    def hat_meteostation(self):
+        return self.meteostation_name is not None
+
     def __repr__(self):
         return (f'<WHKConfig id={self.id} projekt_id={self.projekt_id} '
                 f'whk="{self.whk_nummer}" abgaenge={self.anzahl_abgaenge}>')
@@ -1087,6 +1107,14 @@ class SpsInfo(db.Model):
     image_version = db.Column(db.String(100))
     bemerkung = db.Column(db.Text)
 
+    # Meteostation (nur sichtbar, wenn die WHK eine Meteostation hat — WHKConfig.hat_meteostation).
+    # Alle Freitext. Neue Spalten 11/2026: bestehende DBs via scripts/migrate_sps_meteo.py
+    # (db.create_all legt keine Spalten nach).
+    meteo_baudrate = db.Column(db.String(50))
+    meteo_modbus_adresse = db.Column(db.String(50))
+    meteo_seriennummer = db.Column(db.String(100))
+    meteo_herstellungsjahr = db.Column(db.String(20))
+
     erstellt_am = db.Column(db.DateTime, default=datetime.utcnow)
     geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -1100,7 +1128,9 @@ class SpsInfo(db.Model):
     # Felder, die Formular + Autosave schreiben (zentral, damit Blueprint/Tests
     # nicht driften).
     DATEN_FELDER = ('hostname', 'mac_adresse', 'sps_typ',
-                    'twincat_version', 'image_version', 'bemerkung')
+                    'twincat_version', 'image_version', 'bemerkung',
+                    'meteo_baudrate', 'meteo_modbus_adresse',
+                    'meteo_seriennummer', 'meteo_herstellungsjahr')
 
     # URL-Muster für die aus der Sys-ID abgeleiteten Links — EINZIGE Definitionsstelle.
     # '{sysid}' wird durch die getrimmte Sys-ID ersetzt; Backend (Properties unten) und

@@ -64,6 +64,37 @@
                    placeholder="z.B. v610a" autocomplete="off">
         </div>
 
+        {% if hat_meteostation %}
+        <h3 class="sn-section-title">Meteostation ({{ meteostation_name }})</h3>
+
+        <div class="form-group">
+            <label for="meteo_baudrate">Baudrate</label>
+            <input type="text" id="meteo_baudrate" name="meteo_baudrate"
+                   value="{{ sps.meteo_baudrate or '' }}" maxlength="50"
+                   placeholder="z.B. 19200" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="meteo_modbus_adresse">Modbus-Adresse</label>
+            <input type="text" id="meteo_modbus_adresse" name="meteo_modbus_adresse"
+                   value="{{ sps.meteo_modbus_adresse or '' }}" maxlength="50"
+                   placeholder="z.B. 1" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="meteo_seriennummer">Seriennummer</label>
+            <input type="text" id="meteo_seriennummer" name="meteo_seriennummer"
+                   value="{{ sps.meteo_seriennummer or '' }}" maxlength="100" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="meteo_herstellungsjahr">Herstellungsjahr</label>
+            <input type="text" id="meteo_herstellungsjahr" name="meteo_herstellungsjahr"
+                   value="{{ sps.meteo_herstellungsjahr or '' }}" maxlength="20"
+                   placeholder="z.B. 2026" autocomplete="off">
+        </div>
+        {% endif %}
+
         <h3 class="sn-section-title">Bemerkung</h3>
 
         <div class="form-group">
@@ -92,7 +123,9 @@
 // nachgeholt. URLs kommen aus data-Attributen (kein Jinja im Script).
 (function() {
     var SPS_FELDER = ['hostname', 'mac_adresse', 'sps_typ',
-                      'twincat_version', 'image_version', 'bemerkung'];
+                      'twincat_version', 'image_version', 'bemerkung',
+                      'meteo_baudrate', 'meteo_modbus_adresse',
+                      'meteo_seriennummer', 'meteo_herstellungsjahr'];
     var cfg = document.getElementById('sps-config').dataset;
     var AUTOSAVE_URL = cfg.saveUrl;
     var formEl = document.getElementById('sps-form');
