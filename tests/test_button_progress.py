@@ -75,8 +75,8 @@ class ButtonProgressTest(unittest.TestCase):
         self._sn(p, whk=w2, konf_pdf=False)
         self.assertEqual(calculate_all_projects_en61439_progress()[p.id], 50)
         html = self._render([p])
-        self.assertIn('EN 61439 (<span style="color: #f5a623; font-weight: bold;">50%</span>)', html)
-        self.assertNotIn('en61439-link test-complete', html)
+        self.assertIn('title="EN 61439">EN <span class="chip-pct" style="color: #f5a623;">50%</span>', html)
+        self.assertNotIn('chip-complete', html)
 
     # ---- 2. EN: Steuerungen im Nenner ----
     def test_en_steuerungen_zaehlen_mit(self):
@@ -96,7 +96,7 @@ class ButtonProgressTest(unittest.TestCase):
         self._sps(p, w2)                                 # Auto-Init leer -> nicht erfasst
         self.assertEqual(calculate_all_projects_it_progress()[p.id], 33)
         html = self._render([p])
-        self.assertIn('IT-Inventar (<span style="color: #e9621f; font-weight: bold;">33%</span>)', html)
+        self.assertIn('title="IT-Inventar">IT <span class="chip-pct" style="color: #e9621f;">33%</span>', html)
         # MAC allein reicht (bestehende Status-Logik)
         self._sps(p, w3, mac='00:01:05:1A:2B:3C')
         self.assertEqual(calculate_all_projects_it_progress()[p.id], 67)
@@ -107,8 +107,8 @@ class ButtonProgressTest(unittest.TestCase):
         self.assertEqual(calculate_all_projects_en61439_progress()[p.id], 0)
         self.assertEqual(calculate_all_projects_it_progress()[p.id], 0)
         html = self._render([p])
-        self.assertIn('EN 61439 (<span style="color: #dc3545; font-weight: bold;">0%</span>)', html)
-        self.assertIn('IT-Inventar (<span style="color: #dc3545; font-weight: bold;">0%</span>)', html)
+        self.assertIn('title="EN 61439">EN <span class="chip-pct" style="color: #dc3545;">0%</span>', html)
+        self.assertIn('title="IT-Inventar">IT <span class="chip-pct" style="color: #dc3545;">0%</span>', html)
         self.assertEqual(calculate_all_projects_en61439_progress(), {p.id: 0})  # keine Projekte ohne Eintrag
 
     # ---- 5. 100 % -> gruen ----
@@ -119,11 +119,11 @@ class ButtonProgressTest(unittest.TestCase):
         self.assertEqual(calculate_all_projects_en61439_progress()[p.id], 100)
         self.assertEqual(calculate_all_projects_it_progress()[p.id], 100)
         html = self._render([p])
-        self.assertIn('class="en61439-link test-complete"', html)
-        self.assertIn('class="itinventar-link test-complete"', html)
-        # Farbe bei 100 % = inherit (Makro-Logik des Abnahmetest-Buttons)
-        self.assertIn('EN 61439 (<span style="color: inherit; font-weight: bold;">100%</span>)', html)
-        self.assertIn('IT-Inventar (<span style="color: inherit; font-weight: bold;">100%</span>)', html)
+        self.assertIn('class="progress-chip chip-complete" title="EN 61439">', html)
+        self.assertIn('class="progress-chip chip-complete" title="IT-Inventar">', html)
+        # Farbe bei 100 % = inherit (Makro-Logik), Chip gruen gefuellt
+        self.assertIn('EN <span class="chip-pct" style="color: inherit;">100%</span>', html)
+        self.assertIn('IT <span class="chip-pct" style="color: inherit;">100%</span>', html)
 
     # ---- 6. GWH ohne Button, mehrere Projekte ----
     def test_gwh_kein_button_und_mehrere_projekte(self):
@@ -131,9 +131,10 @@ class ButtonProgressTest(unittest.TestCase):
         p2, _, _ = self._projekt('B', energie='GWH')
         self._sn(p1, whk=w1); self._sps(p1, w1, hostname='x')
         html = self._render([p1, p2])
-        self.assertEqual(html.count('class="en61439-link test-complete"'), 1)
-        self.assertEqual(html.count('class="itinventar-link test-complete"'), 1)
-        self.assertEqual(html.count('itinventar-link'), 1)      # GWH: kein Button
+        self.assertEqual(html.count('class="progress-chip chip-complete" title="EN 61439">'), 1)
+        self.assertEqual(html.count('class="progress-chip chip-complete" title="IT-Inventar">'), 1)
+        self.assertEqual(html.count('title="IT-Inventar"'), 1)      # GWH: kein IT-Chip
+        self.assertEqual(html.count('title="Abnahmetest"'), 2)      # beide Projekte haben AT
         en = calculate_all_projects_en61439_progress()
         self.assertEqual((en[p1.id], en[p2.id]), (100, 0))
 

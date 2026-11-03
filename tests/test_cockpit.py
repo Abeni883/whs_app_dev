@@ -169,10 +169,13 @@ class CockpitTest(unittest.TestCase):
         with self.app.test_request_context():
             html = render_template('projekte.html', projekte=[p], progress_dict={},
                                    en_progress_dict={}, it_progress_dict={})
-        self.assertIn(f'<a href="/projekt/{p.id}/cockpit" class="cockpit-name-link">Luzern Nord</a>', html)
-        # Buttons unveraendert vorhanden
-        for cls in ('action-link', 'config-link', 'test-link', 'en61439-link', 'itinventar-link', 'delete-link'):
-            self.assertIn(f'class="{cls}', html, cls)
+        # Zeile = Cockpit-Link (data-href), Name ohne eigenen Link
+        self.assertIn(f'<tr class="project-row" data-href="/projekt/{p.id}/cockpit"', html)
+        self.assertIn('<strong>Luzern Nord</strong><span class="projekt-didok"> · LZN</span>', html)
+        self.assertNotIn('cockpit-name-link', html)
+        # Chips + Aktionsmenue statt Button-Spalten
+        for s in ('class="progress-chip', 'class="row-menu-toggle"', 'class="row-menu-dropdown"'):
+            self.assertIn(s, html, s)
 
     # ---- 7. projekt_ids-Variante == Bulk ----
     def test_progress_einzelprojekt_gleich_bulk(self):

@@ -247,8 +247,8 @@ class SpsInfoTest(unittest.TestCase):
         with self.app.test_request_context():
             html = render_template('projekte.html', projekte=[self.p, gwh], progress_dict={},
                                    en_progress_dict={}, it_progress_dict={})
-        self.assertIn('<th>IT-Inventar</th>', html)
-        self.assertEqual(html.count('class="itinventar-link"'), 1)
+        self.assertIn('<th>Fortschritt</th>', html)
+        self.assertEqual(html.count('title="IT-Inventar"'), 1)   # IT-Chip nur bei EWH
         self.assertIn(f'/projekt/{self.p.id}/it-inventar', html)
         self.assertNotIn(f'/projekt/{gwh.id}/it-inventar', html)
 

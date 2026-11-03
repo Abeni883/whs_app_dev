@@ -1944,18 +1944,145 @@ td.normen-gruppe-header {
     color: #ffffff;
 }
 
-/* ==================== PROJEKT-COCKPIT ==================== */
-/* Projektname in der Uebersicht als Link aufs Cockpit (dezent, Textfarbe bleibt) */
-.cockpit-name-link {
-    color: var(--text-primary);
-    text-decoration: none;
-    border-bottom: 1px dotted var(--border-color);
+/* ==================== PROJEKTUEBERSICHT (verschlankt) ==================== */
+/* Zeile = Link aufs Cockpit */
+.projekt-liste tbody tr.project-row {
+    cursor: pointer;
 }
 
-.cockpit-name-link:hover {
-    color: var(--accent-blue);
-    border-bottom-color: var(--accent-blue);
+.projekt-liste tbody tr.project-row:hover {
+    background-color: var(--bg-tertiary);
 }
+
+.projekt-liste tbody tr.project-row:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: -2px;
+}
+
+.projekt-liste .projekt-didok {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Fortschritt-Spalte: kompakte Chips, Direktlinks (Spalte 3 linksbuendig, nowrap) */
+.projekt-liste tbody td.projekt-chips,
+.projekt-liste thead th:nth-child(3) {
+    text-align: left;
+    white-space: nowrap;
+}
+
+.progress-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-right: 4px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.progress-chip:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    transform: translateY(-1px);
+}
+
+.progress-chip .chip-pct {
+    font-weight: 700;
+}
+
+/* 100 %: Chip gruen gefuellt */
+.progress-chip.chip-complete {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+    color: #ffffff;
+}
+
+.progress-chip.chip-complete:hover {
+    background-color: var(--accent-green-dark);
+    border-color: var(--accent-green-dark);
+    color: #ffffff;
+}
+
+/* Aktionen: ⋮-Menue pro Zeile (Spalte 4, zentriert ueber project-table-Regeln) */
+.projekt-liste tbody td.projekt-aktionen {
+    width: 60px;
+}
+
+.row-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.row-menu-toggle {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.row-menu-toggle:hover,
+.row-menu.open .row-menu-toggle {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.row-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 160px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    z-index: 100;
+    text-align: left;
+    padding: 0.25rem 0;
+}
+
+.row-menu.open .row-menu-dropdown {
+    display: block;
+}
+
+.projekt-liste .row-menu-dropdown a {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    text-align: left;
+    font-weight: 500;
+}
+
+.projekt-liste .row-menu-dropdown a:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.projekt-liste .row-menu-dropdown a.row-menu-delete {
+    color: var(--accent-red, #ef4444);
+}
+
+.projekt-liste .row-menu-dropdown a.row-menu-delete:hover {
+    background-color: var(--alert-error-bg, #fee2e2);
+}
+
+.projekt-liste .row-menu-dropdown .dropdown-divider {
+    margin: 0.25rem 0;
+}
+
+/* ==================== PROJEKT-COCKPIT ==================== */
 
 .cockpit-header {
     display: flex;
