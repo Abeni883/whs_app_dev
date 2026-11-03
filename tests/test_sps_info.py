@@ -62,8 +62,14 @@ class SpsInfoTest(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn('WHK 01', r.text)
         self.assertIn('WHK 02', r.text)
-        self.assertIn('WHK_20_SEL_01_16', r.text)           # Typ aus Konfiguration
+        self.assertNotIn('<th>Typ</th>', r.text)            # Typ-Spalte entfernt
+        self.assertNotIn('WHK_20_SEL_01_16', r.text)
         self.assertEqual(r.text.count('Nicht erfasst'), 2)
+        # Spaltenstruktur: Bezeichnung | MAC-Adresse | Webvisu | Config | Status | Aktion
+        import re
+        kopf = r.text[r.text.index('<thead>'):r.text.index('</thead>')]
+        self.assertEqual(re.findall(r'<th>(.*?)</th>', kopf),
+                         ['Bezeichnung', 'MAC-Adresse', 'Webvisu', 'Config', 'Status', 'Aktion'])
         self.assertNotIn('>Erfasst<', r.text)
         self.assertEqual(SpsInfo.query.count(), 0)          # Auswahl legt nichts an
 
@@ -287,11 +293,13 @@ class SpsInfoTest(unittest.TestCase):
         html = self._auswahl().text
         self.assertIn('<th>Webvisu</th>', html)
         self.assertIn('<th>Config</th>', html)
-        self.assertIn('href="https://lu-wh-01/webvisu.htm" target="_blank" rel="noopener"', html)
-        self.assertIn('href="https://lu-wh-01/config" target="_blank" rel="noopener"', html)
-        # WHK 02 ist 'Erfasst' (MAC), hat aber keine Sys-ID -> keine Links
-        self.assertEqual(html.count('/webvisu.htm'), 1)
-        self.assertEqual(html.count('/config"'), 1)
+        # URL als Text-Link (href == sichtbarer Text), kein Button
+        self.assertIn('<a href="https://lu-wh-01/webvisu.htm" target="_blank" rel="noopener">https://lu-wh-01/webvisu.htm</a>', html)
+        self.assertIn('<a href="https://lu-wh-01/config" target="_blank" rel="noopener">https://lu-wh-01/config</a>', html)
+        self.assertNotIn('btn-secondary', html)
+        # WHK 02 ist 'Erfasst' (MAC), hat aber keine Sys-ID -> keine Links, MAC sichtbar
+        self.assertEqual(html.count('href="https://'), 2)      # nur WHK 01 (Webvisu + Config)
+        self.assertIn('00:01:05:1A:2B:3C', html)
         self.assertEqual(html.count('>Erfasst<'), 2)
 
     # ---- 9. Einstiegsseite /it-inventar ----

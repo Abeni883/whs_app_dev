@@ -25,14 +25,15 @@
     </div>
 
     {% if whk_data %}
-        <table class="project-table">
+        {# Kompakte Tabelle: Bezeichnung | MAC-Adresse | Webvisu | Config | Status | Aktion #}
+        <table class="project-table sps-auswahl-table">
             <thead>
                 <tr>
                     <th>Bezeichnung</th>
-                    <th>Typ</th>
-                    <th>Status</th>
+                    <th>MAC-Adresse</th>
                     <th>Webvisu</th>
                     <th>Config</th>
+                    <th>Status</th>
                     <th>Aktion</th>
                 </tr>
             </thead>
@@ -43,11 +44,25 @@
                         <strong>{{ item.whk.whk_nummer }}</strong>
                         {% if item.sps and item.sps.hostname %}<span style="color: var(--text-secondary);"> — {{ item.sps.hostname }}</span>{% endif %}
                     </td>
-                    <td>
-                        {% if item.whk.whk_typ %}
-                            <span class="preset-badge">{{ item.whk.whk_typ }}</span>
+                    <td class="sps-mono">
+                        {% if item.sps and item.sps.mac_adresse %}
+                            {{ item.sps.mac_adresse }}
                         {% else %}
-                            <span style="color: var(--text-muted, #999);">—</span>
+                            <span class="sps-leer">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="sps-url">
+                        {% if item.sps and item.sps.webvisu_url %}
+                            <a href="{{ item.sps.webvisu_url }}" target="_blank" rel="noopener">{{ item.sps.webvisu_url }}</a>
+                        {% else %}
+                            <span class="sps-leer">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="sps-url">
+                        {% if item.sps and item.sps.config_url %}
+                            <a href="{{ item.sps.config_url }}" target="_blank" rel="noopener">{{ item.sps.config_url }}</a>
+                        {% else %}
+                            <span class="sps-leer">—</span>
                         {% endif %}
                     </td>
                     <td>
@@ -55,20 +70,6 @@
                             <span class="status-badge status-vorhanden">Erfasst</span>
                         {% else %}
                             <span class="status-badge status-offen">Nicht erfasst</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if item.sps and item.sps.webvisu_url %}
-                            <a href="{{ item.sps.webvisu_url }}" target="_blank" rel="noopener" class="btn-secondary btn-sm">Webvisu</a>
-                        {% else %}
-                            <span style="color: var(--text-muted, #999);">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if item.sps and item.sps.config_url %}
-                            <a href="{{ item.sps.config_url }}" target="_blank" rel="noopener" class="btn-secondary btn-sm">Config</a>
-                        {% else %}
-                            <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
                     </td>
                     <td>

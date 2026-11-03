@@ -1944,6 +1944,46 @@ td.normen-gruppe-header {
     color: #ffffff;
 }
 
+/* IT-Inventar: WHK-Auswahl kompakt (Bezeichnung | MAC | Webvisu | Config | Status | Aktion).
+   Ueberschreibt die Spalten-Zentrierung der Projektverwaltungs-Tabelle (nth-child 3/4 sind
+   hier Text-Links, linksbuendig); Status/Aktion (5/6) bleiben zentriert. */
+.sps-auswahl-table th,
+.sps-auswahl-table td {
+    padding: 0.35rem 0.5rem;
+    white-space: nowrap;
+}
+
+.sps-auswahl-table tbody td:nth-child(3),
+.sps-auswahl-table thead th:nth-child(3),
+.sps-auswahl-table tbody td:nth-child(4),
+.sps-auswahl-table thead th:nth-child(4) {
+    text-align: left;
+}
+
+.sps-auswahl-table .sps-mono {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.9rem;
+}
+
+.sps-auswahl-table td.sps-url {
+    font-size: 0.85rem;
+}
+
+.sps-auswahl-table td.sps-url a {
+    display: inline;
+    color: var(--accent-blue, #3b82f6);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.sps-auswahl-table td.sps-url a:hover {
+    text-decoration: underline;
+}
+
+.sps-auswahl-table .sps-leer {
+    color: var(--text-muted, #999);
+}
+
 /* IT-Inventar: Live-Links unter dem Sys-ID-Feld */
 .sps-links {
     margin-top: 0.4rem;
