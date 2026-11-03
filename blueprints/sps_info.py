@@ -1,8 +1,9 @@
 """
 Blueprint für das IT-Inventar (EWH): SPS-Daten pro WHK.
 
-Pro WHK werden die IT-Daten der verbauten SPS erfasst (Hostname, MAC-Adresse,
-IP-Adresse, SPS-Typ, Seriennummer, TwinCAT-/Image-Version, Bemerkung).
+Pro WHK werden die IT-Daten der verbauten SPS erfasst (Sys-ID/Hostname, MAC-Adresse,
+SPS-Typ, TwinCAT-/Image-Version, Bemerkung). Keine IP-Adresse: die SPS beziehen ihre IP
+per DHCP.
 
 Struktur analog zum Stücknachweis (EN 61439):
     Projektübersicht-Button → WHK-Auswahl (aus Konfiguration) → Formular mit Auto-Save.

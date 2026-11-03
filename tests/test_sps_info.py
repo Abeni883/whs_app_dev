@@ -114,9 +114,7 @@ class SpsInfoTest(unittest.TestCase):
         daten = {
             'hostname': 'CX-1A2B3C',
             'mac_adresse': '00:01:05:1A:2B:3C',
-            'ip_adresse': '10.0.0.10',
             'sps_typ': 'CX8190',
-            'seriennummer': 'SN-12345',
             'twincat_version': '3.1.4024.56',
             'image_version': 'IMG-2026-01',
             'bemerkung': 'Mehrzeilige\nBemerkung <mit> Sonderzeichen & ∆',
@@ -131,26 +129,48 @@ class SpsInfoTest(unittest.TestCase):
 
         # Reload: alle Werte (HTML-escaped) im Formular
         html = self._formular().text
-        for wert in ('CX-1A2B3C', '00:01:05:1A:2B:3C', '10.0.0.10', 'CX8190',
-                     'SN-12345', '3.1.4024.56', 'IMG-2026-01'):
+        for wert in ('CX-1A2B3C', '00:01:05:1A:2B:3C', 'CX8190',
+                     '3.1.4024.56', 'IMG-2026-01'):
             self.assertIn(f'value="{wert}"', html)
         self.assertIn('&lt;mit&gt; Sonderzeichen &amp; ∆', html)
         # Hostname erscheint auch in der Auswahlliste
         self.assertIn('CX-1A2B3C', self._auswahl().text)
 
     def test_autosave_feldweise_und_leer_wird_null(self):
-        self._autosave({'hostname': 'H1', 'ip_adresse': '10.0.0.1'})
+        self._autosave({'hostname': 'H1', 'sps_typ': 'CX8190'})
         # Nur ein Feld senden -> andere bleiben unveraendert
-        self._autosave({'ip_adresse': '10.0.0.2'})
+        self._autosave({'sps_typ': 'CX9020'})
         sps = SpsInfo.query.filter_by(whk_config_id=self.whk1.id).one()
         self.assertEqual(sps.hostname, 'H1')
-        self.assertEqual(sps.ip_adresse, '10.0.0.2')
+        self.assertEqual(sps.sps_typ, 'CX9020')
         # Leer / Whitespace -> NULL, Trim
-        self._autosave({'hostname': '', 'ip_adresse': '  10.0.0.3  '})
+        self._autosave({'hostname': '', 'sps_typ': '  CX8190  '})
         db.session.expire_all()
         sps = SpsInfo.query.filter_by(whk_config_id=self.whk1.id).one()
         self.assertIsNone(sps.hostname)
-        self.assertEqual(sps.ip_adresse, '10.0.0.3')
+        self.assertEqual(sps.sps_typ, 'CX8190')
+
+    def test_ip_und_seriennummer_entfernt_altlast_ignoriert(self):
+        # Felder nicht mehr im Formular; Autosave ignoriert die Keys (Spalten bleiben als Altlast)
+        html = self._formular().text
+        for alt in ('name="ip_adresse"', 'IP-Adresse', 'name="seriennummer"', 'Seriennummer'):
+            self.assertNotIn(alt, html)
+        r = self._autosave({'hostname': 'H', 'ip_adresse': '10.0.0.1', 'seriennummer': 'SN-1'})
+        self.assertEqual(r.status_code, 200)
+        sps = SpsInfo.query.filter_by(whk_config_id=self.whk1.id).one()
+        self.assertEqual(sps.hostname, 'H')
+        self.assertIsNone(sps.ip_adresse)
+        self.assertIsNone(sps.seriennummer)
+        self.assertNotIn('ip_adresse', SpsInfo.DATEN_FELDER)
+        self.assertNotIn('seriennummer', SpsInfo.DATEN_FELDER)
+
+    def test_formular_verbleibende_felder_und_platzhalter(self):
+        html = self._formular().text
+        for name in ('hostname', 'mac_adresse', 'sps_typ', 'twincat_version', 'image_version', 'bemerkung'):
+            self.assertIn(f'name="{name}"', html)
+        self.assertIn('placeholder="z.B. v610a"', html)
+        self.assertEqual(SpsInfo.DATEN_FELDER,
+                         ('hostname', 'mac_adresse', 'sps_typ', 'twincat_version', 'image_version', 'bemerkung'))
 
     def test_autosave_ohne_vorheriges_formular_legt_an(self):
         # Autosave direkt (ohne GET) darf nicht crashen -> Auto-Init auch hier

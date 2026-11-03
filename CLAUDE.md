@@ -480,6 +480,9 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
 - Tests `tests/test_sps_info.py`; `tests/_util.py: make_render_app()` rendert Templates echt.
 - Migration: nur `db.create_all()` (neue Tabelle, läuft beim Dienststart). Bericht:
   `berichte/2026-11-03_it-inventar-sps.md`.
+- Formularfelder (Stand 2026-11-03): Sys-ID, MAC-Adresse | SPS-Typ, TwinCAT-Version,
+  Image-Version, Bemerkung. `ip_adresse` (DHCP) und `seriennummer` sind **Altlast-Spalten**:
+  nicht im Formular, nicht in `SpsInfo.DATEN_FELDER`, kein Rebuild.
 - **Sys-ID:** Spalte `hostname` = Sys-ID der SBB (z.B. `lu-wh-01`), Label „Sys-ID". Daraus
   Webvisu-/Config-Links; URL-Muster **nur** in `SpsInfo.URL_MUSTER` (Backend-Properties
   `webvisu_url`/`config_url`, Formular-JS via data-Attribute).

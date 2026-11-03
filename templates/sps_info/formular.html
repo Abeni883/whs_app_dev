@@ -41,13 +41,6 @@
                    placeholder="z.B. 00:01:05:1A:2B:3C" autocomplete="off">
         </div>
 
-        <div class="form-group">
-            <label for="ip_adresse">IP-Adresse</label>
-            <input type="text" id="ip_adresse" name="ip_adresse"
-                   value="{{ sps.ip_adresse or '' }}" maxlength="50"
-                   placeholder="z.B. 10.0.0.10" autocomplete="off">
-        </div>
-
         <h3 class="sn-section-title">Hardware &amp; Software</h3>
 
         <div class="form-group">
@@ -55,12 +48,6 @@
             <input type="text" id="sps_typ" name="sps_typ"
                    value="{{ sps.sps_typ or '' }}" maxlength="100"
                    placeholder="z.B. CX8190" autocomplete="off">
-        </div>
-
-        <div class="form-group">
-            <label for="seriennummer">Seriennummer</label>
-            <input type="text" id="seriennummer" name="seriennummer"
-                   value="{{ sps.seriennummer or '' }}" maxlength="100" autocomplete="off">
         </div>
 
         <div class="form-group">
@@ -73,7 +60,8 @@
         <div class="form-group">
             <label for="image_version">Image-Version</label>
             <input type="text" id="image_version" name="image_version"
-                   value="{{ sps.image_version or '' }}" maxlength="100" autocomplete="off">
+                   value="{{ sps.image_version or '' }}" maxlength="100"
+                   placeholder="z.B. v610a" autocomplete="off">
         </div>
 
         <h3 class="sn-section-title">Bemerkung</h3>
@@ -103,8 +91,8 @@
 // während eines laufenden Requests ausgelöst wird, wird gemerkt und danach EINMAL
 // nachgeholt. URLs kommen aus data-Attributen (kein Jinja im Script).
 (function() {
-    var SPS_FELDER = ['hostname', 'mac_adresse', 'ip_adresse', 'sps_typ',
-                      'seriennummer', 'twincat_version', 'image_version', 'bemerkung'];
+    var SPS_FELDER = ['hostname', 'mac_adresse', 'sps_typ',
+                      'twincat_version', 'image_version', 'bemerkung'];
     var cfg = document.getElementById('sps-config').dataset;
     var AUTOSAVE_URL = cfg.saveUrl;
     var formEl = document.getElementById('sps-form');

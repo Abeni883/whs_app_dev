@@ -1076,8 +1076,12 @@ class SpsInfo(db.Model):
     # (siehe URL_MUSTER). Spaltenname bleibt 'hostname' (kein Schema-Change).
     hostname = db.Column(db.String(100))
     mac_adresse = db.Column(db.String(50))
+    # Altlast: Feld aus dem Formular entfernt (2026-11-03, SPS beziehen IP per DHCP).
+    # Spalte bleibt (kein Rebuild), nicht in DATEN_FELDER -> Autosave ignoriert den Key.
     ip_adresse = db.Column(db.String(50))
     sps_typ = db.Column(db.String(100))          # z.B. CX8190
+    # Altlast: Feld aus dem Formular entfernt (2026-11-03), Spalte bleibt (kein Rebuild).
+    # Nicht in DATEN_FELDER -> Autosave ignoriert den Key.
     seriennummer = db.Column(db.String(100))
     twincat_version = db.Column(db.String(50))
     image_version = db.Column(db.String(100))
@@ -1095,8 +1099,8 @@ class SpsInfo(db.Model):
 
     # Felder, die Formular + Autosave schreiben (zentral, damit Blueprint/Tests
     # nicht driften).
-    DATEN_FELDER = ('hostname', 'mac_adresse', 'ip_adresse', 'sps_typ',
-                    'seriennummer', 'twincat_version', 'image_version', 'bemerkung')
+    DATEN_FELDER = ('hostname', 'mac_adresse', 'sps_typ',
+                    'twincat_version', 'image_version', 'bemerkung')
 
     # URL-Muster für die aus der Sys-ID abgeleiteten Links — EINZIGE Definitionsstelle.
     # '{sysid}' wird durch die getrimmte Sys-ID ersetzt; Backend (Properties unten) und
