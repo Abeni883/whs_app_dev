@@ -1050,6 +1050,61 @@ def config_art_produkt(config, ist_steuerung):
     return config.name or ART_PRODUKT_FALLBACK_STEUERUNG
 
 
+class SpsInfo(db.Model):
+    """
+    IT-Inventar: Daten der in einer WHK verbauten SPS (Hostname, MAC, IP, ...).
+
+    Genau eine SPS pro WHK (UNIQUE whk_config_id). Alle Felder Freitext —
+    Flexibilität vor Strenge, wie bei den übrigen Formularen.
+
+    Lösch-Verhalten (DB-CASCADE, beide FKs):
+        - Projekt löschen  -> SpsInfo wird mitgelöscht
+        - WHK löschen      -> SpsInfo wird mitgelöscht (kein Lösch-Schutz wie beim
+          Stücknachweis: IT-Daten ohne WHK sind wertlos)
+    """
+    __tablename__ = 'sps_infos'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete='CASCADE'),
+                           nullable=False, index=True)
+    whk_config_id = db.Column(db.Integer, db.ForeignKey('whk_configs.id', ondelete='CASCADE'),
+                              nullable=False, unique=True)  # 1 SPS pro WHK
+
+    hostname = db.Column(db.String(100))
+    mac_adresse = db.Column(db.String(50))
+    ip_adresse = db.Column(db.String(50))
+    sps_typ = db.Column(db.String(100))          # z.B. CX8190
+    seriennummer = db.Column(db.String(100))
+    twincat_version = db.Column(db.String(50))
+    image_version = db.Column(db.String(100))
+    bemerkung = db.Column(db.Text)
+
+    erstellt_am = db.Column(db.DateTime, default=datetime.utcnow)
+    geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships — passive_deletes: Löschung läuft über DB-CASCADE (project_id /
+    # whk_config_id sind NOT NULL, der ORM darf sie nicht nullen).
+    project = db.relationship('Project', backref=db.backref(
+        'sps_infos', lazy=True, cascade='all, delete-orphan', passive_deletes=True))
+    whk_config = db.relationship('WHKConfig', backref=db.backref(
+        'sps_info', uselist=False, cascade='all, delete-orphan', passive_deletes=True))
+
+    # Felder, die Formular + Autosave schreiben (zentral, damit Blueprint/Tests
+    # nicht driften).
+    DATEN_FELDER = ('hostname', 'mac_adresse', 'ip_adresse', 'sps_typ',
+                    'seriennummer', 'twincat_version', 'image_version', 'bemerkung')
+
+    @property
+    def ist_erfasst(self):
+        """True, sobald Hostname oder MAC-Adresse gefüllt ist (Status 'Erfasst')."""
+        return bool((self.hostname or '').strip() or (self.mac_adresse or '').strip())
+
+    def __repr__(self):
+        return (f'<SpsInfo id={self.id} whk_config_id={self.whk_config_id} '
+                f'hostname="{self.hostname}">')
+
+
 class FiMessung(db.Model):
     """
     FI-Schutzschalter Messung für Stücknachweise.

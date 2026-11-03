@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}IT-Inventar — {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>{{ projekt.projektname }}</span>
+        <span class="breadcrumb-sep">›</span>
+        <span>IT-Inventar</span>
+    </nav>
+
+    <div class="page-header">
+        <div>
+            <h2>IT-Inventar — SPS pro WHK</h2>
+            <p style="color: var(--text-secondary); margin-top: 4px;">
+                {{ projekt.projektname }}
+                {% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück</a>
+    </div>
+
+    {% if whk_data %}
+        <table class="project-table">
+            <thead>
+                <tr>
+                    <th>Bezeichnung</th>
+                    <th>Typ</th>
+                    <th>Status</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in whk_data %}
+                <tr>
+                    <td>
+                        <strong>{{ item.whk.whk_nummer }}</strong>
+                        {% if item.sps and item.sps.hostname %}<span style="color: var(--text-secondary);"> — {{ item.sps.hostname }}</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if item.whk.whk_typ %}
+                            <span class="preset-badge">{{ item.whk.whk_typ }}</span>
+                        {% else %}
+                            <span style="color: var(--text-muted, #999);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.erfasst %}
+                            <span class="status-badge status-vorhanden">Erfasst</span>
+                        {% else %}
+                            <span class="status-badge status-offen">Nicht erfasst</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('sps_info.sps_formular', project_id=projekt.id, whk_id=item.whk.id) }}" class="btn-primary btn-sm">Öffnen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-data">
+            <p>Keine WHK-Konfigurationen vorhanden.</p>
+            <p>Erstellen Sie zuerst eine <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}">WH-Anlage Konfiguration</a>.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

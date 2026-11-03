@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}SPS — {{ whk.whk_nummer }} — {{ projekt.projektname }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="{{ auswahl_url }}">{{ projekt.projektname }}</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="{{ auswahl_url }}">IT-Inventar</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>SPS {{ whk.whk_nummer }}</span>
+    </nav>
+
+    <h2>SPS — {{ whk.whk_nummer }}{% if whk.whk_typ %} <span style="color: var(--text-secondary); font-weight: normal;">({{ whk.whk_typ }})</span>{% endif %}</h2>
+    <div id="save-status" class="save-status" style="display: none;"></div>
+
+    <form id="sps-form" onsubmit="return false;">
+
+        <h3 class="sn-section-title">Netzwerk</h3>
+
+        <div class="form-group">
+            <label for="hostname">Hostname</label>
+            <input type="text" id="hostname" name="hostname"
+                   value="{{ sps.hostname or '' }}" maxlength="100"
+                   placeholder="z.B. CX-1A2B3C" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="mac_adresse">MAC-Adresse</label>
+            <input type="text" id="mac_adresse" name="mac_adresse"
+                   value="{{ sps.mac_adresse or '' }}" maxlength="50"
+                   placeholder="z.B. 00:01:05:1A:2B:3C" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="ip_adresse">IP-Adresse</label>
+            <input type="text" id="ip_adresse" name="ip_adresse"
+                   value="{{ sps.ip_adresse or '' }}" maxlength="50"
+                   placeholder="z.B. 10.0.0.10" autocomplete="off">
+        </div>
+
+        <h3 class="sn-section-title">Hardware &amp; Software</h3>
+
+        <div class="form-group">
+            <label for="sps_typ">SPS-Typ</label>
+            <input type="text" id="sps_typ" name="sps_typ"
+                   value="{{ sps.sps_typ or '' }}" maxlength="100"
+                   placeholder="z.B. CX8190" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="seriennummer">Seriennummer</label>
+            <input type="text" id="seriennummer" name="seriennummer"
+                   value="{{ sps.seriennummer or '' }}" maxlength="100" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="twincat_version">TwinCAT-Version</label>
+            <input type="text" id="twincat_version" name="twincat_version"
+                   value="{{ sps.twincat_version or '' }}" maxlength="50"
+                   placeholder="z.B. 3.1.4024.56" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <label for="image_version">Image-Version</label>
+            <input type="text" id="image_version" name="image_version"
+                   value="{{ sps.image_version or '' }}" maxlength="100" autocomplete="off">
+        </div>
+
+        <h3 class="sn-section-title">Bemerkung</h3>
+
+        <div class="form-group">
+            <label for="bemerkung">Bemerkung</label>
+            <textarea id="bemerkung" name="bemerkung" rows="4">{{ sps.bemerkung or '' }}</textarea>
+        </div>
+
+        <!-- ==================== AKTIONEN ==================== -->
+        <div class="form-group form-actions">
+            <a href="{{ auswahl_url }}" class="btn-primary">Zur&uuml;ck</a>
+        </div>
+
+    </form>
+</div>
+
+<div id="sps-config"
+     data-save-url="{{ autosave_url }}"
+     style="display:none;">
+</div>
+<script>
+// ==================== AUTO-SAVE (SPS / IT-Inventar) ====================
+// Muster: Debounce 1.5s + In-Flight-Guard (isSaving/savePending). Ein Save, der
+// während eines laufenden Requests ausgelöst wird, wird gemerkt und danach EINMAL
+// nachgeholt. URLs kommen aus data-Attributen (kein Jinja im Script).
+(function() {
+    var SPS_FELDER = ['hostname', 'mac_adresse', 'ip_adresse', 'sps_typ',
+                      'seriennummer', 'twincat_version', 'image_version', 'bemerkung'];
+    var AUTOSAVE_URL = document.getElementById('sps-config').dataset.saveUrl;
+    var formEl = document.getElementById('sps-form');
+
+    var autosaveTimer = null;
+    var isSaving = false;
+    var savePending = false;
+
+    function sammleFormularDaten() {
+        var daten = {};
+        SPS_FELDER.forEach(function(f) {
+            var el = formEl.querySelector('[name="' + f + '"]');
+            if (el) daten[f] = el.value;
+        });
+        return daten;
+    }
+
+    function performAutoSave() {
+        if (isSaving) {
+            savePending = true;
+            return;
+        }
+        isSaving = true;
+        showSaveStatus('saving');
+        fetch(AUTOSAVE_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(sammleFormularDaten())
+        })
+        .then(function(r) {
+            if (!r.ok) { throw new Error('Status ' + r.status); }
+            return r.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                showSaveStatus('saved');
+            } else {
+                showSaveStatus('error', data.error || 'Unbekannter Fehler');
+            }
+        })
+        .catch(function(err) {
+            console.error('Auto-Save Fehler:', err);
+            showSaveStatus('error', err.message || 'Netzwerkfehler');
+        })
+        .finally(function() {
+            isSaving = false;
+            if (savePending) {
+                savePending = false;
+                performAutoSave();
+            }
+        });
+    }
+
+    function autosave() {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(performAutoSave, 1500);
+    }
+
+    function istFormularfeld(el) {
+        var tag = el.tagName;
+        return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    }
+
+    formEl.addEventListener('input', function(e) {
+        if (istFormularfeld(e.target)) autosave();
+    });
+    formEl.addEventListener('change', function(e) {
+        if (istFormularfeld(e.target)) autosave();
+    });
+})();
+</script>
+{% endblock %}

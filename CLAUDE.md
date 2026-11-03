@@ -468,6 +468,19 @@ git -C C:\inetpub\whs_app_prod_neu diff --name-only <laufender-tag> <doku-tag>
 
 ---
 
+## Implementierter Stand — IT-Inventar (SPS pro WHK) ✅ (2026-11-03, nur DEV)
+
+- Modell `SpsInfo` / Tabelle `sps_infos` (1 SPS pro WHK, UNIQUE). Beide FKs **CASCADE**
+  (Projekt + WHK) — bewusst kein Lösch-Schutz wie beim Stücknachweis.
+- Blueprint `blueprints/sps_info.py`: `/projekt/<id>/it-inventar` (WHK-Auswahl, Status
+  „Erfasst" = Hostname oder MAC gefüllt), `/projekt/<id>/whk/<id>/sps` (Formular, Auto-Init),
+  `.../sps/autosave` (JSON, feldweise).
+- Templates `templates/sps_info/`, Button „IT-Inventar" in `projekte.html` nur bei EWH,
+  CSS `.itinventar-link`.
+- Tests `tests/test_sps_info.py`; `tests/_util.py: make_render_app()` rendert Templates echt.
+- Migration: nur `db.create_all()` (neue Tabelle, läuft beim Dienststart). Bericht:
+  `berichte/2026-11-03_it-inventar-sps.md`.
+
 ## Offene Punkte / Nächste Schritte
 
 - Produktiv-Übernahme (DB-Migrationen beachten!)
