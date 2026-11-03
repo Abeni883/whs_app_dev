@@ -346,14 +346,13 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.10` (Code bis `e1cf4f1` + Skript-Fix) — IT-Inventar
-komplett (SPS-Daten pro WHK, Sys-ID mit Webvisu/Config-Links, Einstiegsseite `/it-inventar`,
-Meteostation-Sektion). **Schema-Schritt:** neue Tabelle `sps_infos` inkl. `meteo_*`-Spalten —
-`scripts/migrate_sps_meteo.py <whs.db>` (idempotent, `--dry-run` read-only; legt die Tabelle bei
-Erst-Deployment selbst aus dem Modell an, sonst ALTER für fehlende Spalten) — in PROD beim Deploy
-zwischen Checkout und Start ausgeführt.
-Vorheriger Stand: `v2026.07.9` (Code bis `9bef61e`) — Stücknachweis folgt der Konfiguration
-(Fallback-Muster); Datenbereinigung `scripts/migrate_sn_fallback.py`.
+Modell brechen. Aktueller Stand: `v2026.07.11` (Code bis `dc7dee4`) — IT-Inventar-Auswahlseite
+kompakt (Spalten Bezeichnung | MAC | Webvisu | Config | Status | Aktion, URL-Textlinks, Titel mit
+Anlagenname · DIDOK); reines Template/CSS-Deployment ohne DB-Schritt.
+Vorheriger Stand: `v2026.07.10` (Code bis `e1cf4f1` + Skript-Fix) — IT-Inventar komplett (SPS-Daten
+pro WHK, Sys-ID mit Webvisu/Config-Links, Einstiegsseite `/it-inventar`, Meteostation-Sektion).
+**Schema-Schritt** damals: Tabelle `sps_infos` inkl. `meteo_*` via `scripts/migrate_sps_meteo.py`
+(idempotent, `--dry-run`; legt die Tabelle bei Erst-Deployment aus dem Modell an) — in PROD ausgeführt.
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
 
 ### Dienstnamen
