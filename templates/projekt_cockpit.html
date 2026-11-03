@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}{{ projekt.projektname }} — Cockpit{% endblock %}
+
+{# Fortschrittsfarbe wie auf der Projektuebersicht (progress_color-Makro in projekte.html) #}
+{% macro progress_color(percent) -%}
+    {%- if percent == 100 -%}inherit
+    {%- elif percent >= 70 -%}#7cbf3f
+    {%- elif percent >= 50 -%}#f5a623
+    {%- elif percent >= 30 -%}#e9621f
+    {%- else -%}#dc3545{%- endif -%}
+{%- endmacro %}
+
+{# Kachel mit Fortschrittsbalken; ganze Kachel klickbar (stretched-link) #}
+{% macro progress_card(titel, icon, percent, url, link_text, css_id) -%}
+<div class="cockpit-card{% if percent == 100 %} complete{% endif %}" id="{{ css_id }}">
+    <div class="cockpit-card-title"><span class="cockpit-card-icon">{{ icon }}</span>{{ titel }}</div>
+    <div class="cockpit-progress">
+        <div class="cockpit-bar"><div class="cockpit-bar-fill" style="width: {{ percent }}%;"></div></div>
+        <span class="cockpit-percent" style="color: {{ progress_color(percent) }};">{{ percent }}%</span>
+    </div>
+    <a href="{{ url }}" class="cockpit-card-link">{{ link_text }} ›</a>
+</div>
+{%- endmacro %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('projekte.projekte') }}">Alle Projekte</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>{{ projekt.projektname }}</span>
+    </nav>
+
+    <!-- Kopfbereich -->
+    <div class="cockpit-header">
+        <div>
+            <h2>
+                <span>{{ projekt.projektname }}{% if projekt.didok_betriebspunkt %} · {{ projekt.didok_betriebspunkt }}{% endif %}</span>
+                <span class="energie-badge energie-{{ 'gwh' if projekt.energie == 'GWH' else 'ewh' }}">{{ 'GWH' if projekt.energie == 'GWH' else 'EWH' }}</span>
+            </h2>
+            {% if projekt.pruefer_achermann or projekt.pruefdatum_text %}
+            <div class="cockpit-subtitle">
+                {% if projekt.pruefer_achermann %}Prüfer: {{ projekt.pruefer_achermann }}{% endif %}
+                {% if projekt.pruefer_achermann and projekt.pruefdatum_text %} · {% endif %}
+                {% if projekt.pruefdatum_text %}Prüfdatum: {{ projekt.pruefdatum_text }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('projekte.projekte') }}" class="btn-cancel">Zurück zur Übersicht</a>
+    </div>
+
+    <!-- Kachel-Raster -->
+    <div class="cockpit-grid">
+
+        <div class="cockpit-card" id="kachel-info">
+            <div class="cockpit-card-title"><span class="cockpit-card-icon">ℹ</span>Projektinformationen</div>
+            <div class="cockpit-kennzahl">
+                {% if projekt.projektleiter_sbb %}<small>Projektleiter SBB:</small> {{ projekt.projektleiter_sbb }}{% else %}<small>Stammdaten, Prüfer, Prüfdatum</small>{% endif %}
+            </div>
+            <a href="{{ url_for('projekte.projekt_bearbeiten', projekt_id=projekt.id) }}" class="cockpit-card-link">Bearbeiten ›</a>
+        </div>
+
+        <div class="cockpit-card" id="kachel-konfiguration">
+            <div class="cockpit-card-title"><span class="cockpit-card-icon">⚙</span>WH-Anlage Konfiguration</div>
+            <div class="cockpit-kennzahl">
+                {% if ist_ewh %}
+                    {{ whk_anzahl }} <small>WHK</small> · {{ steuerung_anzahl }} <small>Steuerung{{ '' if steuerung_anzahl == 1 else 'en' }}</small>
+                {% else %}
+                    {{ zsk_anzahl }} <small>ZSK</small>
+                {% endif %}
+            </div>
+            {% if ist_ewh %}
+                <a href="{{ url_for('konfiguration.projekt_konfiguration', projekt_id=projekt.id) }}" class="cockpit-card-link">Konfiguration ›</a>
+            {% else %}
+                <a href="{{ url_for('konfiguration.gwh_konfiguration', projekt_id=projekt.id) }}" class="cockpit-card-link">Konfiguration ›</a>
+            {% endif %}
+        </div>
+
+        {% if ist_ewh %}
+            {{ progress_card('Abnahmetest', '✓', test_progress, url_for('ewh.projekt_abnahmetest', projekt_id=projekt.id), 'Abnahmetest', 'kachel-abnahmetest') }}
+            {{ progress_card(norm_name, '§', en_progress, url_for('stuecknachweis.whk_auswahl', project_id=projekt.id), 'Stücknachweise', 'kachel-en61439') }}
+            {{ progress_card('IT-Inventar', '⌂', it_progress, url_for('sps_info.whk_auswahl', project_id=projekt.id), 'SPS-Daten', 'kachel-itinventar') }}
+        {% else %}
+            {{ progress_card('Abnahmetest', '✓', test_progress, url_for('gwh.gwh_abnahmetest', projekt_id=projekt.id), 'Abnahmetest', 'kachel-abnahmetest') }}
+        {% endif %}
+
+    </div>
+
+    <!-- Loeschen: bestehender Flow der Uebersicht (GET + confirm), bewusst keine Kachel -->
+    <div class="cockpit-footer">
+        <a href="{{ url_for('projekte.projekt_loeschen', projekt_id=projekt.id) }}" class="cockpit-delete-link" title="Projekt löschen"
+           onclick="return confirm('Möchten Sie dieses Projekt wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')">✕ Projekt löschen</a>
+    </div>
+</div>
+{% endblock %}

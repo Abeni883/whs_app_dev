@@ -1944,6 +1944,187 @@ td.normen-gruppe-header {
     color: #ffffff;
 }
 
+/* ==================== PROJEKT-COCKPIT ==================== */
+/* Projektname in der Uebersicht als Link aufs Cockpit (dezent, Textfarbe bleibt) */
+.cockpit-name-link {
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--border-color);
+}
+
+.cockpit-name-link:hover {
+    color: var(--accent-blue);
+    border-bottom-color: var(--accent-blue);
+}
+
+.cockpit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.cockpit-header h2 {
+    margin-bottom: 0.25rem;
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.cockpit-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.cockpit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+
+/* Kachel: Card-Stil der App (Radius 8px, Border, leichter Schatten, Variablen) —
+   ganze Kachel klickbar via stretched-link (.cockpit-card-link::after). */
+.cockpit-card {
+    position: relative;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.25rem 1.4rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 130px;
+}
+
+.cockpit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    border-color: var(--accent-blue);
+}
+
+.cockpit-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cockpit-card-icon {
+    font-size: 1.1rem;
+    opacity: 0.85;
+}
+
+.cockpit-card-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-top: auto;
+}
+
+.cockpit-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.cockpit-card:hover .cockpit-card-link {
+    text-decoration: underline;
+}
+
+.cockpit-kennzahl {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cockpit-kennzahl small {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.cockpit-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cockpit-bar {
+    flex: 1;
+    height: 10px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.cockpit-bar-fill {
+    height: 100%;
+    background-color: var(--accent-blue);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.cockpit-percent {
+    min-width: 3.2rem;
+    text-align: right;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+/* 100 %: gruener Akzent (Balken + Rand dezent) */
+.cockpit-card.complete {
+    border-color: var(--accent-green);
+    background-color: var(--accent-green-light);
+}
+
+.cockpit-card.complete .cockpit-bar-fill {
+    background-color: var(--accent-green);
+}
+
+.cockpit-card.complete .cockpit-percent {
+    color: var(--accent-green-dark);
+}
+
+.cockpit-card.complete:hover {
+    border-color: var(--accent-green-dark);
+}
+
+.cockpit-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+}
+
+.cockpit-delete-link {
+    color: var(--accent-red, #ef4444);
+    text-decoration: none;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.cockpit-delete-link:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .cockpit-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* EN-61439- und IT-Inventar-Button bei 100 %: gruen wie .test-link.test-complete
    (Light/Dark ueber die accent-green-Variablen; die Dark-Regeln der Basisklassen setzen
    explizite Farben, daher eigene Dark-Overrides mit hoeherer Spezifitaet). */

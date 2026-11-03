@@ -39,6 +39,16 @@ def parse_date_from_form(date_string, date_format='%d.%m.%Y'):
         return None
 
 
+def _projekte_fuer_progress(projekt_ids=None):
+    """Projekte fuer die Fortschrittsberechnung: alle (Uebersicht) oder nur die angegebenen
+    (Cockpit: ein einzelnes Projekt). Die Bulk-Queries bleiben identisch, nur die
+    Projektmenge wird eingeschraenkt — kein Mehraufwand fuer die Uebersicht."""
+    q = Project.query
+    if projekt_ids is not None:
+        q = q.filter(Project.id.in_(list(projekt_ids)))
+    return q.all()
+
+
 def _prozent(fertig, einheiten):
     """Gerundeter Prozentwert 0-100; 0 wenn keine Einheiten (keine Division durch 0)."""
     if not einheiten:
@@ -46,8 +56,8 @@ def _prozent(fertig, einheiten):
     return min(100, max(0, round(fertig / einheiten * 100)))
 
 
-def calculate_all_projects_en61439_progress():
-    """EN-61439-Fortschritt pro Projekt (Bulk, keine N+1).
+def calculate_all_projects_en61439_progress(projekt_ids=None):
+    """EN-61439-Fortschritt pro Projekt (Bulk, keine N+1). projekt_ids=None -> alle Projekte.
 
     einheiten = alle WHKs + alle Steuerungen des Projekts
     fertig    = Einheiten, deren Stuecknachweis den Status 'vorhanden' hat
@@ -56,7 +66,7 @@ def calculate_all_projects_en61439_progress():
     Returns:
         dict: {projekt_id: prozent (0-100)}
     """
-    projekte = Project.query.all()
+    projekte = _projekte_fuer_progress(projekt_ids)
     if not projekte:
         return {}
     projekt_ids = [p.id for p in projekte]
@@ -76,8 +86,8 @@ def calculate_all_projects_en61439_progress():
     return {p.id: _prozent(fertig.get(p.id, 0), einheiten.get(p.id, 0)) for p in projekte}
 
 
-def calculate_all_projects_it_progress():
-    """IT-Inventar-Fortschritt pro Projekt (Bulk, keine N+1).
+def calculate_all_projects_it_progress(projekt_ids=None):
+    """IT-Inventar-Fortschritt pro Projekt (Bulk, keine N+1). projekt_ids=None -> alle Projekte.
 
     einheiten = alle WHKs des Projekts
     fertig    = WHKs mit SpsInfo 'erfasst' (Sys-ID/hostname oder MAC gefuellt —
@@ -86,7 +96,7 @@ def calculate_all_projects_it_progress():
     Returns:
         dict: {projekt_id: prozent (0-100)}
     """
-    projekte = Project.query.all()
+    projekte = _projekte_fuer_progress(projekt_ids)
     if not projekte:
         return {}
     projekt_ids = [p.id for p in projekte]
@@ -103,9 +113,10 @@ def calculate_all_projects_it_progress():
     return {p.id: _prozent(fertig.get(p.id, 0), einheiten.get(p.id, 0)) for p in projekte}
 
 
-def calculate_all_projects_test_progress():
+def calculate_all_projects_test_progress(projekt_ids=None):
     """
-    Berechnet den Testfortschritt für alle Projekte effizient.
+    Berechnet den Testfortschritt für alle Projekte effizient (projekt_ids=None -> alle;
+    sonst nur die angegebenen, z. B. Cockpit fuer ein einzelnes Projekt).
 
     KANONISCHE Logik (Phase 2b / O-3): identisch zur EWH-Detailseite
     (blueprints/ewh.py calc_component_percent) und zu blueprints/gwh.py, damit
@@ -129,7 +140,7 @@ def calculate_all_projects_test_progress():
     """
     progress_dict = {}
 
-    projekte = Project.query.all()
+    projekte = _projekte_fuer_progress(projekt_ids)
     if not projekte:
         return progress_dict
 
@@ -299,6 +310,36 @@ def projekte():
 
     return render_template('projekte.html', projekte=alle_projekte, progress_dict=progress_dict,
                            en_progress_dict=en_progress_dict, it_progress_dict=it_progress_dict)
+
+
+@projekte_bp.route('/projekt/<int:projekt_id>/cockpit')
+@login_required
+def projekt_cockpit(projekt_id):
+    """Projekt-Cockpit: zentrale Einstiegsseite mit einer Kachel pro Modul.
+
+    Kacheln: Projektinformationen, WH-Anlage-Konfiguration (Bestand), Abnahmetest (%),
+    EN 61439 (%) und IT-Inventar (%) — die beiden letzten nur bei EWH. Fortschritte kommen
+    aus denselben Funktionen wie die Projektuebersicht (auf ein Projekt eingeschraenkt),
+    damit Cockpit und Uebersicht identische Werte zeigen.
+    """
+    projekt = Project.query.get(projekt_id)
+    if not projekt:
+        flash('Projekt nicht gefunden!', 'error')
+        return redirect(url_for('projekte.projekte'))
+
+    ids = [projekt.id]
+    ist_ewh = projekt.energie != 'GWH'
+    return render_template(
+        'projekt_cockpit.html',
+        projekt=projekt,
+        ist_ewh=ist_ewh,
+        whk_anzahl=WHKConfig.query.filter_by(projekt_id=projekt.id).count(),
+        steuerung_anzahl=SteuerungConfig.query.filter_by(projekt_id=projekt.id).count(),
+        zsk_anzahl=ZSKConfig.query.filter_by(projekt_id=projekt.id).count(),
+        test_progress=calculate_all_projects_test_progress(ids).get(projekt.id, 0),
+        en_progress=calculate_all_projects_en61439_progress(ids).get(projekt.id, 0) if ist_ewh else None,
+        it_progress=calculate_all_projects_it_progress(ids).get(projekt.id, 0) if ist_ewh else None,
+    )
 
 
 @projekte_bp.route('/projekt/neu', methods=['GET', 'POST'])

@@ -63,7 +63,7 @@
                             {%- endif -%}
                         </span>
                     </td>
-                    <td><strong>{{ projekt.projektname }}</strong></td>
+                    <td><strong><a href="{{ url_for('projekte.projekt_cockpit', projekt_id=projekt.id) }}" class="cockpit-name-link">{{ projekt.projektname }}</a></strong></td>
                     <td>
                         <a href="{{ url_for('projekte.projekt_bearbeiten', projekt_id=projekt.id) }}" class="action-link">Bearbeiten</a>
                     </td>
