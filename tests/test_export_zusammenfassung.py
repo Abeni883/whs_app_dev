@@ -151,7 +151,7 @@ class ExportZusammenfassungTest(unittest.TestCase):
         for projekt in (self.ewh, self.gwh):
             html = self.client.get(f'/export/projekt/{projekt.id}').text
             self.assertIn('id="zusammenfassung-hinweis" class="section-hint" style="display: none;"', html)
-            self.assertIn('Die Zusammenfassung enthält nur Tests der ausgewählten Komponenten.', html)
+            self.assertIn('Die Zusammenfassung enthält nur Tests der folgenden ausgewählten Komponenten.', html)
             # Hinweis steht direkt nach der Zusammenfassungs-Checkbox, vor der naechsten Checkbox
             pos_cb = html.index('value="zusammenfassung_fehler"')
             pos_hinweis = html.index('id="zusammenfassung-hinweis"')
