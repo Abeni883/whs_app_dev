@@ -6,8 +6,8 @@
 **Zweck:** Verwaltung und Durchführung von Abnahmetests für Weichenheizungssysteme (EWH/GWH) der SBB  
 **Pfad:** `C:\inetpub\whs_app_dev`  
 **Port:** `5002` (Produktion läuft auf Port 5001)  
-**GitHub:** `github.com/Abeni883/sbb-weichenheizung-dev`  
-**Produktion:** `C:\inetpub\whs_app_prod_neu` (Port 5001, separates Repo)
+**GitHub:** `github.com/Abeni883/whs_app_dev.git`  
+**Produktion:** `C:\inetpub\whs_app_prod_neu` (Port 5001, dasselbe Repo — Tag-Checkout, siehe „Deployment-Regeln")
 
 ---
 
@@ -295,7 +295,7 @@ Der Betrieb läuft über NSSM-Dienste — siehe Abschnitt **„Instanzen & Betri
 |---|---|---|
 | Pfad | `C:\inetpub\whs_app_prod_neu` | `C:\inetpub\whs_app_dev` |
 | Port | 5001 | 5002 |
-| Git Repo | `sbb-weichenheizung` | `sbb-weichenheizung-dev` |
+| Git Repo | `whs_app_dev` (dasselbe Repo, Tag-Checkout) | `whs_app_dev` (Branch `main`) |
 | Datenbank | `whs.db` | `whs_dev.db` |
 | Debug | False | True |
 | Server | Flask built-in + TLS (`app.py`) | Flask built-in + TLS (`app.py`) |
