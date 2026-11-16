@@ -76,7 +76,7 @@
                         {% else %}
                             {{ progress_chip('AT', 'Abnahmetest', progress, url_for('ewh.projekt_abnahmetest', projekt_id=projekt.id)) }}
                             {{ progress_chip('EN', norm_name, en_progress_dict.get(projekt.id, 0), url_for('stuecknachweis.whk_auswahl', project_id=projekt.id)) }}
-                            {{ progress_chip('IT', 'IT-Inventar', it_progress_dict.get(projekt.id, 0), url_for('sps_info.whk_auswahl', project_id=projekt.id)) }}
+                            {% if feature_it_inventar %}{{ progress_chip('IT', 'IT-Inventar', it_progress_dict.get(projekt.id, 0), url_for('sps_info.whk_auswahl', project_id=projekt.id)) }}{% endif %}
                         {% endif %}
                     </td>
                     <td class="projekt-aktionen">

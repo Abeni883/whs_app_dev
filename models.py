@@ -534,6 +534,41 @@ def get_norm_name():
     return NORM_NAME_DEFAULT
 
 
+class AppSettingFlag(db.Model):
+    """Feature-Schalter (Key/Value, bool) als Ergaenzung zu AppSettings.
+
+    Bewusst eine EIGENE Tabelle statt einer Spalte in app_settings: db.create_all legt
+    neue Tabellen automatisch an, aber keine Spalten nach. So braucht ein Deployment
+    keinen Schema-Schritt, und ein fehlender Key bedeutet schlicht AUS.
+    """
+    __tablename__ = 'app_setting_flags'
+
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Boolean, nullable=False, default=False)
+    geaendert_am = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<AppSettingFlag {self.key}={self.value}>'
+
+
+FEATURE_IT_INVENTAR = 'feature_it_inventar'
+
+
+def get_feature_flag(key):
+    """True nur, wenn der Key existiert UND gesetzt ist. Fehlender Key = AUS."""
+    flag = db.session.get(AppSettingFlag, key)
+    return bool(flag and flag.value)
+
+
+def set_feature_flag(key, value):
+    """Setzt den Schalter (legt den Key bei Bedarf an). Commit macht der Aufrufer."""
+    flag = db.session.get(AppSettingFlag, key)
+    if flag is None:
+        flag = AppSettingFlag(key=key)
+        db.session.add(flag)
+    flag.value = bool(value)
+
+
 class TestabschlussItem(db.Model):
     """
     Testabschluss-Einträge für EWH und GWH.

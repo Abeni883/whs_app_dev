@@ -80,7 +80,7 @@
         {% if ist_ewh %}
             {{ progress_card('Abnahmetest', '✓', test_progress, url_for('ewh.projekt_abnahmetest', projekt_id=projekt.id), 'Abnahmetest', 'kachel-abnahmetest') }}
             {{ progress_card(norm_name, '§', en_progress, url_for('stuecknachweis.whk_auswahl', project_id=projekt.id), 'Stücknachweise', 'kachel-en61439') }}
-            {{ progress_card('IT-Inventar', '⌂', it_progress, url_for('sps_info.whk_auswahl', project_id=projekt.id), 'SPS-Daten', 'kachel-itinventar') }}
+            {% if feature_it_inventar %}{{ progress_card('IT-Inventar', '⌂', it_progress, url_for('sps_info.whk_auswahl', project_id=projekt.id), 'SPS-Daten', 'kachel-itinventar') }}{% endif %}
         {% else %}
             {{ progress_card('Abnahmetest', '✓', test_progress, url_for('gwh.gwh_abnahmetest', projekt_id=projekt.id), 'Abnahmetest', 'kachel-abnahmetest') }}
         {% endif %}

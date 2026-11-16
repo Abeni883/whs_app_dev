@@ -17,7 +17,7 @@ from datetime import datetime
 from flask import render_template
 from sqlalchemy import event
 
-from tests._util import make_render_app
+from tests._util import make_render_app, it_inventar_ein
 from models import db, Project, WHKConfig, SteuerungConfig, Stuecknachweis, SpsInfo
 from blueprints.projekte import (calculate_all_projects_en61439_progress,
                                  calculate_all_projects_it_progress)
@@ -28,6 +28,7 @@ class ButtonProgressTest(unittest.TestCase):
         self.app, self.db_path = make_render_app()
         self.ctx = self.app.app_context(); self.ctx.push()
         db.create_all()
+        it_inventar_ein()
 
     def tearDown(self):
         db.session.remove(); self.ctx.pop()

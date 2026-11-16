@@ -13,7 +13,7 @@ import re
 import unittest
 from datetime import datetime
 
-from tests._util import make_render_app
+from tests._util import make_render_app, it_inventar_ein
 from models import db, Project, WHKConfig, SteuerungConfig, Stuecknachweis, SpsInfo
 
 
@@ -22,6 +22,7 @@ class ProjekteUebersichtTest(unittest.TestCase):
         self.app, self.db_path = make_render_app()
         self.ctx = self.app.app_context(); self.ctx.push()
         db.create_all()
+        it_inventar_ein()
         self.client = self.app.test_client()
         self.ewh = Project(energie='EWH', projektname='Luzern Nord', didok_betriebspunkt='LZN')
         self.gwh = Project(energie='GWH', projektname='Gas Süd')

@@ -17,7 +17,7 @@ from datetime import datetime
 
 from flask import render_template
 
-from tests._util import make_render_app
+from tests._util import make_render_app, it_inventar_ein
 from models import db, Project, WHKConfig, SteuerungConfig, ZSKConfig, Stuecknachweis, SpsInfo
 from blueprints.projekte import (calculate_all_projects_test_progress,
                                  calculate_all_projects_en61439_progress,
@@ -29,6 +29,7 @@ class CockpitTest(unittest.TestCase):
         self.app, self.db_path = make_render_app()
         self.ctx = self.app.app_context(); self.ctx.push()
         db.create_all()
+        it_inventar_ein()
         self.client = self.app.test_client()
 
     def tearDown(self):
