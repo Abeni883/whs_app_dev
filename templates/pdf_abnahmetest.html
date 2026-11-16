@@ -395,6 +395,14 @@
         {% endfor %}
     </table>
     <div class="page-break"></div>
+    {% elif 'zusammenfassung_fehler' in selected_sections %}
+    <!-- Leerfall: statt leerer Seite ein Hinweis. Ohne Komponenten folgt nichts mehr -> kein Seitenumbruch -->
+    {%- set komponenten_gewaehlt = selected_sections | reject('in', ['deckblatt', 'zusammenfassung_fehler']) | list | length > 0 %}
+    <h1>Zusammenfassung fehlgeschlagener Tests</h1>
+    <p style="margin-top: 10px; font-size: 11pt;">
+        {% if komponenten_gewaehlt %}Keine fehlgeschlagenen Tests{% else %}Keine Komponenten ausgew&auml;hlt{% endif %}
+    </p>
+    {% if komponenten_gewaehlt %}<div class="page-break"></div>{% endif %}
     {% endif %}
 
     <!-- ==================== SEITE 2+: WH-ANLAGE ==================== -->
