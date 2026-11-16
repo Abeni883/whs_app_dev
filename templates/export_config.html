@@ -56,6 +56,9 @@
                             <small>Übersicht aller Tests mit Ergebnis "falsch"</small>
                         </span>
                     </label>
+                    <p id="zusammenfassung-hinweis" class="section-hint" style="display: none;">
+                        Die Zusammenfassung enthält nur Tests der ausgewählten Komponenten.
+                    </p>
 
                     {% if projekt.energie == 'GWH' %}
                     <label class="checkbox-item">
@@ -402,6 +405,17 @@
     background: var(--btn-secondary-bg);
 }
 
+/* Hinweis direkt unter einer Checkbox (kein Fehler - Export bleibt erlaubt) */
+.section-hint {
+    margin: -0.25rem 0 0.5rem 0;
+    padding: 0.6rem 1rem;
+    background: var(--alert-warning-bg);
+    color: var(--alert-warning-text);
+    border: 1px solid var(--alert-warning-border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
 .validation-message {
     color: var(--accent-red);
     text-align: center;
@@ -418,6 +432,9 @@
     const deselectAllBtn = document.getElementById('deselect-all-btn');
     const exportBtn = document.getElementById('export-btn');
     const validationMessage = document.getElementById('validation-message');
+    const zusammenfassungHinweis = document.getElementById('zusammenfassung-hinweis');
+    // Komponenten = alle Sektionen ausser Deckblatt und Zusammenfassung
+    const KEINE_KOMPONENTE = ['deckblatt', 'zusammenfassung_fehler'];
 
     // Vorgeschlagener Dateiname vom Server
     const suggestedFilename = "{{ suggested_filename | default('WH_331 Export.pdf') }}";
@@ -448,6 +465,12 @@
         } else {
             validationMessage.style.display = 'none';
         }
+
+        // Zusammenfassung gewaehlt, aber keine Komponente: nur Hinweis, Export bleibt erlaubt
+        const liste = Array.from(checkboxes);
+        const zusammenfassung = liste.some(cb => cb.checked && cb.value === 'zusammenfassung_fehler');
+        const komponente = liste.some(cb => cb.checked && !KEINE_KOMPONENTE.includes(cb.value));
+        zusammenfassungHinweis.style.display = (zusammenfassung && !komponente) ? 'block' : 'none';
     }
 
     // Event-Listener für Checkboxen

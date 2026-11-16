@@ -382,6 +382,32 @@
         </tbody>
     </table>
     <div class="page-break"></div>
+    {% elif 'zusammenfassung_fehler' in selected_sections %}
+    <!-- Leerfall: statt leerer Seite ein Hinweis. Ohne Komponenten folgt nichts mehr -> kein Seitenumbruch -->
+    {%- set komponenten_gewaehlt = selected_sections | reject('in', ['deckblatt', 'zusammenfassung_fehler']) | list | length > 0 %}
+    <!-- Header -->
+    <div class="page-header">
+        <table width="100%" style="border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 15px;">
+            <tr>
+                <td width="20%" style="vertical-align: middle;">
+                    {% if sbb_logo_base64 %}<img src="{{ sbb_logo_base64 }}" height="35" alt="SBB">{% endif %}
+                </td>
+                <td width="60%" style="text-align: center; vertical-align: middle;">
+                    <span style="font-size: 11pt;">GWH Funktionalit&auml;tstest</span><br>
+                    <span style="font-size: 11pt;">Abnahmetest V3.0</span>
+                </td>
+                <td width="20%" style="text-align: right; vertical-align: middle;">
+                    {% if achermann_logo_base64 %}<img src="{{ achermann_logo_base64 }}" height="35" alt="Achermann">{% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h1>Zusammenfassung fehlgeschlagener Tests</h1>
+    <p style="margin-top: 10px; font-size: 11pt;">
+        {% if komponenten_gewaehlt %}Keine fehlgeschlagenen Tests{% else %}Keine Komponenten ausgew&auml;hlt{% endif %}
+    </p>
+    {% if komponenten_gewaehlt %}<div class="page-break"></div>{% endif %}
     {% endif %}
 
     <!-- ==================== GWH-ANLAGE TESTS ==================== -->
