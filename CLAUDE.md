@@ -346,7 +346,13 @@ git -C C:\inetpub\whs_app_prod_neu describe --tags   # verifizieren
 ```
 
 Ein `pull` würde den detachten HEAD auf einen Commit **ohne Tag-Bezug** fast-forwarden und das
-Modell brechen. Aktueller Stand: `v2026.07.11` (Code bis `dc7dee4`) — IT-Inventar-Auswahlseite
+Modell brechen. Aktueller Stand: **`v2026.07.13`** (`412c750`, Branch `release/v2026.07.12`) —
+Hotfix PDF-Export: bei leerer «Zusammenfassung fehlgeschlagener Tests» Hinweistext statt leerer
+Seite, Hinweis im Export-Dialog; reines Template-Deployment ohne DB-Schritt.
+Vorheriger Stand: `v2026.07.12` (`cfa3f7c`) — Feature-Schalter IT-Inventar (Default AUS, Modul in
+PROD ausgeblendet); neue Tabelle `app_setting_flags` legt `create_all` beim Dienststart an, kein
+Migrationsskript.
+Davor: `v2026.07.11` (Code bis `dc7dee4`) — IT-Inventar-Auswahlseite
 kompakt (Spalten Bezeichnung | MAC | Webvisu | Config | Status | Aktion, URL-Textlinks, Titel mit
 Anlagenname · DIDOK); reines Template/CSS-Deployment ohne DB-Schritt.
 Vorheriger Stand: `v2026.07.10` (Code bis `e1cf4f1` + Skript-Fix) — IT-Inventar komplett (SPS-Daten
@@ -354,6 +360,22 @@ pro WHK, Sys-ID mit Webvisu/Config-Links, Einstiegsseite `/it-inventar`, Meteost
 **Schema-Schritt** damals: Tabelle `sps_infos` inkl. `meteo_*` via `scripts/migrate_sps_meteo.py`
 (idempotent, `--dry-run`; legt die Tabelle bei Erst-Deployment aus dem Modell an) — in PROD ausgeführt.
 PROD ist ein **Deployment-Ziel, kein Arbeitsverzeichnis** — dort wird nicht committet.
+
+### PROD-Linie: Branch `release/v2026.07.12` (ohne die UI-Commits)
+
+Seit `v2026.07.12` werden die PROD-Tags **nicht mehr auf `main`** gesetzt, sondern auf dem Branch
+`release/v2026.07.12` (abgezweigt von `v2026.07.11`). Grund: `main` enthält drei UI-Commits, die
+noch nicht nach PROD sollen — `227bdee` (Prozentanzeige), `0b17950` (Projekt-Cockpit), `11a1b2b`
+(verschlankte Projektübersicht). PROD zeigt daher weiterhin die alte Tabellen-Projektübersicht
+und hat kein Cockpit.
+
+- Fixes für PROD: auf `main` committen, dann per `git cherry-pick -x` auf den Release-Branch
+  (in einem separaten `git worktree`, nicht im DEV-Verzeichnis — dort läuft der Dienst), Unit-Suite
+  + Smoke-Test gegen PROD-DB-Kopie, Branch pushen, Tag auf den Branch-Stand.
+- Vor jedem Cherry-pick prüfen, ob die Dateien von den UI-Commits berührt wurden
+  (`git log 227bdee^..11a1b2b -- <dateien>`). `ef08269` (Feature-Schalter) brauchte deshalb eine
+  manuelle Konfliktauflösung (`d9b526c`: Schalter in der alten `projekte.html`, kein Cockpit).
+- Sobald die UI-Commits freigegeben sind: wieder ab `main` taggen; der Release-Branch entfällt.
 
 ### Dienstnamen
 
