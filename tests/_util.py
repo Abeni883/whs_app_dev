@@ -75,5 +75,17 @@ def make_render_app():
     lm = LoginManager()
     lm.init_app(app)
     lm.user_loader(lambda uid: None)
-    app.context_processor(lambda: dict(norm_name='EN 61439'))
+    # Feature-Schalter ECHT aus der Temp-DB lesen (wie app.py: fehlender Key = AUS).
+    # Tests, die das IT-Inventar brauchen, rufen nach db.create_all() it_inventar_ein().
+    from models import get_feature_flag, FEATURE_IT_INVENTAR
+    app.context_processor(lambda: dict(
+        norm_name='EN 61439',
+        feature_it_inventar=get_feature_flag(FEATURE_IT_INVENTAR)))
     return app, path
+
+
+def it_inventar_ein(ein=True):
+    """Schaltet das Modul IT-Inventar in der Temp-DB frei (bzw. wieder aus)."""
+    from models import set_feature_flag, FEATURE_IT_INVENTAR
+    set_feature_flag(FEATURE_IT_INVENTAR, ein)
+    db.session.commit()

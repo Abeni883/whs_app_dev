@@ -18,12 +18,21 @@ Der Status in der Auswahlliste wechselt erst auf "Erfasst", sobald Hostname oder
 MAC-Adresse gefüllt ist (SpsInfo.ist_erfasst).
 """
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_required
 
-from models import db, Project, WHKConfig, SpsInfo
+from models import db, Project, WHKConfig, SpsInfo, get_feature_flag, FEATURE_IT_INVENTAR
 
 sps_info_bp = Blueprint('sps_info', __name__)
+
+
+@sps_info_bp.before_request
+def _feature_schalter():
+    """Modul ausgeblendet (Schalter AUS oder Key fehlt) -> 404 fuer ALLE Routen des
+    Blueprints, auch POST/Autosave. Laeuft vor login_required: das Modul existiert
+    nach aussen dann schlicht nicht."""
+    if not get_feature_flag(FEATURE_IT_INVENTAR):
+        abort(404)
 
 
 # ==================== HELPERS ====================

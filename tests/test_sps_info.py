@@ -16,7 +16,7 @@ Abgedeckt (hermetische Temp-DB, echtes Template-Rendering via make_render_app):
 import os
 import unittest
 
-from tests._util import make_render_app
+from tests._util import make_render_app, it_inventar_ein
 from models import db, Project, WHKConfig, SpsInfo, EWHMeteostation
 from blueprints.konfiguration import reconcile_whk_configs
 
@@ -26,6 +26,7 @@ class SpsInfoTest(unittest.TestCase):
         self.app, self.db_path = make_render_app()
         self.ctx = self.app.app_context(); self.ctx.push()
         db.create_all()
+        it_inventar_ein()
         self.client = self.app.test_client()
 
         self.p = Project(energie='EWH', projektname='P-IT')

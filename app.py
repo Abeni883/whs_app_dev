@@ -72,6 +72,9 @@ from models import (
     ProjectTimeLog,
     AppSettings,
     get_norm_name,
+    get_feature_flag,
+    set_feature_flag,
+    FEATURE_IT_INVENTAR,
     TestabschlussItem,
     # GWH-Modelle
     ZSKConfig,
@@ -649,6 +652,9 @@ def einstellungen_allgemein():
             timeout = request.form.get('zeiterfassung_timeout', type=int)
             if timeout and 1 <= timeout <= 480:
                 settings.zeiterfassung_timeout_minuten = timeout
+                # Checkbox: nicht angehakt = Feld fehlt im POST = AUS
+                set_feature_flag(FEATURE_IT_INVENTAR,
+                                 request.form.get('feature_it_inventar') == 'on')
                 db.session.commit()
                 flash('Einstellungen wurden gespeichert.', 'success')
             else:
@@ -666,6 +672,12 @@ def einstellungen_allgemein():
 def inject_norm_name():
     """Stellt den konfigurierbaren Norm-Namen in ALLEN Templates bereit."""
     return dict(norm_name=get_norm_name())
+
+
+@app.context_processor
+def inject_feature_flags():
+    """Stellt die Feature-Schalter in ALLEN Templates bereit (fehlender Key = AUS)."""
+    return dict(feature_it_inventar=get_feature_flag(FEATURE_IT_INVENTAR))
 
 
 @app.route('/einstellungen/en61439', methods=['GET', 'POST'])

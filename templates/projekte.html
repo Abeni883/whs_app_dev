@@ -41,7 +41,7 @@
                     <th>WH-Anlage</th>
                     <th>Abnahmetest</th>
                     <th>{{ norm_name }}</th>
-                    <th>IT-Inventar</th>
+                    {% if feature_it_inventar %}<th>IT-Inventar</th>{% endif %}
                     <th>Löschen</th>
                 </tr>
             </thead>
@@ -93,6 +93,7 @@
                             <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
                     </td>
+                    {% if feature_it_inventar %}
                     <td>
                         {% if projekt.energie == 'EWH' %}
                             <a href="{{ url_for('sps_info.whk_auswahl', project_id=projekt.id) }}" class="itinventar-link">IT-Inventar</a>
@@ -100,6 +101,7 @@
                             <span style="color: var(--text-muted, #999);">—</span>
                         {% endif %}
                     </td>
+                    {% endif %}
                     <td>
                         <a href="{{ url_for('projekte.projekt_loeschen', projekt_id=projekt.id) }}" class="delete-link" title="Projekt löschen" onclick="return confirm('Möchten Sie dieses Projekt wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')">✕</a>
                     </td>
